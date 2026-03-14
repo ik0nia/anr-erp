@@ -3,6 +3,7 @@
  * Helper import membri din CSV – modul nou, izolat.
  */
 
+require_once __DIR__ . '/date_helper.php';
 require_once __DIR__ . '/cnp_validator.php';
 require_once __DIR__ . '/log_helper.php';
 
@@ -137,16 +138,7 @@ function membri_import_available_fields(PDO $pdo): array {
  * @return string|null
  */
 function membri_import_parse_date(string $value): ?string {
-    $value = trim($value);
-    if ($value === '') return null;
-    $formats = ['d.m.Y', 'Y-m-d', 'd/m/Y', 'm/d/Y'];
-    foreach ($formats as $fmt) {
-        $dt = date_create_from_format($fmt, $value);
-        if ($dt instanceof DateTime) {
-            return $dt->format('Y-m-d');
-        }
-    }
-    return null;
+    return parse_date_to_ymd($value, ['d.m.Y', 'Y-m-d', 'd/m/Y', 'm/d/Y']);
 }
 
 /**

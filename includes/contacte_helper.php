@@ -2,6 +2,7 @@
 /**
  * Helper modul Contacte - tabel, tipuri, import
  */
+require_once __DIR__ . '/date_helper.php';
 
 define('CONTACTE_TIPURI', [
     'Institutie' => 'Instituție',
@@ -171,8 +172,7 @@ function importa_contacte(PDO $pdo, array $headers, array $rows, array $mapare) 
                 $val = trim((string)$row[$excel_idx]);
             }
             if ($db_field === 'data_nasterii' && !empty($val)) {
-                $d = date_create_from_format('d.m.Y', $val) ?: date_create_from_format('Y-m-d', $val) ?: date_create_from_format('d/m/Y', $val);
-                $data[$db_field] = $d ? $d->format('Y-m-d') : null;
+                $data[$db_field] = parse_date_to_ymd($val, ['d.m.Y', 'Y-m-d', 'd/m/Y']);
             } elseif ($db_field === 'tip_contact') {
                 $data[$db_field] = in_array($val, $tipuri_valide) ? $val : 'alte contacte';
             } else {

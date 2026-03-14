@@ -33,8 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_contact'])) 
         try {
             $data_nasterii_val = !empty($data_nasterii) ? $data_nasterii : null;
             if ($data_nasterii_val) {
-                $d = date_create_from_format('Y-m-d', $data_nasterii_val) ?: date_create_from_format('d.m.Y', $data_nasterii_val);
-                $data_nasterii_val = $d ? $d->format('Y-m-d') : null;
+                $data_nasterii_val = parse_date_to_ymd($data_nasterii_val, ['Y-m-d', 'd.m.Y']);
             }
             $stmt = $pdo->prepare('INSERT INTO contacte (nume, prenume, companie, tip_contact, telefon, telefon_personal, email, email_personal, website, data_nasterii, notite, referinta_contact) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
             $stmt->execute([$nume, $prenume ?: null, $companie ?: null, $tip_contact, $telefon ?: null, $telefon_personal ?: null, $email ?: null, $email_personal ?: null, $website ?: null, $data_nasterii_val, $notite ?: null, $referinta_contact ?: null]);

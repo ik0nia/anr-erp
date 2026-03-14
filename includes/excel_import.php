@@ -3,9 +3,10 @@
  * Helper pentru import Excel membri
  * Notă: Pentru funcționalitate completă, instalați PhpSpreadsheet:
  * composer require phpoffice/phpspreadsheet
- * 
+ *
  * Această implementare folosește o metodă simplă pentru CSV și Excel basic
  */
+require_once __DIR__ . '/date_helper.php';
 
 /**
  * Citește un fișier Excel/CSV și returnează datele
@@ -222,14 +223,7 @@ function importa_membri($pdo, $rows, $mapare, $skip_duplicates = true) {
                     $data[$db_field] = (strtolower($value) === 'da' || $value === '1' || strtolower($value) === 'yes') ? 1 : 0;
                 } elseif (in_array($db_field, ['dosardata', 'datanastere', 'cidataelib', 'cidataexp', 'cedata', 'ceexp'])) {
                     // Procesare date
-                    if (!empty($value)) {
-                        $date = date_create_from_format('d.m.Y', $value);
-                        if (!$date) $date = date_create_from_format('Y-m-d', $value);
-                        if (!$date) $date = date_create_from_format('d/m/Y', $value);
-                        $data[$db_field] = $date ? $date->format('Y-m-d') : null;
-                    } else {
-                        $data[$db_field] = null;
-                    }
+                    $data[$db_field] = !empty($value) ? parse_date_to_ymd($value, ['d.m.Y', 'Y-m-d', 'd/m/Y']) : null;
                 } elseif ($db_field === 'cinumar') {
                     // Număr C.I.: doar cifre, max 7 caractere
                     $num = preg_replace('/\D/', '', $value);
