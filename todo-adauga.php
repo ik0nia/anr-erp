@@ -6,6 +6,7 @@
 ob_start();
 require_once __DIR__ . '/config.php';
 require_once 'includes/log_helper.php';
+require_once 'includes/task_helper.php';
 
 $eroare = '';
 
@@ -31,18 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_task'])) {
         }
         $data_ora = $data . ' ' . $ora_val;
         try {
-            // Verifică dacă există coloana utilizator_id
-            $cols = $pdo->query("SHOW COLUMNS FROM taskuri")->fetchAll(PDO::FETCH_COLUMN);
-            $has_user_id = in_array('utilizator_id', $cols);
-            $user_id = $_SESSION['user_id'] ?? null;
-            
-            if ($has_user_id) {
-                $stmt = $pdo->prepare('INSERT INTO taskuri (nume, data_ora, detalii, nivel_urgenta, utilizator_id) VALUES (?, ?, ?, ?, ?)');
-                $stmt->execute([$nume, $data_ora, $detalii ?: null, $nivel_urgenta, $user_id]);
-            } else {
-                $stmt = $pdo->prepare('INSERT INTO taskuri (nume, data_ora, detalii, nivel_urgenta) VALUES (?, ?, ?, ?)');
-                $stmt->execute([$nume, $data_ora, $detalii ?: null, $nivel_urgenta]);
-            }
+            task_create($pdo, [
+                'nume' => $nume,
+                'data_ora' => $data_ora,
+                'detalii' => $detalii ?: null,
+                'nivel_urgenta' => $nivel_urgenta,
+                'utilizator_id' => $_SESSION['user_id'] ?? null,
+            ]);
             log_activitate($pdo, "Sarcină creată: {$nume} (nivel: {$nivel_urgenta})");
             $redirect = trim($_GET['redirect'] ?? $_POST['redirect'] ?? 'index.php');
             if (empty($redirect) || strpos($redirect, '//') !== false) {
