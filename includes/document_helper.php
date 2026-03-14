@@ -8,6 +8,24 @@ define('UPLOAD_TEMPLATE_DIR', __DIR__ . '/../uploads/documente_template/');
 define('UPLOAD_GENERATE_DIR', __DIR__ . '/../uploads/documente_generate/');
 
 /**
+ * Formatează o dată Y-m-d conform DATE_FORMAT. Returnează spațiu dacă e gol.
+ * Extrasă din closures duplicate din membru_la_valori_tag / voluntar_la_valori_tag.
+ */
+function _doc_format_date($val) {
+    if (empty($val)) return ' ';
+    $d = DateTime::createFromFormat('Y-m-d', $val);
+    return $d ? $d->format(DATE_FORMAT) : $val;
+}
+
+/**
+ * Returnează valoarea ca string sau spațiu dacă e gol/null.
+ * Extrasă din closures duplicate din membru_la_valori_tag / voluntar_la_valori_tag.
+ */
+function _doc_val($val) {
+    return (trim((string)$val) === '' || $val === null) ? ' ' : (string)$val;
+}
+
+/**
  * Returnează calea absolută la fișierul DOCX antet asociație din setări, sau null dacă nu există.
  * Folosit la: liste prezență, documente BPA, documente administrative (nu la generare documente cu date membrului, nici la Încasări).
  *
@@ -94,16 +112,9 @@ function get_toate_numele_tagurilor() {
 function membru_la_valori_tag($membru) {
     if (empty($membru)) return [];
     
-    $formatDate = function($val) {
-        if (empty($val)) return ' ';
-        $d = DateTime::createFromFormat('Y-m-d', $val);
-        return $d ? $d->format(DATE_FORMAT) : $val;
-    };
-    
-    $v = function($val) {
-        return (trim((string)$val) === '' || $val === null) ? ' ' : (string)$val;
-    };
-    
+    $formatDate = '_doc_format_date';
+    $v = '_doc_val';
+
     // Adresă completă
     $adresa = [];
     if (!empty($membru['codpost'])) $adresa[] = 'Cod ' . $membru['codpost'];
@@ -252,14 +263,8 @@ function voluntar_la_valori_tag($voluntar, $nr_registratura = '') {
     if (!function_exists('contacte_data_nasterii_din_cnp')) {
         require_once __DIR__ . '/contacte_helper.php';
     }
-    $formatDate = function($val) {
-        if (empty($val)) return ' ';
-        $d = DateTime::createFromFormat('Y-m-d', $val);
-        return $d ? $d->format(DATE_FORMAT) : $val;
-    };
-    $v = function($val) {
-        return (trim((string)$val) === '' || $val === null) ? ' ' : (string)$val;
-    };
+    $formatDate = '_doc_format_date';
+    $v = '_doc_val';
     $adresa = [];
     if (!empty($voluntar['codpost'])) $adresa[] = 'Cod ' . $voluntar['codpost'];
     if (!empty($voluntar['domloc'])) $adresa[] = $voluntar['domloc'];
