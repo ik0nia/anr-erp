@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/config.php';
 require_once 'includes/log_helper.php';
+require_once 'includes/db_helper.php';
 include 'header.php';
 include 'sidebar.php';
 
@@ -12,8 +13,7 @@ $logs = [];
 $eroare_bd = '';
 
 try {
-    $stmt = $pdo->query('SELECT id, data_ora, utilizator, actiune FROM log_activitate ORDER BY data_ora DESC LIMIT 500');
-    $logs = $stmt->fetchAll();
+    $logs = db_fetch_all($pdo, 'SELECT id, data_ora, utilizator, actiune FROM log_activitate ORDER BY data_ora DESC LIMIT 500');
 } catch (PDOException $e) {
     $eroare_bd = 'Tabelul log_activitate nu există. Rulați schema_log_activitate.sql în baza de date ' . (defined('DB_NAME') ? DB_NAME : '') . '.';
 }

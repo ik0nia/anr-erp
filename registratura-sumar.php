@@ -4,6 +4,7 @@
  * Parametri: id, redirect=dashboard|registratura
  */
 require_once __DIR__ . '/config.php';
+require_once 'includes/db_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
 $redirect_param = isset($_GET['redirect']) && $_GET['redirect'] === 'dashboard' ? 'dashboard' : 'registratura';
@@ -15,9 +16,7 @@ if ($id <= 0) {
 }
 
 try {
-    $stmt = $pdo->prepare('SELECT * FROM registratura WHERE id = ?');
-    $stmt->execute([$id]);
-    $r = $stmt->fetch(PDO::FETCH_ASSOC);
+    $r = db_fetch_one($pdo, 'SELECT * FROM registratura WHERE id = ?', [$id]);
 } catch (PDOException $e) {
     $r = null;
 }
