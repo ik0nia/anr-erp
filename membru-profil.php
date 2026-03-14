@@ -6,6 +6,7 @@
 // Activează output buffering pentru a preveni probleme cu redirect-uri
 ob_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/liste_helper.php';
 
 // Scrie mesaje de debug într-un fișier din proiect (nu depinde de php.ini / Apache)
 function debug_profil_log($mesaj) {
@@ -172,13 +173,7 @@ if (isset($_GET['succes']) && $_GET['succes'] == '1') {
     $succes = 'Datele membrului au fost actualizate cu succes.';
 }
 
-// Funcție pentru calcularea vârstei
-function calculeaza_varsta($data_nastere) {
-    if (empty($data_nastere)) return null;
-    $birth = new DateTime($data_nastere);
-    $today = new DateTime();
-    return $today->diff($birth)->y;
-}
+// calculeaza_varsta() este furnizată de includes/liste_helper.php
 
 $varsta = $membru ? calculeaza_varsta($membru['datanastere'] ?? null) : null;
 

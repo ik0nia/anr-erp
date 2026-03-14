@@ -6,6 +6,7 @@
 require_once __DIR__ . '/config.php';
 require_once 'includes/newsletter_helper.php';
 require_once 'includes/registru_interactiuni_v2_helper.php';
+require_once 'includes/liste_helper.php';
 include 'header.php';
 include 'sidebar.php';
 
@@ -101,13 +102,7 @@ try {
     $membri_arhiva = 0;
 }
 
-// Funcție pentru calcularea vârstei
-function calculeaza_varsta($data_nastere) {
-    if (empty($data_nastere)) return null;
-    $birth = new DateTime($data_nastere);
-    $today = new DateTime();
-    return $today->diff($birth)->y;
-}
+// calculeaza_varsta() este furnizată de includes/liste_helper.php
 
 // Calculare statistici detaliate pentru membri activi (doar dacă tab-ul este "statistici")
 $statistici_membri = null;
