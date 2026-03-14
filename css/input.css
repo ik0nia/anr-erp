@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Sidebar header: logo, titlu, notificări – centrate */
+#navigation .border-b.flex-col {
+  align-items: center;
+}
+#navigation .border-b h2 {
+  text-align: center !important;
+}
+#navigation .border-b a.flex {
+  justify-content: center !important;
+  text-align: center !important;
+}
+/* Sidebar: restul butoanelor și linkurilor – aliniere la stânga */
+#navigation nav a.flex,
+#navigation .sidebar-submenu-panel a.flex,
+#navigation .border-t a.flex,
+#navigation .border-t button.flex {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+#navigation nav {
+  text-align: left;
+}

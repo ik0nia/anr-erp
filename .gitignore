@@ -1,0 +1,9 @@
+vendor/
+node_modules/
+config.php
+uploads/
+logs/
+error_log
+.env
+*.log
+backups/
