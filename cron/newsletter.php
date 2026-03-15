@@ -12,17 +12,17 @@
  */
 $run_from_cli = (php_sapi_name() === 'cli');
 
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../includes/newsletter_helper.php';
+
 if (!$run_from_cli) {
     // Apel din browser: permite doar cu cheie secretă (CRON_NEWSLETTER_KEY în config)
     $key = $_GET['key'] ?? '';
-    if (CRON_NEWSLETTER_KEY === '' || $key !== CRON_NEWSLETTER_KEY) {
+    if (!defined('CRON_NEWSLETTER_KEY') || CRON_NEWSLETTER_KEY === '' || $key !== CRON_NEWSLETTER_KEY) {
         header('HTTP/1.1 403 Forbidden');
         exit('Forbidden');
     }
 }
-
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/newsletter_helper.php';
 
 $rez = newsletter_proceseaza_programate($pdo);
 

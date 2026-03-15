@@ -95,6 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_task_rapid']))
 $taskuri_active = [];
 $taskuri_istoric_count = 0;
 $membri_cu_avertizari = 0;
+$ci_de_actualizat = 0;
+$ch_de_actualizat = 0;
+$aniversari_azi_count = 0;
+$tickete_deschise_count = 0;
 
 if (isset($_GET['succes'])) {
     $succes = $_GET['succes'] == '4' ? 'Taskul a fost actualizat cu succes.' : 'Taskul a fost marcat ca finalizat.';
@@ -114,6 +118,14 @@ try {
 
     $stats = dashboard_load_stats($pdo);
     $membri_cu_avertizari = $stats['membri_cu_avertizari'];
+    $ci_de_actualizat = $stats['ci_de_actualizat'] ?? 0;
+    $ch_de_actualizat = $stats['ch_de_actualizat'] ?? 0;
+    $aniversari_azi_count = dashboard_count_aniversari_azi($pdo);
+    try {
+        require_once APP_ROOT . '/includes/tickete_helper.php';
+        tickete_ensure_tables($pdo);
+        $tickete_deschise_count = tickete_count_deschise($pdo);
+    } catch (Throwable $e2) {}
 } catch (PDOException $e) {
     $eroare_bd = 'Tabelul taskuri nu exista. Rulati schema.sql sau schema_taskuri.sql in baza de date ' . (defined('DB_NAME') ? DB_NAME : '') . '.';
     $taskuri_istoric_count = 0;

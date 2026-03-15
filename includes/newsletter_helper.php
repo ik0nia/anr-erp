@@ -6,7 +6,19 @@
 require_once __DIR__ . '/contacte_helper.php';
 require_once __DIR__ . '/mailer_functions.php';
 
-define('NEWSLETTER_ATAŞAMENT_MAX_MB', 5);
+define('NEWSLETTER_ATASAMENT_MAX_MB', 5);
+
+/**
+ * Asigura existenta coloanei newsletter_opt_in in tabela membri
+ */
+function newsletter_ensure_opt_in_column(PDO $pdo) {
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM membri LIKE 'newsletter_opt_in'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE membri ADD COLUMN newsletter_opt_in TINYINT(1) DEFAULT 0");
+        }
+    } catch (PDOException $e) {}
+}
 
 /**
  * Asigură existența tabelelor pentru newsletter
@@ -173,15 +185,19 @@ function newsletter_trimite_acum(PDO $pdo, array $date, ?array $fisier_atasament
     $atasament_path = null;
     $atasament_nume = null;
     if (!empty($fisier_atasament['tmp_name']) && is_uploaded_file($fisier_atasament['tmp_name'])) {
-        $max_bytes = NEWSLETTER_ATAŞAMENT_MAX_MB * 1024 * 1024;
+        $max_bytes = NEWSLETTER_ATASAMENT_MAX_MB * 1024 * 1024;
         if ($fisier_atasament['size'] > $max_bytes) {
-            return ['id' => 0, 'trimise' => 0, 'eroare' => ['Atașamentul depășește ' . NEWSLETTER_ATAŞAMENT_MAX_MB . ' MB.']];
+            return ['id' => 0, 'trimise' => 0, 'eroare' => ['Atașamentul depășește ' . NEWSLETTER_ATASAMENT_MAX_MB . ' MB.']];
         }
         $upload_dir = __DIR__ . '/../uploads/newsletter/';
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0755, true);
         }
-        $ext = pathinfo($fisier_atasament['name'], PATHINFO_EXTENSION);
+        $ext = strtolower(pathinfo($fisier_atasament['name'], PATHINFO_EXTENSION));
+        $allowed_ext = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'csv', 'txt', 'zip'];
+        if (!in_array($ext, $allowed_ext)) {
+            return ['id' => 0, 'trimise' => 0, 'eroare' => ['Tip de fisier nepermis.']];
+        }
         $atasament_nume = basename($fisier_atasament['name']);
         $atasament_path = $upload_dir . 'nl_' . time() . '_' . uniqid() . '.' . $ext;
         if (!move_uploaded_file($fisier_atasament['tmp_name'], $atasament_path)) {
@@ -222,15 +238,19 @@ function newsletter_programeaza(PDO $pdo, array $date, string $data_programata_m
     $atasament_path = null;
     $atasament_nume = null;
     if (!empty($fisier_atasament['tmp_name']) && is_uploaded_file($fisier_atasament['tmp_name'])) {
-        $max_bytes = NEWSLETTER_ATAŞAMENT_MAX_MB * 1024 * 1024;
+        $max_bytes = NEWSLETTER_ATASAMENT_MAX_MB * 1024 * 1024;
         if ($fisier_atasament['size'] > $max_bytes) {
-            return ['id' => 0, 'eroare' => 'Atașamentul depășește ' . NEWSLETTER_ATAŞAMENT_MAX_MB . ' MB.'];
+            return ['id' => 0, 'eroare' => 'Atașamentul depășește ' . NEWSLETTER_ATASAMENT_MAX_MB . ' MB.'];
         }
         $upload_dir = __DIR__ . '/../uploads/newsletter/';
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0755, true);
         }
-        $ext = pathinfo($fisier_atasament['name'], PATHINFO_EXTENSION);
+        $ext = strtolower(pathinfo($fisier_atasament['name'], PATHINFO_EXTENSION));
+        $allowed_ext = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'gif', 'csv', 'txt', 'zip'];
+        if (!in_array($ext, $allowed_ext)) {
+            return ['id' => 0, 'eroare' => 'Tip de fisier nepermis.'];
+        }
         $atasament_nume = basename($fisier_atasament['name']);
         $atasament_path = $upload_dir . 'nl_' . time() . '_' . uniqid() . '.' . $ext;
         if (!move_uploaded_file($fisier_atasament['tmp_name'], $atasament_path)) {
@@ -322,4 +342,122 @@ function newsletter_proceseaza_programate(PDO $pdo) {
     }
 
     return ['procesate' => $procesate, 'trimise_total' => $trimise_total, 'erori' => $erori];
+}
+
+/**
+ * Toti membrii activi cu email valid
+ */
+function newsletter_get_membri_cu_email(PDO $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT id, nume, prenume, email FROM membri WHERE status_dosar = 'Activ' AND email IS NOT NULL AND email != '' ORDER BY nume, prenume");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Membri cu newsletter_opt_in=1 si email valid
+ */
+function newsletter_get_membri_opted_in(PDO $pdo) {
+    newsletter_ensure_opt_in_column($pdo);
+    try {
+        $stmt = $pdo->query("SELECT id, nume, prenume, email FROM membri WHERE status_dosar = 'Activ' AND email IS NOT NULL AND email != '' AND newsletter_opt_in = 1 ORDER BY nume, prenume");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Liste predefinite de destinatari pentru newsletter
+ * Returneaza array cu: key => ['name' => string, 'count' => int]
+ */
+function newsletter_get_liste_predefinite(PDO $pdo) {
+    $liste = [];
+
+    // 1. Toti membrii cu email (opted in)
+    $opted_in = newsletter_get_membri_opted_in($pdo);
+    $liste['membri_opted_in'] = [
+        'name' => 'Membrii abonati la newsletter',
+        'count' => count($opted_in),
+    ];
+
+    // 2. Toti membrii cu email (indiferent de opt-in)
+    $toti = newsletter_get_membri_cu_email($pdo);
+    $liste['membri_toti'] = [
+        'name' => 'Toti membrii cu email',
+        'count' => count($toti),
+    ];
+
+    // 3. Categorii contacte
+    $categorii = newsletter_get_categorii_contacte($pdo);
+    foreach ($categorii as $key => $label) {
+        $emails = newsletter_get_emails_by_categorie($pdo, $key);
+        $liste['contacte_' . $key] = [
+            'name' => 'Contacte: ' . $label,
+            'count' => count($emails),
+        ];
+    }
+
+    return $liste;
+}
+
+/**
+ * Lista tuturor newsletterelor (drafturi + trimise + programate) ordonate descrescator
+ */
+function newsletter_lista_toate(PDO $pdo, int $limit = 50) {
+    newsletter_ensure_tables($pdo);
+    $limit = (int)$limit;
+    try {
+        $stmt = $pdo->query("SELECT id, subiect, nr_recipienti, categoria_contacte, data_trimiterii, data_programata, status, created_at FROM newsletter ORDER BY COALESCE(data_trimiterii, data_programata, created_at) DESC LIMIT " . $limit);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Un singur newsletter dupa id (alias pentru newsletter_get_by_id)
+ */
+function newsletter_get(PDO $pdo, int $id) {
+    return newsletter_get_by_id($pdo, $id);
+}
+
+/**
+ * Programeaza trimiterea unui newsletter existent (draft)
+ */
+function newsletter_programeaza_trimitere(PDO $pdo, int $id, string $data_programata) {
+    try {
+        $stmt = $pdo->prepare("UPDATE newsletter SET status = 'programat', data_programata = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'draft'");
+        $stmt->execute([$data_programata, $id]);
+        return $stmt->rowCount() > 0;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Obtine emailurile destinatarilor pe baza cheii listei predefinite
+ * @return array [['email' => ..., 'nume' => ...], ...]
+ */
+function newsletter_get_destinatari_by_lista(PDO $pdo, string $lista_key) {
+    if ($lista_key === 'membri_opted_in') {
+        $membri = newsletter_get_membri_opted_in($pdo);
+        return array_map(function($m) {
+            return ['email' => $m['email'], 'nume' => trim($m['nume'] . ' ' . $m['prenume'])];
+        }, $membri);
+    }
+    if ($lista_key === 'membri_toti') {
+        $membri = newsletter_get_membri_cu_email($pdo);
+        return array_map(function($m) {
+            return ['email' => $m['email'], 'nume' => trim($m['nume'] . ' ' . $m['prenume'])];
+        }, $membri);
+    }
+    // Contacte category: strip "contacte_" prefix
+    if (strpos($lista_key, 'contacte_') === 0) {
+        $categoria = substr($lista_key, strlen('contacte_'));
+        return newsletter_get_emails_by_categorie($pdo, $categoria);
+    }
+    return [];
 }

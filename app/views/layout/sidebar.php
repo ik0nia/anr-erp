@@ -28,7 +28,7 @@ function sidebar_sub_link_class($path, $current) {
 }
 
 // Submeniu deschis daca una din paginile sale e activa
-$submenu_pages = ['/administrativ', '/todo', '/librarie-documente', '/contacte', '/formular-230', '/rapoarte'];
+$submenu_pages = ['/administrativ', '/todo', '/librarie-documente', '/contacte', '/formular-230', '/rapoarte', '/newsletter', '/comunicare'];
 $submenu_active = false;
 foreach ($submenu_pages as $sp) {
     if ($current_path === $sp || strpos($current_path, $sp) === 0) {
@@ -89,6 +89,9 @@ foreach ($submenu_pages as $sp) {
         <a href="/fundraising" class="<?php echo sidebar_link_class('/fundraising', $current_path); ?>" aria-label="Fundraising">
             <i data-lucide="hand-coins" class="mr-3 w-5 h-5 shrink-0" aria-hidden="true"></i> Fundraising
         </a>
+        <a href="/tickete" class="<?php echo sidebar_link_class('/tickete', $current_path); ?>" aria-label="Tickete">
+            <i data-lucide="ticket" class="mr-3 w-5 h-5 shrink-0" aria-hidden="true"></i> Tickete
+        </a>
         <div class="sidebar-submenu" role="group" aria-label="Meniu Administrativ">
             <button type="button" class="sidebar-submenu-trigger flex items-center justify-center w-full py-2.5 px-3 rounded transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900 dark:focus:ring-offset-slate-800 text-center <?php echo $submenu_active ? 'bg-slate-700 dark:bg-slate-600' : 'hover:bg-slate-700 dark:hover:bg-slate-600'; ?>" aria-expanded="<?php echo $submenu_active ? 'true' : 'false'; ?>" aria-controls="sidebar-submenu-panel" id="sidebar-submenu-btn" aria-label="Meniul Administrativ">
                 <span class="flex items-center">
@@ -104,6 +107,8 @@ foreach ($submenu_pages as $sp) {
                     <a href="/contacte" class="<?php echo sidebar_sub_link_class('/contacte', $current_path); ?>" aria-label="Contacte"><i data-lucide="book-open" class="mr-2 w-4 h-4 shrink-0" aria-hidden="true"></i>Contacte</a>
                     <a href="/formular-230" class="<?php echo sidebar_sub_link_class('/formular-230', $current_path); ?>" aria-label="Formular 230"><i data-lucide="percent" class="mr-2 w-4 h-4 shrink-0" aria-hidden="true"></i>Formular 230</a>
                     <a href="/rapoarte" class="<?php echo sidebar_sub_link_class('/rapoarte', $current_path); ?>" aria-label="Rapoarte"><i data-lucide="bar-chart-2" class="mr-2 w-4 h-4 shrink-0" aria-hidden="true"></i>Rapoarte</a>
+                    <a href="/comunicare" class="<?php echo sidebar_sub_link_class('/comunicare', $current_path); ?>" aria-label="Printing"><i data-lucide="printer" class="mr-2 w-4 h-4 shrink-0" aria-hidden="true"></i>Printing</a>
+                    <a href="/newsletter" class="<?php echo sidebar_sub_link_class('/newsletter', $current_path); ?>" aria-label="Newsletter"><i data-lucide="mail" class="mr-2 w-4 h-4 shrink-0" aria-hidden="true"></i>Newsletter</a>
                 </div>
             </div>
         </div>

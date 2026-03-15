@@ -11,6 +11,32 @@ require_once APP_ROOT . '/app/services/MembriService.php';
 $eroare = '';
 $succes = '';
 
+// --- CSV Export (inainte de orice output HTML) ---
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    $all_members = membri_lista_all($pdo, $_GET);
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="membri_export_' . date('Y-m-d') . '.csv"');
+    $out = fopen('php://output', 'w');
+    fprintf($out, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
+    fputcsv($out, ['Dosar Nr', 'Nume', 'Prenume', 'CNP', 'Data Nastere', 'Telefon', 'Email', 'Localitate', 'Status', 'Grad Handicap']);
+    foreach ($all_members as $m) {
+        fputcsv($out, [
+            $m['dosarnr'] ?? '',
+            $m['nume'] ?? '',
+            $m['prenume'] ?? '',
+            $m['cnp'] ?? '',
+            $m['datanastere'] ?? '',
+            $m['telefonnev'] ?? '',
+            $m['email'] ?? '',
+            $m['domloc'] ?? '',
+            $m['status_dosar'] ?? '',
+            $m['hgrad'] ?? '',
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
 // --- POST: Salvare mesaj precompletat ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_mesaj_precompletat'])) {
     csrf_require_valid();
@@ -84,6 +110,14 @@ $filters = [
     'actualizare_cnp_ci' => $actualizare_cnp_ci_filter,
     'cotizatie_neachitata' => $cotizatie_neachitata_filter,
     'fara_contact' => $fara_contact_filter,
+    // Filtre avansate (status_dosar avansat override tab status)
+    'sex' => $_GET['sex'] ?? '',
+    'hgrad' => $_GET['hgrad'] ?? '',
+    'status_dosar' => !empty($_GET['status_dosar']) ? $_GET['status_dosar'] : '',
+    'localitate' => $_GET['localitate'] ?? '',
+    'mediu' => $_GET['mediu'] ?? '',
+    'data_nastere_de_la' => $_GET['data_nastere_de_la'] ?? '',
+    'data_nastere_pana_la' => $_GET['data_nastere_pana_la'] ?? '',
 ];
 
 // --- Date pentru view ---

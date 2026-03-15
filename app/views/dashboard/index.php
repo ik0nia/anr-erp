@@ -50,12 +50,16 @@
                         <span class="text-xs font-medium text-slate-800 dark:text-gray-200 text-center px-1">Creaza lista</span>
                     </a>
                     <a href="/membri?avertizari=1" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"
-                       aria-label="Actualizare date membri<?php echo $membri_cu_avertizari > 0 ? '. ' . $membri_cu_avertizari . ' membri cu avertizari' : ''; ?>">
+                       aria-label="Actualizare date membri<?php echo $membri_cu_avertizari > 0 ? '. ' . $membri_cu_avertizari . ' membri cu avertizari' : ''; ?>"
+                       title="<?php echo $ci_de_actualizat > 0 || $ch_de_actualizat > 0 ? 'CI: ' . $ci_de_actualizat . ' | CH: ' . $ch_de_actualizat : ''; ?>">
                         <?php if ($membri_cu_avertizari > 0): ?>
                         <span class="absolute top-2 right-2 flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-amber-600 rounded-full z-10" aria-hidden="true"><?php echo $membri_cu_avertizari; ?></span>
                         <?php endif; ?>
                         <i data-lucide="users" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
                         <span class="text-xs font-medium text-slate-800 dark:text-gray-200 text-center px-1">Actualizare membri</span>
+                        <?php if ($ci_de_actualizat > 0 || $ch_de_actualizat > 0): ?>
+                        <span class="text-[10px] text-slate-500 dark:text-gray-400">CI: <?php echo $ci_de_actualizat; ?> | CH: <?php echo $ch_de_actualizat; ?></span>
+                        <?php endif; ?>
                     </a>
                     <button type="button" onclick="document.getElementById('modal-task-nou').showModal()" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"
                        aria-label="Adauga task nou">
@@ -82,6 +86,22 @@
                         <i data-lucide="hand-heart" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
                         <span class="text-xs font-medium text-slate-800 dark:text-gray-200 text-center px-1">Activitate voluntari</span>
                     </a>
+                    <a href="/aniversari" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"
+                       aria-label="Aniversarile zilei<?php echo $aniversari_azi_count > 0 ? '. ' . $aniversari_azi_count . ' aniversari azi' : ''; ?>">
+                        <?php if ($aniversari_azi_count > 0): ?>
+                        <span class="absolute top-2 right-2 flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-amber-600 rounded-full z-10" aria-hidden="true"><?php echo $aniversari_azi_count; ?></span>
+                        <?php endif; ?>
+                        <i data-lucide="cake" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
+                        <span class="text-xs font-medium text-slate-800 dark:text-gray-200 text-center px-1">Aniversarile zilei</span>
+                    </a>
+                    <a href="/tickete" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"
+                       aria-label="Tickete<?php echo $tickete_deschise_count > 0 ? '. ' . $tickete_deschise_count . ' tickete deschise' : ''; ?>">
+                        <?php if ($tickete_deschise_count > 0): ?>
+                        <span class="absolute top-2 right-2 flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-red-500 rounded-full z-10" aria-hidden="true"><?php echo $tickete_deschise_count; ?></span>
+                        <?php endif; ?>
+                        <i data-lucide="ticket" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
+                        <span class="text-xs font-medium text-slate-800 dark:text-gray-200 text-center px-1">Tickete</span>
+                    </a>
                 </nav>
                 <!-- Bloc Cauta membru -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
@@ -94,12 +114,14 @@
                                    value="<?php echo htmlspecialchars($cautare_membru); ?>"
                                    placeholder="Nume, prenume sau CNP..."
                                    class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                                   autocomplete="off"
                                    aria-label="Cauta membru">
                             <button type="submit"
                                     class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400"
                                     aria-label="Cauta">
                                 <i data-lucide="search" class="w-5 h-5" aria-hidden="true"></i>
                             </button>
+                            <div id="cautare-membru-live" class="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg max-h-72 overflow-y-auto hidden" role="listbox" aria-label="Rezultate cautare membru"></div>
                         </div>
                     </form>
                     <div id="rezultate-cautare" class="space-y-2 max-h-64 overflow-y-auto">
@@ -317,7 +339,7 @@
                         </div>
                         <div class="mb-4">
                             <button type="button" id="btn-task-activ-v2" onclick="toggleTaskActivV2()"
-                                    class="w-full px-4 py-2 border-2 border-slate-300 dark:border-gray-600 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center gap-2 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                                    class="w-full px-4 py-2 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                                     aria-pressed="false" aria-label="Creaza task in Taskuri">
                                 <input type="checkbox" name="task_activ_v2" value="1" id="task-activ-v2" class="sr-only" aria-hidden="true">
                                 <i data-lucide="check-square" id="icon-task-v2" class="w-5 h-5 text-slate-400 dark:text-gray-500" aria-hidden="true"></i>
@@ -399,7 +421,7 @@
 </dialog>
 
 <script>
-lucide.createIcons();
+if (typeof lucide !== 'undefined') lucide.createIcons();
 function setTipInteractiuneV2(tip) {
     document.getElementById('tip-interact-v2-input').value = tip;
     var btnApel = document.getElementById('btn-apel-v2');
@@ -429,16 +451,16 @@ function toggleTaskActivV2() {
 
     if (newChecked) {
         btn.setAttribute('aria-pressed', 'true');
-        btn.className = 'w-full px-4 py-2 border-2 border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/30 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center gap-2';
+        btn.className = 'w-full px-4 py-2 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white';
         if (typeof lucide !== 'undefined') {
             icon.setAttribute('data-lucide', 'check-square');
             lucide.createIcons();
         }
-        icon.className = 'w-5 h-5 text-green-600 dark:text-green-400';
-        if (textSpan) textSpan.className = 'text-green-700 dark:text-green-300 font-semibold';
+        icon.className = 'w-5 h-5 text-white';
+        if (textSpan) textSpan.className = 'text-white font-semibold';
     } else {
         btn.setAttribute('aria-pressed', 'false');
-        btn.className = 'w-full px-4 py-2 border-2 border-slate-300 dark:border-gray-600 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center gap-2 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20';
+        btn.className = 'w-full px-4 py-2 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400';
         if (typeof lucide !== 'undefined') {
             icon.setAttribute('data-lucide', 'check-square');
             lucide.createIcons();
@@ -634,6 +656,56 @@ if (dlgTask) {
             }
         });
     });
+})();
+
+// AJAX live search pentru Cauta Membru
+(function() {
+    var inputCautare = document.getElementById('cautare_membru');
+    var listaLive = document.getElementById('cautare-membru-live');
+    var timerCautare = null;
+    if (!inputCautare || !listaLive) return;
+
+    inputCautare.addEventListener('input', function() {
+        var val = this.value.trim();
+        clearTimeout(timerCautare);
+        if (val.length < 2) { listaLive.innerHTML = ''; listaLive.classList.add('hidden'); return; }
+        timerCautare = setTimeout(function() {
+            fetch('/api/cauta-membri?q=' + encodeURIComponent(val))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    listaLive.innerHTML = '';
+                    if (!data.membri || data.membri.length === 0) {
+                        listaLive.innerHTML = '<div class="px-3 py-2 text-sm text-slate-500 dark:text-gray-400">Nu s-au gasit membri.</div>';
+                        listaLive.classList.remove('hidden');
+                        return;
+                    }
+                    data.membri.forEach(function(m) {
+                        var a = document.createElement('a');
+                        a.href = '/membru-profil?id=' + m.id;
+                        a.className = 'block px-3 py-2 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 border-b border-slate-100 dark:border-gray-700 last:border-0 transition';
+                        var numeDiv = document.createElement('div');
+                        numeDiv.className = 'font-medium text-sm text-slate-900 dark:text-white';
+                        numeDiv.textContent = ((m.nume || '') + ' ' + (m.prenume || '')).trim();
+                        a.appendChild(numeDiv);
+                        var parts = [];
+                        if (m.dosarnr) parts.push('Dosar: ' + m.dosarnr);
+                        if (m.domloc) parts.push(m.domloc);
+                        if (parts.length) {
+                            var d = document.createElement('div');
+                            d.className = 'text-xs text-slate-500 dark:text-gray-400';
+                            d.textContent = parts.join(' \u2022 ');
+                            a.appendChild(d);
+                        }
+                        listaLive.appendChild(a);
+                    });
+                    listaLive.classList.remove('hidden');
+                }).catch(function() { listaLive.classList.add('hidden'); });
+        }, 300);
+    });
+    document.addEventListener('click', function(e) {
+        if (!inputCautare.contains(e.target) && !listaLive.contains(e.target)) listaLive.classList.add('hidden');
+    });
+    inputCautare.addEventListener('keydown', function(e) { if (e.key === 'Escape') listaLive.classList.add('hidden'); });
 })();
 </script>
 <?php require_once APP_ROOT . '/includes/incasari_dashboard_modal.php'; ?>

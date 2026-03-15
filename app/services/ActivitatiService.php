@@ -190,15 +190,30 @@ function activitati_update_status(PDO $pdo, int $id, string $status, string $uti
     }
 
     try {
-        $stmt = $pdo->prepare('SELECT nume FROM activitati WHERE id = ?');
+        $stmt = $pdo->prepare('SELECT id, nume, data_ora, lista_prezenta_id FROM activitati WHERE id = ?');
         $stmt->execute([$id]);
-        $nume = $stmt->fetchColumn();
-        if (!$nume) {
+        $activitate = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$activitate) {
             return ['success' => false, 'error' => 'Activitate negăsită.'];
         }
+        $nume = $activitate['nume'];
 
         $pdo->prepare('UPDATE activitati SET status = ? WHERE id = ?')->execute([$status, $id]);
         log_activitate($pdo, 'Status activitate modificat: ' . $nume . ' -> ' . $status, $utilizator);
+
+        // Cand activitatea este finalizata, log prezenta pentru toti membrii din lista de prezenta asociata
+        if ($status === 'Finalizata' && !empty($activitate['lista_prezenta_id'])) {
+            $data_activitate = date('Y-m-d', strtotime($activitate['data_ora']));
+            $stmt_membri = $pdo->prepare('SELECT membru_id FROM liste_prezenta_membri WHERE lista_id = ? AND membru_id IS NOT NULL');
+            $stmt_membri->execute([$activitate['lista_prezenta_id']]);
+            $membri = $stmt_membri->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($membri as $membru_id) {
+                if ($membru_id > 0) {
+                    log_activitate($pdo, "Activitate: Prezent la - {$nume} ({$data_activitate})", $utilizator, (int)$membru_id);
+                }
+            }
+        }
+
         return ['success' => true, 'error' => null];
     } catch (PDOException $e) {
         return ['success' => false, 'error' => 'Eroare la actualizarea statusului.'];

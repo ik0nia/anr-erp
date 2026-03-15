@@ -42,13 +42,29 @@ function dashboard_load_tasks(PDO $pdo, ?int $user_id = null): array {
 /**
  * Incarca statistici: membri cu avertizari (CI/certificat care expira in <= 60 zile).
  *
- * @return array ['membri_cu_avertizari'=>int]
+ * @return array ['membri_cu_avertizari'=>int, 'ci_de_actualizat'=>int, 'ch_de_actualizat'=>int]
  */
 function dashboard_load_stats(PDO $pdo): array {
     $membri_cu_avertizari = 0;
+    $ci_de_actualizat = 0;
+    $ch_de_actualizat = 0;
+    $filter_status = "(status_dosar IS NULL OR status_dosar = 'Activ' OR status_dosar NOT IN ('Suspendat', 'Expirat', 'Retras', 'Decedat'))";
     try {
+        // CI expiring within 60 days
         $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
-            (status_dosar IS NULL OR status_dosar = 'Activ' OR status_dosar NOT IN ('Suspendat', 'Expirat', 'Retras', 'Decedat'))
+            {$filter_status}
+            AND (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))");
+        $ci_de_actualizat = (int) $stmt->fetch()['n'];
+
+        // CH expiring within 60 days
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
+            {$filter_status}
+            AND (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))");
+        $ch_de_actualizat = (int) $stmt->fetch()['n'];
+
+        // Combined count (backward compat): members with CI OR CH expiring
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
+            {$filter_status}
             AND (
                 (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
                 OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
@@ -56,7 +72,11 @@ function dashboard_load_stats(PDO $pdo): array {
         $membri_cu_avertizari = (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}
 
-    return ['membri_cu_avertizari' => $membri_cu_avertizari];
+    return [
+        'membri_cu_avertizari' => $membri_cu_avertizari,
+        'ci_de_actualizat' => $ci_de_actualizat,
+        'ch_de_actualizat' => $ch_de_actualizat,
+    ];
 }
 
 /**
@@ -167,6 +187,38 @@ function dashboard_add_interactiune_v2(PDO $pdo, array $data, string $user, ?int
     log_activitate($pdo, "registru_interactiuni_v2: " . ($tip === 'apel' ? 'Apel telefonic' : 'Vizita sediu') . " inregistrat: {$persoana}");
 
     return ['success' => true, 'error' => null];
+}
+
+/**
+ * Numara aniversarile zilei (membri + contacte) pentru dashboard badge.
+ *
+ * @return int Numarul total de aniversari azi
+ */
+function dashboard_count_aniversari_azi(PDO $pdo): int {
+    $total = 0;
+    try {
+        $stmt = $pdo->query("
+            SELECT COUNT(*) as n FROM membri
+            WHERE datanastere IS NOT NULL
+              AND MONTH(datanastere) = MONTH(CURDATE())
+              AND DAY(datanastere) = DAY(CURDATE())
+              AND (status_dosar IS NULL OR status_dosar != 'Decedat')
+        ");
+        $total += (int) $stmt->fetch()['n'];
+    } catch (PDOException $e) {}
+
+    try {
+        $stmt = $pdo->query("
+            SELECT COUNT(*) as n FROM contacte
+            WHERE data_nasterii IS NOT NULL
+              AND MONTH(data_nasterii) = MONTH(CURDATE())
+              AND DAY(data_nasterii) = DAY(CURDATE())
+              AND (tip_contact IS NULL OR tip_contact != 'Beneficiar')
+        ");
+        $total += (int) $stmt->fetch()['n'];
+    } catch (PDOException $e) {}
+
+    return $total;
 }
 
 /**

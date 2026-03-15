@@ -107,3 +107,46 @@ function aniversari_calendar_data(): array {
         'zile_sapt' => ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sam'],
     ];
 }
+
+/**
+ * Obtine membrii cu ziua de nastere la o data specificata (exclus Decedat)
+ */
+function aniversari_membri_la_data(PDO $pdo, string $data): array {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT id, nume, prenume, datanastere, domloc, telefonnev, telefonapartinator, email,
+                   gdpr, cidataelib, ceexp
+            FROM membri
+            WHERE datanastere IS NOT NULL
+              AND MONTH(datanastere) = MONTH(?)
+              AND DAY(datanastere) = DAY(?)
+              AND (status_dosar IS NULL OR status_dosar != 'Decedat')
+            ORDER BY nume, prenume
+        ");
+        $stmt->execute([$data, $data]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Obtine contactele cu ziua de nastere la o data specificata (exclus Beneficiar)
+ */
+function aniversari_contacte_la_data(PDO $pdo, string $data): array {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT id, nume, prenume, data_nasterii, companie, telefon, telefon_personal, email, email_personal, tip_contact
+            FROM contacte
+            WHERE data_nasterii IS NOT NULL
+              AND MONTH(data_nasterii) = MONTH(?)
+              AND DAY(data_nasterii) = DAY(?)
+              AND (tip_contact IS NULL OR tip_contact != 'Beneficiar')
+            ORDER BY nume, prenume
+        ");
+        $stmt->execute([$data, $data]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}

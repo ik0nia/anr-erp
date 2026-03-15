@@ -25,6 +25,10 @@ if ($actualizare_cnp_ci_filter) $sort_link_params['actualizare_cnp_ci'] = '1';
 if ($aniversari_azi_filter) $sort_link_params['aniversari_azi'] = '1';
 if ($cotizatie_neachitata_filter) $sort_link_params['cotizatie_neachitata'] = '1';
 if ($fara_contact_filter) $sort_link_params['fara_contact'] = '1';
+// Pastreaza filtrele avansate in sort links
+foreach (['sex', 'hgrad', 'status_dosar', 'localitate', 'mediu', 'data_nastere_de_la', 'data_nastere_pana_la'] as $fk) {
+    if (!empty($_GET[$fk])) $sort_link_params[$fk] = $_GET[$fk];
+}
 
 // Helper: base URL for filter buttons (status + cautare + per_page, no special filters)
 $base_filter_url = '/membri?status=' . urlencode($status_filter) .
@@ -99,16 +103,47 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 </button>
             </form>
 
-            <button type="button"
-                    onclick="document.getElementById('formular-membru').showModal()"
-                    class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
-                    aria-label="Deschide formular pentru adaugare membru nou"
-                    aria-haspopup="dialog"
-                    aria-expanded="false"
-                    id="btn-adauga-membru">
-                <i data-lucide="user-plus" class="mr-2 w-5 h-5" aria-hidden="true"></i>
-                Adauga Membru Nou
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+                <button type="button"
+                        onclick="window.print()"
+                        class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
+                        aria-label="Printeaza lista membrilor">
+                    <i data-lucide="printer" class="mr-2 w-5 h-5" aria-hidden="true"></i>
+                    Print lista
+                </button>
+
+                <?php
+                $export_params = $_GET;
+                $export_params['export'] = 'csv';
+                $export_url = '/membri?' . http_build_query($export_params);
+                ?>
+                <a href="<?php echo htmlspecialchars($export_url); ?>"
+                   class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
+                   aria-label="Exporta lista membrilor in format CSV">
+                    <i data-lucide="download" class="mr-2 w-5 h-5" aria-hidden="true"></i>
+                    Export CSV
+                </a>
+
+                <button type="button"
+                        onclick="document.getElementById('modal-filtre-avansate').showModal()"
+                        class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
+                        aria-label="Deschide filtre avansate"
+                        aria-haspopup="dialog">
+                    <i data-lucide="filter" class="mr-2 w-5 h-5" aria-hidden="true"></i>
+                    Filtre
+                </button>
+
+                <button type="button"
+                        onclick="document.getElementById('formular-membru').showModal()"
+                        class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
+                        aria-label="Deschide formular pentru adaugare membru nou"
+                        aria-haspopup="dialog"
+                        aria-expanded="false"
+                        id="btn-adauga-membru">
+                    <i data-lucide="user-plus" class="mr-2 w-5 h-5" aria-hidden="true"></i>
+                    Adauga Membru Nou
+                </button>
+            </div>
         </div>
 
         <!-- Rând 2: Filtre -->
@@ -527,6 +562,122 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
 <?php require_once APP_ROOT . '/includes/documente_modal.php'; ?>
 <?php require_once APP_ROOT . '/includes/incasari_modal.php'; ?>
 
+<!-- Dialog filtre avansate -->
+<dialog id="modal-filtre-avansate"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titlu-filtre-avansate"
+        class="p-0 rounded-lg shadow-xl max-w-2xl w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-700 dark:bg-gray-800 backdrop:bg-black/30">
+    <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="titlu-filtre-avansate" class="text-lg font-bold text-slate-900 dark:text-white">Filtre avansate</h2>
+            <button type="button"
+                    onclick="document.getElementById('modal-filtre-avansate').close()"
+                    class="text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    aria-label="Inchide">
+                <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
+            </button>
+        </div>
+        <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Selectati criteriile dorite si apasati Aplica. Filtrele se combina cu cautarea si statusul curent.</p>
+
+        <form method="get" action="/membri" id="form-filtre-avansate">
+            <!-- Pastreaza parametrii existenti -->
+            <input type="hidden" name="status" value="<?php echo htmlspecialchars($status_filter); ?>">
+            <input type="hidden" name="per_page" value="<?php echo $per_page; ?>">
+            <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort_col); ?>">
+            <input type="hidden" name="dir" value="<?php echo htmlspecialchars(strtolower($sort_dir)); ?>">
+            <?php if (!empty($cautare)): ?>
+            <input type="hidden" name="cautare" value="<?php echo htmlspecialchars($cautare); ?>">
+            <?php endif; ?>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Data nastere de la -->
+                <div>
+                    <label for="filtr_data_nastere_de_la" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data nastere de la</label>
+                    <input type="date" id="filtr_data_nastere_de_la" name="data_nastere_de_la"
+                           value="<?php echo htmlspecialchars($_GET['data_nastere_de_la'] ?? ''); ?>"
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                </div>
+                <!-- Data nastere pana la -->
+                <div>
+                    <label for="filtr_data_nastere_pana_la" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data nastere pana la</label>
+                    <input type="date" id="filtr_data_nastere_pana_la" name="data_nastere_pana_la"
+                           value="<?php echo htmlspecialchars($_GET['data_nastere_pana_la'] ?? ''); ?>"
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                </div>
+                <!-- Sex -->
+                <div>
+                    <label for="filtr_sex" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Sex</label>
+                    <select id="filtr_sex" name="sex"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                        <option value="">-- Toate --</option>
+                        <option value="Masculin" <?php echo ($_GET['sex'] ?? '') === 'Masculin' ? 'selected' : ''; ?>>Masculin</option>
+                        <option value="Feminin" <?php echo ($_GET['sex'] ?? '') === 'Feminin' ? 'selected' : ''; ?>>Feminin</option>
+                    </select>
+                </div>
+                <!-- Grad handicap -->
+                <div>
+                    <label for="filtr_hgrad" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Grad handicap</label>
+                    <select id="filtr_hgrad" name="hgrad"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                        <option value="">-- Toate --</option>
+                        <?php
+                        $grade_handicap = ['Grav cu insotitor', 'Grav', 'Accentuat', 'Mediu', 'Usor', 'Alt handicap', 'Asociat', 'Fara handicap'];
+                        foreach ($grade_handicap as $g):
+                        ?>
+                        <option value="<?php echo htmlspecialchars($g); ?>" <?php echo ($_GET['hgrad'] ?? '') === $g ? 'selected' : ''; ?>><?php echo htmlspecialchars($g); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <!-- Status dosar -->
+                <div>
+                    <label for="filtr_status_dosar" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Status dosar</label>
+                    <select id="filtr_status_dosar" name="status_dosar"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                        <option value="">-- Toate --</option>
+                        <?php
+                        $statusuri_dosar = ['Activ', 'Expirat', 'Suspendat', 'Retras', 'Decedat'];
+                        foreach ($statusuri_dosar as $s):
+                        ?>
+                        <option value="<?php echo htmlspecialchars($s); ?>" <?php echo ($_GET['status_dosar'] ?? '') === $s ? 'selected' : ''; ?>><?php echo htmlspecialchars($s); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <!-- Localitate -->
+                <div>
+                    <label for="filtr_localitate" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Localitate</label>
+                    <input type="text" id="filtr_localitate" name="localitate"
+                           value="<?php echo htmlspecialchars($_GET['localitate'] ?? ''); ?>"
+                           placeholder="Ex: Oradea"
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                </div>
+                <!-- Mediu -->
+                <div>
+                    <label for="filtr_mediu" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Mediu</label>
+                    <select id="filtr_mediu" name="mediu"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                        <option value="">-- Toate --</option>
+                        <option value="Urban" <?php echo ($_GET['mediu'] ?? '') === 'Urban' ? 'selected' : ''; ?>>Urban</option>
+                        <option value="Rural" <?php echo ($_GET['mediu'] ?? '') === 'Rural' ? 'selected' : ''; ?>>Rural</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-gray-700">
+                <a href="/membri?status=<?php echo urlencode($status_filter); ?>&per_page=<?php echo $per_page; ?>"
+                   class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium transition">
+                    Reseteaza filtre
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition">
+                    <i data-lucide="check" class="inline w-4 h-4 mr-1" aria-hidden="true"></i>
+                    Aplica filtre
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
 <style>
 .resizable-th {
     position: relative;
@@ -554,6 +705,14 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
     padding-top: calc(0.5rem + 5px);
     padding-bottom: calc(0.5rem + 5px);
     vertical-align: middle;
+}
+@media print {
+    header, nav, aside, #sidebar, .no-print, dialog,
+    form#form-cautare-membri, form#form-mesaj-precompletat,
+    [aria-label="Mesaj pentru trimitere catre membri"] { display: none !important; }
+    main { overflow: visible !important; }
+    body { background: white !important; }
+    table { font-size: 11px; }
 }
 </style>
 

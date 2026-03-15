@@ -617,11 +617,11 @@ document.addEventListener('DOMContentLoaded', function(){
         function showRezultate(list) {
             rezultateDiv.innerHTML = '';
             if (!list || list.length === 0) {
-                rezultateDiv.innerHTML = '<div class="px-3 py-2 text-sm text-slate-500 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-lg shadow">Niciun rezultat</div>';
+                rezultateDiv.innerHTML = '<div class="px-3 py-2 text-sm text-slate-500 dark:text-white bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-lg shadow">Niciun rezultat</div>';
                 return;
             }
             var ul = document.createElement('ul');
-            ul.className = 'max-h-64 overflow-y-auto bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-lg shadow-lg text-sm';
+            ul.className = 'max-h-64 overflow-y-auto bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-lg shadow-lg text-sm text-slate-900 dark:text-white';
             ul.setAttribute('role', 'listbox');
             ul.id = 'list-cauta-bpa';
             list.forEach(function(m){
@@ -634,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 if (ci) ci = ci.trim();
                 var id = m.id;
                 var li = document.createElement('li');
-                li.className = 'flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-gray-700 last:border-0 hover:bg-amber-50 dark:hover:bg-amber-900/20';
+                li.className = 'flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 dark:border-gray-700 last:border-0 hover:bg-amber-50 dark:hover:bg-amber-900/20 dark:text-white';
                 li.setAttribute('role', 'option');
                 li.setAttribute('data-id', id);
                 li.setAttribute('data-nume', nume);
@@ -674,12 +674,12 @@ document.addEventListener('DOMContentLoaded', function(){
                         showRezultate(data.membri || []);
                     } catch (err) {
                         showRezultate([]);
-                        rezultateDiv.innerHTML = '<div class="px-3 py-2 text-sm text-red-500 bg-white dark:bg-gray-800 border border-slate-300 rounded-lg">Răspuns invalid</div>';
+                        rezultateDiv.innerHTML = '<div class="px-3 py-2 text-sm text-red-500 dark:text-white bg-white dark:bg-gray-800 border border-slate-300 rounded-lg">Răspuns invalid</div>';
                     }
                 })
                 .catch(function(){
                     showRezultate([]);
-                    rezultateDiv.innerHTML = '<div class="px-3 py-2 text-sm text-red-500 bg-white dark:bg-gray-800 border border-slate-300 rounded-lg">Eroare la căutare</div>';
+                    rezultateDiv.innerHTML = '<div class="px-3 py-2 text-sm text-red-500 dark:text-white bg-white dark:bg-gray-800 border border-slate-300 rounded-lg">Eroare la căutare</div>';
                 });
         }
         cautaInput.addEventListener('input', function(){

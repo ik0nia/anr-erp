@@ -174,6 +174,8 @@ function liste_prezenta_create(PDO $pdo, array $post, string $user): array {
 
         log_activitate($pdo, 'Lista prezenta creata: ' . $d['tip_titlu'] . ' - ' . $d['detalii_activitate']);
 
+        // Prezenta in istoricul membrilor se logheaza la finalizarea activitatii (ActivitatiService)
+
         return ['success' => true, 'error' => '', 'lista_id' => (int)$lista_id, 'activitate_id' => $activitate_id];
     } catch (PDOException $e) {
         return ['success' => false, 'error' => 'Eroare la salvare: ' . $e->getMessage(), 'lista_id' => null, 'activitate_id' => null];
@@ -221,6 +223,9 @@ function liste_prezenta_update(PDO $pdo, int $id, array $post): array {
         liste_prezenta_save_membri($pdo, $id, $d['membri_ids'], $d['participanti_manuali']);
 
         log_activitate($pdo, 'Lista prezenta modificata ID ' . $id);
+
+        // Log prezenta in istoricul fiecarui membru
+        // Prezenta in istoricul membrilor se logheaza la finalizarea activitatii (ActivitatiService)
 
         return ['success' => true, 'error' => ''];
     } catch (PDOException $e) {

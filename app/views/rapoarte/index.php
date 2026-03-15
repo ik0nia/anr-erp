@@ -28,19 +28,6 @@
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Indicatori Membri</h2>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Total Membri -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm text-slate-600 dark:text-gray-400">Total Membri</p>
-                            <p class="text-3xl font-bold text-slate-900 dark:text-white mt-2"><?php echo $total_activi; ?></p>
-                        </div>
-                        <div class="p-3 bg-slate-100 dark:bg-gray-700 rounded-lg">
-                            <i data-lucide="users" class="w-8 h-8 text-slate-600 dark:text-gray-400" aria-hidden="true"></i>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Membri Activi -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
                     <div class="flex items-center justify-between">
@@ -89,6 +76,19 @@
                         </div>
                         <div class="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
                             <i data-lucide="alert-circle" class="w-8 h-8 text-red-600 dark:text-red-400" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grad Grav cu Asistent Personal -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-600 dark:text-gray-400">Grad Grav cu Asistent Personal</p>
+                            <p class="text-3xl font-bold text-red-800 dark:text-red-300 mt-2"><?php echo $grad_grav_cu_asistent; ?></p>
+                        </div>
+                        <div class="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                            <i data-lucide="heart-handshake" class="w-8 h-8 text-red-800 dark:text-red-300" aria-hidden="true"></i>
                         </div>
                     </div>
                 </div>

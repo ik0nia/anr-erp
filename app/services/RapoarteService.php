@@ -20,23 +20,27 @@ function rapoarte_indicatori_membri(PDO $pdo): array {
         $result_total = $stmt_total->fetch(PDO::FETCH_ASSOC);
         $total_activi = (int)($result_total['total'] ?? 0);
 
-        $stmt_grav = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Grav'");
+        $stmt_grav = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Grav' AND (insotitor IS NULL OR insotitor NOT IN ('INDEMNIZATIE INSOTITOR', 'ASISTENT PERSONAL')) AND status_dosar = 'Activ'");
         $result_grav = $stmt_grav->fetch(PDO::FETCH_ASSOC);
         $grad_grav = (int)($result_grav['total'] ?? 0);
 
-        $stmt_accentuat = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Accentuat'");
+        $stmt_grav_asistent = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE (hgrad = 'Grav cu insotitor' OR (hgrad = 'Grav' AND insotitor IN ('INDEMNIZATIE INSOTITOR', 'ASISTENT PERSONAL'))) AND status_dosar = 'Activ'");
+        $result_grav_asistent = $stmt_grav_asistent->fetch(PDO::FETCH_ASSOC);
+        $grad_grav_cu_asistent = (int)($result_grav_asistent['total'] ?? 0);
+
+        $stmt_accentuat = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Accentuat' AND status_dosar = 'Activ'");
         $result_accentuat = $stmt_accentuat->fetch(PDO::FETCH_ASSOC);
         $grad_accentuat = (int)($result_accentuat['total'] ?? 0);
 
-        $stmt_mediu = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Mediu'");
+        $stmt_mediu = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Mediu' AND status_dosar = 'Activ'");
         $result_mediu = $stmt_mediu->fetch(PDO::FETCH_ASSOC);
         $grad_mediu = (int)($result_mediu['total'] ?? 0);
 
-        $stmt_femei = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE sex = 'Feminin'");
+        $stmt_femei = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE sex = 'Feminin' AND status_dosar = 'Activ'");
         $result_femei = $stmt_femei->fetch(PDO::FETCH_ASSOC);
         $femei = (int)($result_femei['total'] ?? 0);
 
-        $stmt_barbati = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE sex = 'Masculin'");
+        $stmt_barbati = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE sex = 'Masculin' AND status_dosar = 'Activ'");
         $result_barbati = $stmt_barbati->fetch(PDO::FETCH_ASSOC);
         $barbati = (int)($result_barbati['total'] ?? 0);
 
@@ -55,6 +59,7 @@ function rapoarte_indicatori_membri(PDO $pdo): array {
         return [
             'total_activi' => $total_activi,
             'grad_grav' => $grad_grav,
+            'grad_grav_cu_asistent' => $grad_grav_cu_asistent,
             'grad_accentuat' => $grad_accentuat,
             'grad_mediu' => $grad_mediu,
             'femei' => $femei,
@@ -67,6 +72,7 @@ function rapoarte_indicatori_membri(PDO $pdo): array {
         return [
             'total_activi' => 0,
             'grad_grav' => 0,
+            'grad_grav_cu_asistent' => 0,
             'grad_accentuat' => 0,
             'grad_mediu' => 0,
             'femei' => 0,

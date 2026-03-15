@@ -14,7 +14,7 @@ if (strlen($q) < 2) {
 
 $term = '%' . $q . '%';
 try {
-    $stmt = $pdo->prepare("SELECT id, nume, prenume, datanastere, ciseria, cinumar, domloc, codpost, judet_domiciliu
+    $stmt = $pdo->prepare("SELECT id, nume, prenume, datanastere, ciseria, cinumar, domloc, codpost, judet_domiciliu, dosarnr
                            FROM membri
                            WHERE (nume LIKE ? OR prenume LIKE ? OR CONCAT(nume,' ',prenume) LIKE ? OR cnp LIKE ? OR dosarnr LIKE ?)
                            AND (status_dosar IS NULL OR status_dosar = 'Activ' OR status_dosar NOT IN ('Decedat','Retras'))

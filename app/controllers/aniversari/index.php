@@ -23,8 +23,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mesaj_azi'])) {
 $mesaj_azi = isset($_SESSION['aniversari_mesaj_azi']) ? (string)$_SESSION['aniversari_mesaj_azi'] : '';
 
 // --- Date pentru view ---
-$aniversari_membri = aniversari_membri_azi($pdo);
-$aniversari_contacte = aniversari_contacte_azi($pdo);
+$data_selectata = isset($_GET['data']) ? trim($_GET['data']) : date('Y-m-d');
+if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data_selectata) || !strtotime($data_selectata)) {
+    $data_selectata = date('Y-m-d');
+}
+$este_azi = ($data_selectata === date('Y-m-d'));
+
+if ($este_azi) {
+    $aniversari_membri = aniversari_membri_azi($pdo);
+    $aniversari_contacte = aniversari_contacte_azi($pdo);
+} else {
+    $aniversari_membri = function_exists('aniversari_membri_la_data') ? aniversari_membri_la_data($pdo, $data_selectata) : aniversari_membri_azi($pdo);
+    $aniversari_contacte = function_exists('aniversari_contacte_la_data') ? aniversari_contacte_la_data($pdo, $data_selectata) : aniversari_contacte_azi($pdo);
+}
 $aniversari_per_zi = aniversari_per_zi_luna($pdo);
 $cal = aniversari_calendar_data();
 

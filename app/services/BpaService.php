@@ -100,6 +100,17 @@ function bpa_service_salveaza_tabel(PDO $pdo, int $tabel_id, string $nr_tabel, s
     }
     $id = bpa_salveaza_tabel($pdo, $tabel_id, $nr_tabel, $data_tabel, $predare_sediul, $predare_centru, $livrare_domiciliu, $randuri, $utilizator);
     log_activitate($pdo, "BPA: tabel distributie salvat - {$nr_tabel}");
+
+    // Log distributie in istoricul fiecarui membru doar la creare (nu re-save)
+    if ($tabel_id == 0) {
+        foreach ($randuri as $rand) {
+            if (!empty($rand['membru_id'])) {
+                $membru_id = (int)$rand['membru_id'];
+                log_activitate($pdo, "BPA: Distribuit pachet - Tabel distributie #{$nr_tabel}", null, $membru_id);
+            }
+        }
+    }
+
     return ['success' => true, 'id' => (int)$id, 'error' => null];
 }
 

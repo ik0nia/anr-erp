@@ -57,6 +57,10 @@
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_setari === 'incasari' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Încasări
             </a>
+            <a href="/setari?tab=tickete" role="tab" aria-selected="<?php echo $tab_setari === 'tickete' ? 'true' : 'false'; ?>"
+               class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_setari === 'tickete' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
+                Tickete
+            </a>
         </nav>
 
         <?php if ($tab_setari === 'incasari'): ?>
@@ -576,6 +580,68 @@
                 </table>
             </div>
         </section>
+        <?php elseif ($tab_setari === 'tickete'): ?>
+        <!-- Tab Tickete: administrare departamente -->
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 max-w-2xl" aria-labelledby="tickete-departamente-heading">
+            <h2 id="tickete-departamente-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center">
+                <i data-lucide="ticket" class="mr-2 w-5 h-5" aria-hidden="true"></i>
+                Departamente Tickete
+            </h2>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Creati si activati sau dezactivati departamentele disponibile in modulul Tickete. Departamentele dezactivate nu apar in dropdown-ul de selectie.</p>
+            <form method="post" action="/setari?tab=tickete" class="mb-4">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="adauga_departament_ticket" value="1">
+                <div class="flex gap-2">
+                    <input type="text" name="nume_departament_ticket" id="nume_departament_ticket"
+                           placeholder="Ex: Resurse Umane"
+                           class="flex-1 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                           required aria-label="Nume departament nou">
+                    <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500 transition">
+                        <i data-lucide="plus" class="w-4 h-4 inline mr-1" aria-hidden="true"></i> Adauga
+                    </button>
+                </div>
+            </form>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-label="Lista departamente tickete">
+                    <thead class="bg-slate-100 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Departament</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Status</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Actiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+                        <?php if (empty($lista_departamente_tickete)): ?>
+                        <tr><td colspan="3" class="px-4 py-8 text-center text-slate-600 dark:text-gray-400">Nu exista departamente definite.</td></tr>
+                        <?php else: foreach ($lista_departamente_tickete as $dep): ?>
+                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
+                            <td class="px-4 py-3 text-sm text-slate-900 dark:text-white font-medium"><?php echo htmlspecialchars($dep['nume']); ?></td>
+                            <td class="px-4 py-3">
+                                <?php if ($dep['activ']): ?>
+                                <span class="inline-flex px-2 py-1 text-xs font-medium rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200">Activ</span>
+                                <?php else: ?>
+                                <span class="inline-flex px-2 py-1 text-xs font-medium rounded bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400">Inactiv</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-3">
+                                <form method="post" action="/setari?tab=tickete" class="inline">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="toggle_departament_ticket" value="1">
+                                    <input type="hidden" name="departament_id_ticket" value="<?php echo (int)$dep['id']; ?>">
+                                    <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium <?php echo $dep['activ'] ? 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800' : 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/50 hover:bg-emerald-200 dark:hover:bg-emerald-800'; ?> rounded focus:ring-2 focus:ring-amber-500"
+                                            aria-label="<?php echo $dep['activ'] ? 'Dezactiveaza' : 'Activeaza'; ?> departamentul <?php echo htmlspecialchars($dep['nume']); ?>">
+                                        <i data-lucide="<?php echo $dep['activ'] ? 'x' : 'check'; ?>" class="w-4 h-4" aria-hidden="true"></i>
+                                        <?php echo $dep['activ'] ? 'Dezactiveaza' : 'Activeaza'; ?>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
         <?php else: ?>
         <!-- Tab General: setări platformă (3 coloane) -->
         <!-- Buton Management Generare Documente -->
@@ -698,6 +764,7 @@
                 </h2>
 
                 <form method="post" action="/setari" class="space-y-4">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="actualizeaza_logo" value="1">
 
                     <div>
@@ -841,6 +908,7 @@
                 $urmatorul_nr = registratura_urmatorul_nr($pdo);
                 ?>
                 <form method="post" action="/setari" class="space-y-4">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="actualizeaza_registratura" value="1">
                     <div>
                         <label for="registratura_nr_pornire" class="block text-sm font-medium text-slate-900 dark:text-white mb-2">Număr pornire înregistrări</label>

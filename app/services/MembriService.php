@@ -46,12 +46,16 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
     $where_parts = [];
     $params = [];
 
-    if ($status_filter === 'suspendati') {
-        $where_parts[] = "status_dosar IN ('Suspendat', 'Expirat')";
-    } elseif ($status_filter === 'arhiva') {
-        $where_parts[] = "status_dosar = 'Decedat'";
-    } else {
-        $where_parts[] = "status_dosar = 'Activ'";
+    // Filtrul avansat status_dosar override tab-ul de status
+    $status_dosar_avansat = $filters['status_dosar'] ?? '';
+    if ($status_dosar_avansat === '') {
+        if ($status_filter === 'suspendati') {
+            $where_parts[] = "status_dosar IN ('Suspendat', 'Expirat')";
+        } elseif ($status_filter === 'arhiva') {
+            $where_parts[] = "status_dosar = 'Decedat'";
+        } else {
+            $where_parts[] = "status_dosar = 'Activ'";
+        }
     }
 
     if ($avertizari_filter) {
@@ -125,6 +129,43 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         $where_parts[] = "(nume LIKE ? OR prenume LIKE ? OR cnp LIKE ? OR dosarnr LIKE ? OR telefonnev LIKE ? OR email LIKE ? OR domloc LIKE ? OR CONCAT(COALESCE(nume,''),' ',COALESCE(prenume,'')) LIKE ?)";
         $search_term = '%' . $cautare . '%';
         $params = array_merge($params, [$search_term, $search_term, $search_term, $search_term, $search_term, $search_term, $search_term, $search_term]);
+    }
+
+    // Filtre avansate (din dialog Filtre)
+    $sex_filter_val = $filters['sex'] ?? '';
+    if ($sex_filter_val !== '' && in_array($sex_filter_val, ['Masculin', 'Feminin'])) {
+        $where_parts[] = "sex = ?";
+        $params[] = $sex_filter_val;
+    }
+    $hgrad_filter_val = $filters['hgrad'] ?? '';
+    if ($hgrad_filter_val !== '') {
+        $where_parts[] = "hgrad = ?";
+        $params[] = $hgrad_filter_val;
+    }
+    $status_dosar_filter_val = $filters['status_dosar'] ?? '';
+    if ($status_dosar_filter_val !== '') {
+        $where_parts[] = "status_dosar = ?";
+        $params[] = $status_dosar_filter_val;
+    }
+    $localitate_filter_val = trim($filters['localitate'] ?? '');
+    if ($localitate_filter_val !== '') {
+        $where_parts[] = "domloc LIKE ?";
+        $params[] = '%' . $localitate_filter_val . '%';
+    }
+    $mediu_filter_val = $filters['mediu'] ?? '';
+    if ($mediu_filter_val !== '' && in_array($mediu_filter_val, ['Urban', 'Rural'])) {
+        $where_parts[] = "tipmediuur = ?";
+        $params[] = $mediu_filter_val;
+    }
+    $data_nastere_de_la = $filters['data_nastere_de_la'] ?? '';
+    if ($data_nastere_de_la !== '') {
+        $where_parts[] = "datanastere >= ?";
+        $params[] = $data_nastere_de_la;
+    }
+    $data_nastere_pana_la = $filters['data_nastere_pana_la'] ?? '';
+    if ($data_nastere_pana_la !== '') {
+        $where_parts[] = "datanastere <= ?";
+        $params[] = $data_nastere_pana_la;
     }
 
     $where = !empty($where_parts) ? 'WHERE ' . implode(' AND ', $where_parts) : '';
@@ -263,6 +304,131 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
 }
 
 /**
+ * Lista TOTI membrii (fara paginare) — folosit pentru export CSV.
+ * Aplica aceleasi filtre ca membri_list().
+ *
+ * @return array Lista de membri (array asociativ)
+ */
+function membri_lista_all(PDO $pdo, array $get_params): array {
+    $status_filter = $get_params['status'] ?? 'activi';
+    $cautare = trim($get_params['cautare'] ?? '');
+    $sort_col = $get_params['sort'] ?? 'dosarnr';
+    $sort_dir_input = strtolower($get_params['dir'] ?? 'asc');
+    $avertizari_filter = !empty($get_params['avertizari']);
+    $aniversari_azi_filter = !empty($get_params['aniversari_azi']);
+    $actualizare_cnp_ci_filter = !empty($get_params['actualizare_cnp_ci']);
+    $cotizatie_neachitata_filter = !empty($get_params['cotizatie_neachitata']);
+    $fara_contact_filter = !empty($get_params['fara_contact']);
+
+    // Filtre avansate
+    $sex_filter = $get_params['sex'] ?? '';
+    $hgrad_filter = $get_params['hgrad'] ?? '';
+    $status_dosar_filter = $get_params['status_dosar'] ?? '';
+    $localitate_filter = trim($get_params['localitate'] ?? '');
+    $mediu_filter = $get_params['mediu'] ?? '';
+    $data_nastere_de_la = $get_params['data_nastere_de_la'] ?? '';
+    $data_nastere_pana_la = $get_params['data_nastere_pana_la'] ?? '';
+
+    $allowed_sort_cols = ['dosarnr', 'nume', 'prenume', 'datanastere', 'ciseria', 'cinumar', 'telefonnev', 'hgrad'];
+    if (!in_array($sort_col, $allowed_sort_cols)) $sort_col = 'dosarnr';
+    $sort_dir = $sort_dir_input === 'desc' ? 'DESC' : 'ASC';
+
+    $where_parts = [];
+    $params = [];
+
+    $status_dosar_avansat = $get_params['status_dosar'] ?? '';
+    if ($status_dosar_avansat === '') {
+        if ($status_filter === 'suspendati') {
+            $where_parts[] = "status_dosar IN ('Suspendat', 'Expirat')";
+        } elseif ($status_filter === 'arhiva') {
+            $where_parts[] = "status_dosar = 'Decedat'";
+        } else {
+            $where_parts[] = "status_dosar = 'Activ'";
+        }
+    }
+
+    if ($avertizari_filter) {
+        $where_parts[] = "(status_dosar = 'Activ' AND ((cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0)) OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))))";
+    }
+    if ($aniversari_azi_filter) {
+        $where_parts[] = "datanastere IS NOT NULL AND MONTH(datanastere) = MONTH(CURDATE()) AND DAY(datanastere) = DAY(CURDATE())";
+    }
+    if ($actualizare_cnp_ci_filter) {
+        $where_parts[] = "(status_dosar = 'Activ' AND (cidataelib IS NULL OR cielib IS NULL OR cielib = '' OR cidataexp IS NULL OR cnp IS NULL OR cnp = '' OR LENGTH(cnp) != 13 OR (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 30 DAY))))";
+    }
+    if ($fara_contact_filter) {
+        $where_parts[] = "status_dosar = 'Activ' AND (telefonnev IS NULL OR telefonnev = '') AND (email IS NULL OR email = '')";
+    }
+
+    if ($cotizatie_neachitata_filter) {
+        $where_parts[] = "status_dosar = 'Activ'";
+        $membri_scutiti = [];
+        try { $membri_scutiti = cotizatii_membri_scutiti_ids($pdo); } catch (PDOException $e) {}
+        $membri_achitata = [];
+        try {
+            cotizatii_ensure_tables($pdo);
+            $membri_achitata = incasari_membri_cotizatie_achitata_an($pdo, (int)date('Y'));
+        } catch (PDOException $e) {}
+        $excluded_ids = array_unique(array_merge($membri_scutiti, $membri_achitata));
+        if (!empty($excluded_ids)) {
+            $placeholders = implode(',', array_fill(0, count($excluded_ids), '?'));
+            $where_parts[] = "id NOT IN ($placeholders)";
+            foreach ($excluded_ids as $eid) $params[] = (int)$eid;
+        }
+    }
+
+    if ($cautare !== '') {
+        $where_parts[] = "(nume LIKE ? OR prenume LIKE ? OR cnp LIKE ? OR dosarnr LIKE ? OR telefonnev LIKE ? OR email LIKE ? OR domloc LIKE ? OR CONCAT(COALESCE(nume,''),' ',COALESCE(prenume,'')) LIKE ?)";
+        $search_term = '%' . $cautare . '%';
+        $params = array_merge($params, [$search_term, $search_term, $search_term, $search_term, $search_term, $search_term, $search_term, $search_term]);
+    }
+
+    // Filtre avansate
+    if ($sex_filter !== '' && in_array($sex_filter, ['Masculin', 'Feminin'])) {
+        $where_parts[] = "sex = ?";
+        $params[] = $sex_filter;
+    }
+    if ($hgrad_filter !== '') {
+        $where_parts[] = "hgrad = ?";
+        $params[] = $hgrad_filter;
+    }
+    if ($status_dosar_filter !== '') {
+        $where_parts[] = "status_dosar = ?";
+        $params[] = $status_dosar_filter;
+    }
+    if ($localitate_filter !== '') {
+        $where_parts[] = "domloc LIKE ?";
+        $params[] = '%' . $localitate_filter . '%';
+    }
+    if ($mediu_filter !== '' && in_array($mediu_filter, ['Urban', 'Rural'])) {
+        $where_parts[] = "tipmediuur = ?";
+        $params[] = $mediu_filter;
+    }
+    if ($data_nastere_de_la !== '') {
+        $where_parts[] = "datanastere >= ?";
+        $params[] = $data_nastere_de_la;
+    }
+    if ($data_nastere_pana_la !== '') {
+        $where_parts[] = "datanastere <= ?";
+        $params[] = $data_nastere_pana_la;
+    }
+
+    $where = !empty($where_parts) ? 'WHERE ' . implode(' AND ', $where_parts) : '';
+    $order_by = $sort_col . ' ' . $sort_dir . ", nume ASC, prenume ASC";
+
+    $sql = "SELECT id, dosarnr, status_dosar, nume, prenume, datanastere, cnp, telefonnev, email, domloc, hgrad, sex, tipmediuur
+            FROM membri $where ORDER BY $order_by";
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
  * Calculeaza indicatorii (total, activi, grade handicap etc.)
  */
 function membri_indicatori(PDO $pdo): array {
@@ -296,12 +462,32 @@ function membri_indicatori(PDO $pdo): array {
 }
 
 /**
+ * Asigura existenta coloanelor pentru Biblioteca Online in tabela membri.
+ */
+function membri_ensure_biblioteca_online_columns(PDO $pdo): void {
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM membri LIKE 'biblioteca_online_username'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE membri ADD COLUMN biblioteca_online_username VARCHAR(100) DEFAULT NULL");
+        }
+        $stmt = $pdo->query("SHOW COLUMNS FROM membri LIKE 'biblioteca_online_parola'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE membri ADD COLUMN biblioteca_online_parola VARCHAR(255) DEFAULT NULL");
+        }
+    } catch (PDOException $e) {
+        // Silently ignore — columns may already exist
+    }
+}
+
+/**
  * Obtine un membru dupa ID.
  *
  * @return array|null Datele membrului sau null daca nu exista
  */
 function membri_get(PDO $pdo, int $id): ?array {
     if ($id <= 0) return null;
+
+    membri_ensure_biblioteca_online_columns($pdo);
 
     try {
         $stmt = $pdo->prepare('SELECT * FROM membri WHERE id = ?');
@@ -606,7 +792,8 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
             'nume_apartinator','prenume_apartinator','email','datanastere','locnastere','judnastere',
             'ciseria','cinumar','cielib','cidataelib','cidataexp','gdpr','codpost','tipmediuur',
             'domloc','judet_domiciliu','domstr','domnr','dombl','domsc','domet','domap','sex',
-            'hgrad','hmotiv','diagnostic','hdur','insotitor','cnp','cenr','cedata','ceexp','primaria','notamembru'];
+            'hgrad','hmotiv','diagnostic','hdur','insotitor','cnp','cenr','cedata','ceexp','primaria','notamembru',
+            'biblioteca_online_username','biblioteca_online_parola','newsletter_opt_in'];
         foreach ($all_fields as $f) {
             if (!array_key_exists($f, $post_data)) {
                 $post_data[$f] = $membru_existent_data[$f] ?? '';
@@ -665,6 +852,9 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
     $ceexp = !empty($post_data['ceexp']) ? date('Y-m-d', strtotime($post_data['ceexp'])) : null;
     $primaria = trim($post_data['primaria'] ?? '') ?: null;
     $notamembru = trim($post_data['notamembru'] ?? '') ?: null;
+    $biblioteca_online_username = trim($post_data['biblioteca_online_username'] ?? '') ?: null;
+    $biblioteca_online_parola = trim($post_data['biblioteca_online_parola'] ?? '') ?: null;
+    $newsletter_opt_in = !empty($post_data['newsletter_opt_in']) ? 1 : 0;
 
     try {
         if ($is_update) {
@@ -686,7 +876,8 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 nume_apartinator = ?, prenume_apartinator = ?, email = ?, datanastere = ?, locnastere = ?, judnastere = ?, ciseria = ?, cinumar = ?,
                 cielib = ?, cidataelib = ?, cidataexp = ?, gdpr = ?, codpost = ?, tipmediuur = ?, domloc = ?, judet_domiciliu = ?, domstr = ?,
                 domnr = ?, dombl = ?, domsc = ?, domet = ?, domap = ?, sex = ?, hgrad = ?, hmotiv = ?, diagnostic = ?,
-                hdur = ?, insotitor = ?, cnp = ?, cenr = ?, cedata = ?, ceexp = ?, primaria = ?, notamembru = ?
+                hdur = ?, insotitor = ?, cnp = ?, cenr = ?, cedata = ?, ceexp = ?, primaria = ?, notamembru = ?,
+                biblioteca_online_username = ?, biblioteca_online_parola = ?, newsletter_opt_in = ?
                 WHERE id = ?';
 
             $params = [
@@ -694,7 +885,8 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 $nume_apartinator, $prenume_apartinator, $email, $datanastere, $locnastere, $judnastere, $ciseria, $cinumar,
                 $cielib, $cidataelib, $cidataexp, $gdpr, $codpost, $tipmediuur, $domloc, $judet_domiciliu, $domstr,
                 $domnr, $dombl, $domsc, $domet, $domap, $sex, $hgrad, $hmotiv, $diagnostic,
-                $hdur, $insotitor, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru, $membru_id
+                $hdur, $insotitor, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru,
+                $biblioteca_online_username, $biblioteca_online_parola, $newsletter_opt_in, $membru_id
             ];
 
             $stmt = $pdo->prepare($sql);
@@ -780,15 +972,17 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 nume_apartinator, prenume_apartinator, email, datanastere, locnastere, judnastere, ciseria, cinumar,
                 cielib, cidataelib, cidataexp, gdpr, codpost, tipmediuur, domloc, judet_domiciliu, domstr,
                 domnr, dombl, domsc, domet, domap, sex, hgrad, hmotiv, diagnostic,
-                hdur, insotitor, cnp, cenr, cedata, ceexp, primaria, notamembru
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                hdur, insotitor, cnp, cenr, cedata, ceexp, primaria, notamembru,
+                biblioteca_online_username, biblioteca_online_parola, newsletter_opt_in
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
             $params = [
                 $dosarnr, $dosardata, $status_dosar, $nume, $prenume, $telefonnev, $telefonapartinator,
                 $nume_apartinator, $prenume_apartinator, $email, $datanastere, $locnastere, $judnastere, $ciseria, $cinumar,
                 $cielib, $cidataelib, $cidataexp, $gdpr, $codpost, $tipmediuur, $domloc, $judet_domiciliu, $domstr,
                 $domnr, $dombl, $domsc, $domet, $domap, $sex, $hgrad, $hmotiv, $diagnostic,
-                $hdur, $insotitor, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru
+                $hdur, $insotitor, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru,
+                $biblioteca_online_username, $biblioteca_online_parola, $newsletter_opt_in
             ];
 
             $stmt = $pdo->prepare($sql);

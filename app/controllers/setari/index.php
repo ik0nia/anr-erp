@@ -19,7 +19,7 @@ setari_ensure_table($pdo);
 // Tab detection (needed early for some POST redirects)
 // ---------------------------------------------------------------------------
 $tab_setari = 'general';
-$valid_tabs = ['general', 'dashboard', 'email', 'cotizatii', 'incasari'];
+$valid_tabs = ['general', 'dashboard', 'email', 'cotizatii', 'incasari', 'tickete'];
 if (isset($_GET['tab']) && in_array($_GET['tab'], $valid_tabs)) {
     $tab_setari = $_GET['tab'];
 }
@@ -295,6 +295,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_newslett
 }
 
 // ---------------------------------------------------------------------------
+// POST: Tickete — departamente management
+// ---------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_departament_ticket'])) {
+    csrf_require_valid();
+    require_once APP_ROOT . '/includes/tickete_helper.php';
+    $result = tickete_departament_adauga($pdo, trim($_POST['nume_departament_ticket'] ?? ''));
+    if ($result['success']) {
+        header('Location: /setari?tab=tickete&succes_tickete=1');
+        exit;
+    }
+    $eroare = $result['error'];
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_departament_ticket'])) {
+    csrf_require_valid();
+    require_once APP_ROOT . '/includes/tickete_helper.php';
+    $id = (int)($_POST['departament_id_ticket'] ?? 0);
+    $result = tickete_departament_toggle($pdo, $id);
+    if ($result['success']) {
+        header('Location: /setari?tab=tickete&succes_tickete=1');
+        exit;
+    }
+    $eroare = $result['error'];
+}
+
+// ---------------------------------------------------------------------------
 // POST: Documente settings
 // ---------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_documente'])) {
@@ -336,6 +362,7 @@ if (isset($_GET['succes_newsletter'])) $succes = 'Setările Newsletter au fost s
 if (isset($_GET['succes_documente'])) $succes = 'Setările pentru generare documente au fost salvate.';
 if (isset($_GET['succes_email'])) $succes = 'Setările email au fost salvate.';
 if (isset($_GET['succes_email_test'])) $succes = 'Emailul de test a fost trimis cu succes la ' . htmlspecialchars(urldecode($_GET['dest'] ?? 'adresa configurată')) . '.';
+if (isset($_GET['succes_tickete'])) $succes = 'Setarile Tickete au fost salvate.';
 
 // ---------------------------------------------------------------------------
 // Load tab-specific data for the view
@@ -388,6 +415,13 @@ if ($tab_setari === 'incasari') {
     $incasari_serie_incasari = $incasari_data['serie_incasari'];
     $lista_donatii_incasate = $incasari_data['donatii'];
     $incasari_setari_design = $incasari_data['design'];
+}
+
+$lista_departamente_tickete = [];
+if ($tab_setari === 'tickete') {
+    require_once APP_ROOT . '/includes/tickete_helper.php';
+    tickete_ensure_tables($pdo);
+    $lista_departamente_tickete = tickete_departamente_lista($pdo);
 }
 
 // ---------------------------------------------------------------------------

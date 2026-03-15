@@ -109,6 +109,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
         <div class="flex flex-wrap gap-2">
             <?php if (!empty($membru['email'])): ?>
             <a href="mailto:<?php echo htmlspecialchars($membru['email']); ?>"
+               onclick="logActiuneMembru(<?php echo $membru['id']; ?>, 'Mesaj Email')"
                class="inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                aria-label="Trimite email">
                 <i data-lucide="mail" class="mr-2 w-4 h-4" aria-hidden="true"></i>
@@ -118,10 +119,21 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
             <?php if (!empty($membru['telefonnev'])): ?>
             <a href="https://wa.me/<?php echo preg_replace('/\D/', '', $membru['telefonnev']); ?>"
                target="_blank"
+               onclick="logActiuneMembru(<?php echo $membru['id']; ?>, 'Mesaj WhatsApp')"
                class="inline-flex items-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                aria-label="Mesaj WhatsApp">
                 <i data-lucide="message-circle" class="mr-2 w-4 h-4" aria-hidden="true"></i>
                 WhatsApp
+            </a>
+            <?php endif; ?>
+            <?php if (!empty($membru['telefonapartinator'])): ?>
+            <a href="https://wa.me/<?php echo preg_replace('/\D/', '', $membru['telefonapartinator']); ?>"
+               target="_blank"
+               onclick="logActiuneMembru(<?php echo $membru['id']; ?>, 'Mesaj WhatsApp Apartinator')"
+               class="inline-flex items-center px-3 py-2 bg-green-800 hover:bg-green-900 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+               aria-label="Mesaj WhatsApp Apartinator">
+                <i data-lucide="message-circle" class="mr-2 w-4 h-4" aria-hidden="true"></i>
+                WhatsApp Apartinator
             </a>
             <?php endif; ?>
             <button type="button"
@@ -364,6 +376,10 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Nume apartinator</dt>
                             <dd class="font-medium text-slate-900 dark:text-white"><?php echo trim(($membru['nume_apartinator'] ?? '') . ' ' . ($membru['prenume_apartinator'] ?? '')) ?: '<span class="text-slate-400 dark:text-gray-500">—</span>'; ?></dd>
                         </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Primeste newsletter</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo (!isset($membru['newsletter_opt_in']) || $membru['newsletter_opt_in']) ? 'Da' : 'Nu'; ?></dd>
+                        </div>
                     </dl>
                 </div>
                 <div class="card-edit hidden p-4" data-card="date-contact">
@@ -395,6 +411,13 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                                     <label for="ec_prenume_apartinator" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Prenume apartinator</label>
                                     <input type="text" id="ec_prenume_apartinator" name="prenume_apartinator" value="<?php echo $val('prenume_apartinator'); ?>" class="<?php echo $input_class; ?>">
                                 </div>
+                            </div>
+                            <div class="flex items-center gap-2 mt-3">
+                                <input type="hidden" name="newsletter_opt_in" value="0">
+                                <input type="checkbox" id="ec_newsletter_opt_in" name="newsletter_opt_in" value="1"
+                                       <?php echo (!isset($membru['newsletter_opt_in']) || $membru['newsletter_opt_in']) ? 'checked' : ''; ?>
+                                       class="rounded border-slate-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500">
+                                <label for="ec_newsletter_opt_in" class="text-sm font-medium text-slate-800 dark:text-gray-200">Primeste newsletter</label>
                             </div>
                         </div>
                         <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
@@ -642,6 +665,24 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Valabilitate</dt>
                             <dd class="font-medium text-slate-900 dark:text-white"><?php echo $valabilitate_display; ?></dd>
                         </div>
+                        <div class="col-span-2">
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Status Membru</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white">
+                                <?php
+                                $sv = $membru['status_dosar'] ?? 'Activ';
+                                $sc = [
+                                    'Activ' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+                                    'Expirat' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                                    'Suspendat' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                                    'Retras' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+                                    'Decedat' => 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300',
+                                ][$sv] ?? 'bg-slate-100 text-slate-700 dark:bg-gray-600 dark:text-gray-200';
+                                ?>
+                                <span class="px-2.5 py-1 text-sm font-medium rounded-full <?php echo $sc; ?>">
+                                    <?php echo htmlspecialchars($sv); ?>
+                                </span>
+                            </dd>
+                        </div>
                     </dl>
                 </div>
                 <div class="card-edit hidden p-4" data-card="certificat-handicap">
@@ -698,6 +739,18 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                                 <div>
                                     <label for="ech_ceexp" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data expirare (daca revizuibil)</label>
                                     <input type="date" id="ech_ceexp" name="ceexp" value="<?php echo $val('ceexp'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="ech_status_dosar" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Status Membru</label>
+                                    <select id="ech_status_dosar" name="status_dosar" class="<?php echo $input_class; ?>">
+                                        <option value="Activ" <?php echo $selected('status_dosar', 'Activ'); ?>>Activ</option>
+                                        <option value="Suspendat" <?php echo $selected('status_dosar', 'Suspendat'); ?>>Suspendat</option>
+                                        <option value="Expirat" <?php echo $selected('status_dosar', 'Expirat'); ?>>Expirat</option>
+                                        <option value="Retras" <?php echo $selected('status_dosar', 'Retras'); ?>>Retras</option>
+                                        <option value="Decedat" <?php echo $selected('status_dosar', 'Decedat'); ?>>Decedat</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -876,10 +929,6 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('dosardata', 'date'); ?></dd>
                         </div>
                         <div>
-                            <dt class="text-sm text-slate-500 dark:text-gray-400">Status dosar</dt>
-                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('status_dosar'); ?></dd>
-                        </div>
-                        <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Acord GDPR</dt>
                             <dd class="font-medium text-slate-900 dark:text-white">
                                 <?php echo !empty($membru['gdpr']) ? '<span class="text-emerald-600 dark:text-emerald-400">Da</span>' : '<span class="text-red-600 dark:text-red-400">Nu</span>'; ?>
@@ -904,16 +953,6 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label for="edd_status_dosar" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Status dosar</label>
-                                    <select id="edd_status_dosar" name="status_dosar" class="<?php echo $input_class; ?>">
-                                        <option value="Activ" <?php echo $selected('status_dosar', 'Activ'); ?>>Activ</option>
-                                        <option value="Expirat" <?php echo $selected('status_dosar', 'Expirat'); ?>>Expirat</option>
-                                        <option value="Suspendat" <?php echo $selected('status_dosar', 'Suspendat'); ?>>Suspendat</option>
-                                        <option value="Retras" <?php echo $selected('status_dosar', 'Retras'); ?>>Retras</option>
-                                        <option value="Decedat" <?php echo $selected('status_dosar', 'Decedat'); ?>>Decedat</option>
-                                    </select>
-                                </div>
                                 <div class="flex items-end pb-2">
                                     <label class="flex items-center">
                                         <input type="checkbox" name="gdpr" value="1" <?php echo $checked('gdpr', '1'); ?>
@@ -957,6 +996,55 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <?php echo csrf_field(); ?>
                         <div>
                             <textarea name="notamembru" rows="5" class="<?php echo $input_class; ?>"><?php echo $val('notamembru'); ?></textarea>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card: Acces Biblioteca Online -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="book-open" class="w-5 h-5" aria-hidden="true"></i>
+                        Acces Biblioteca Online
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="biblioteca-online">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="biblioteca-online">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Utilizator</span>
+                            <span class="text-slate-900 dark:text-white"><?php echo !empty($membru['biblioteca_online_username']) ? htmlspecialchars($membru['biblioteca_online_username']) : '<span class="text-slate-400 dark:text-gray-500">—</span>'; ?></span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Parola</span>
+                            <span class="text-slate-900 dark:text-white"><?php echo !empty($membru['biblioteca_online_parola']) ? htmlspecialchars($membru['biblioteca_online_parola']) : '<span class="text-slate-400 dark:text-gray-500">—</span>'; ?></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-edit hidden p-4" data-card="biblioteca-online">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
+                        <input type="hidden" name="card" value="biblioteca-online">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Utilizator</label>
+                                <input type="text" name="biblioteca_online_username" value="<?php echo $val('biblioteca_online_username'); ?>" class="<?php echo $input_class; ?>">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Parola</label>
+                                <input type="text" name="biblioteca_online_parola" value="<?php echo $val('biblioteca_online_parola'); ?>" class="<?php echo $input_class; ?>">
+                            </div>
                         </div>
                         <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
@@ -1340,6 +1428,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+</script>
+<script>
+function logActiuneMembru(membruId, actiune) {
+    fetch('/api/log-actiune-membru', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ membru_id: membruId, actiune: actiune })
+    }).catch(function() {});
+}
 </script>
 </body>
 </html>

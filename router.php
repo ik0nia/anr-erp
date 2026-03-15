@@ -32,10 +32,13 @@ $routes = [
     '/registratura/adauga'     => ['type' => 'controller', 'script' => 'registratura-adauga.php',     'file' => 'app/controllers/registratura/store.php'],
     '/registratura/edit'       => ['type' => 'controller', 'script' => 'registratura-edit.php',       'file' => 'app/controllers/registratura/update.php'],
     '/registru-interactiuni'   => ['type' => 'controller', 'script' => 'registru-interactiuni-v2.php','file' => 'app/controllers/registru-interactiuni-v2/index.php'],
+    '/tickete'                 => ['type' => 'controller', 'script' => 'tickete.php',                  'file' => 'app/controllers/tickete/index.php'],
+    '/tickete/edit'            => ['type' => 'controller', 'script' => 'tickete-edit.php',             'file' => 'app/controllers/tickete/edit.php'],
     '/todo'                    => ['type' => 'controller', 'script' => 'todo.php',                    'file' => 'app/controllers/todo/index.php'],
     '/todo/adauga'             => ['type' => 'controller', 'script' => 'todo-adauga.php',             'file' => 'app/controllers/todo/store.php'],
     '/todo/edit'               => ['type' => 'controller', 'script' => 'todo-edit.php',               'file' => 'app/controllers/todo/edit.php'],
     '/voluntariat'             => ['type' => 'controller', 'script' => 'voluntariat.php',             'file' => 'app/controllers/voluntariat/index.php'],
+    '/comunicare'              => ['type' => 'controller', 'script' => 'comunicare.php',              'file' => 'app/controllers/comunicare/index.php'],
 
     // Legacy modules (not yet migrated to MVC)
     '/membri'                  => ['type' => 'controller', 'script' => 'membri.php',            'file' => 'app/controllers/membri/index.php'],
@@ -48,6 +51,7 @@ $routes = [
     '/aniversari'              => ['type' => 'controller', 'script' => 'aniversari.php',         'file' => 'app/controllers/aniversari/index.php'],
     '/generare-documente'      => ['type' => 'controller', 'script' => 'generare-documente.php', 'file' => 'app/controllers/generare-documente/index.php'],
     '/log-activitate'          => ['type' => 'controller', 'script' => 'log-activitate.php',     'file' => 'app/controllers/log-activitate/index.php'],
+    '/newsletter'              => ['type' => 'controller', 'script' => 'newsletter.php',          'file' => 'app/controllers/newsletter/index.php'],
     '/newsletter-view'         => ['type' => 'controller', 'script' => 'newsletter-view.php',    'file' => 'app/controllers/newsletter/view.php'],
     '/registratura/sumar'      => ['type' => 'controller', 'script' => 'registratura-sumar.php', 'file' => 'app/controllers/registratura/sumar.php'],
     '/actualizeaza-csv'        => ['type' => 'controller', 'script' => 'actualizezcsv.php',      'file' => 'app/controllers/import/actualizeaza-csv.php'],
@@ -73,6 +77,7 @@ $routes = [
     '/api/genereaza-document'      => ['type' => 'legacy', 'script' => 'genereaza-document.php',          'file' => 'api/genereaza-document.php'],
     '/api/trimite-email-document'  => ['type' => 'legacy', 'script' => 'trimite-email-document.php',      'file' => 'api/trimite-email-document.php'],
     '/api/log-print-document'      => ['type' => 'legacy', 'script' => 'log-print-document.php',          'file' => 'api/log-print-document.php'],
+    '/api/log-actiune-membru'      => ['type' => 'legacy', 'script' => 'log-actiune-membru.php',         'file' => 'api/log-actiune-membru.php'],
 ];
 
 // --- Route matching ---

@@ -22,6 +22,7 @@ if (!empty($_SESSION['user_id']) && !empty($_SESSION['utilizator'])) {
 auth_ensure_tables($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_require_valid();
     $user = trim($_POST['username'] ?? '');
     $pass = $_POST['password'] ?? '';
     if ($user === '' || $pass === '') {
@@ -75,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form method="post" action="/login" class="space-y-4" aria-label="Formular autentificare">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
                 <div>
                     <label for="username" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume utilizator <span class="text-red-600" aria-hidden="true">*</span></label>

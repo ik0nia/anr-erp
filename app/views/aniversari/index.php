@@ -14,6 +14,17 @@
     </header>
 
     <div class="p-6 overflow-y-auto flex-1">
+        <!-- Date picker -->
+        <div class="mb-4 flex items-center gap-3">
+            <label for="data-aniversari" class="text-sm font-medium text-slate-700 dark:text-gray-300">Selecteaza data:</label>
+            <input type="date" id="data-aniversari" value="<?php echo htmlspecialchars($data_selectata); ?>"
+                   class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+                   onchange="window.location.href='/aniversari?data=' + this.value">
+            <?php if (!$este_azi): ?>
+            <a href="/aniversari" class="px-3 py-2 text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 underline">Inapoi la azi</a>
+            <?php endif; ?>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <!-- Calendar lunar stanga sus -->
             <div class="lg:col-span-1">
@@ -75,7 +86,7 @@
         </div>
 
         <section class="mb-8" aria-labelledby="titlu-membri">
-            <h2 id="titlu-membri" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari membri – <?php echo date('d.m.Y'); ?></h2>
+            <h2 id="titlu-membri" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari membri – <?php echo date('d.m.Y', strtotime($data_selectata)); ?></h2>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-label="Aniversari membri">
@@ -160,7 +171,7 @@
         </section>
 
         <section class="mb-6" aria-labelledby="titlu-contacte">
-            <h2 id="titlu-contacte" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari contacte – <?php echo date('d.m.Y'); ?></h2>
+            <h2 id="titlu-contacte" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari contacte – <?php echo date('d.m.Y', strtotime($data_selectata)); ?></h2>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-label="Aniversari contacte">

@@ -25,6 +25,7 @@ $statistici_localitati = null;
 $indicatori = rapoarte_indicatori_membri($pdo);
 $total_activi = $indicatori['total_activi'];
 $grad_grav = $indicatori['grad_grav'];
+$grad_grav_cu_asistent = $indicatori['grad_grav_cu_asistent'];
 $grad_accentuat = $indicatori['grad_accentuat'];
 $grad_mediu = $indicatori['grad_mediu'];
 $femei = $indicatori['femei'];
