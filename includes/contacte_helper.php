@@ -1,67 +1,57 @@
 <?php
 /**
- * Helper modul Contacte - tabel, tipuri, import
+ * Helper modul Contacte — WRAPPER COMPATIBILITATE
+ *
+ * Acest fisier pastreaza compatibilitatea cu modulele care inca
+ * folosesc require_once 'includes/contacte_helper.php'.
+ *
+ * Logica reala este in: app/services/ContacteService.php
+ *
+ * Functiile vechi delegheaza catre service-ul nou.
  */
 require_once __DIR__ . '/date_helper.php';
+require_once __DIR__ . '/../app/services/ContacteService.php';
 
-define('CONTACTE_TIPURI', [
-    'Institutie' => 'Instituție',
-    'Beneficiar' => 'Beneficiar',
-    'Companie' => 'Companie',
-    'Contact politic' => 'Contact politic',
-    'Voluntar' => 'Voluntar',
-    'Donator' => 'Donator',
-    'Sponsor' => 'Sponsor',
-    'Partener' => 'Parteneri',
-    'Presa' => 'Presa',
-    'ANR' => 'ANR',
-    'Formular 230' => 'Formular 230',
-    'alte contacte' => 'Alte contacte',
-]);
+// Constanta pastrata pentru compatibilitate (contacte-import.php o foloseste)
+if (!defined('CONTACTE_TIPURI')) {
+    define('CONTACTE_TIPURI', contacte_tipuri());
+}
 
 /**
- * Asigură existența tabelului contacte
+ * @deprecated Foloseste contacte_ensure_table() din ContacteService
  */
 function ensure_contacte_table(PDO $pdo) {
-    $pdo->exec("CREATE TABLE IF NOT EXISTS contacte (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nume VARCHAR(100) NOT NULL,
-        prenume VARCHAR(100) DEFAULT NULL,
-        cnp VARCHAR(20) DEFAULT NULL,
-        companie VARCHAR(255) DEFAULT NULL,
-        tip_contact VARCHAR(50) NOT NULL DEFAULT 'alte contacte',
-        telefon VARCHAR(50) DEFAULT NULL,
-        telefon_personal VARCHAR(50) DEFAULT NULL,
-        email VARCHAR(255) DEFAULT NULL,
-        email_personal VARCHAR(255) DEFAULT NULL,
-        website VARCHAR(500) DEFAULT NULL,
-        data_nasterii DATE DEFAULT NULL,
-        notite TEXT DEFAULT NULL,
-        referinta_contact VARCHAR(500) DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_tip_contact (tip_contact),
-        INDEX idx_nume (nume),
-        INDEX idx_companie (companie),
-        INDEX idx_email (email)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    try {
-        $cols = $pdo->query("SHOW COLUMNS FROM contacte")->fetchAll(PDO::FETCH_COLUMN);
-        if (!in_array('cnp', $cols)) {
-            $pdo->exec("ALTER TABLE contacte ADD COLUMN cnp VARCHAR(20) DEFAULT NULL AFTER prenume");
-        }
-    } catch (PDOException $e) { /* migrare opțională */ }
+    contacte_ensure_table($pdo);
 }
 
 /**
- * Returnează lista de tipuri de contact
+ * @deprecated Foloseste contacte_tipuri() din ContacteService
  */
 function get_contacte_tipuri() {
-    return CONTACTE_TIPURI;
+    return contacte_tipuri();
 }
 
 /**
- * Extrage data nașterii din CNP (format YYYY-MM-DD sau null dacă invalid).
+ * @deprecated Foloseste contacte_whatsapp() din ContacteService
+ */
+function contacte_whatsapp_url($telefon) {
+    return contacte_whatsapp((string)$telefon);
+}
+
+/**
+ * @deprecated Foloseste contacte_whatsapp() din ContacteService
+ */
+function contacte_whatsapp_url_cu_mesaj($telefon, $mesaj = '') {
+    $url = contacte_whatsapp((string)$telefon);
+    if (!$url) return null;
+    if ($mesaj !== '') {
+        $url .= '?text=' . rawurlencode($mesaj);
+    }
+    return $url;
+}
+
+/**
+ * Extrage data nasterii din CNP. Pastrat pentru compatibilitate.
  */
 function contacte_data_nasterii_din_cnp($cnp) {
     $cnp = preg_replace('/\D/', '', (string)$cnp);
@@ -80,83 +70,26 @@ function contacte_data_nasterii_din_cnp($cnp) {
 }
 
 /**
- * Creează un contact donator (tip Donator). Din CNP se extrage data nașterii.
- * Returnează id-ul contactului.
+ * @deprecated Foloseste contacte_creeaza_donator() din ContacteService
  */
 function contacte_creare_donator(PDO $pdo, $nume, $prenume = null, $cnp = null, $telefon = null, $email = null) {
-    ensure_contacte_table($pdo);
-    $nume = trim((string)$nume);
-    if ($nume === '') return null;
-    $prenume = trim((string)$prenume) ?: null;
-    $cnp = trim((string)$cnp) ?: null;
-    $telefon = trim((string)$telefon) ?: null;
-    $email = trim((string)$email) ?: null;
-    $data_nasterii = $cnp ? contacte_data_nasterii_din_cnp($cnp) : null;
-    $stmt = $pdo->prepare("INSERT INTO contacte (nume, prenume, cnp, tip_contact, telefon, email, data_nasterii) VALUES (?, ?, ?, 'Donator', ?, ?, ?)");
-    $stmt->execute([$nume, $prenume, $cnp, $telefon, $email, $data_nasterii]);
-    return (int)$pdo->lastInsertId();
+    return contacte_creeaza_donator($pdo, (string)$nume, $prenume, $cnp, $telefon, $email);
 }
 
 /**
- * Formatează telefon pentru link WhatsApp (doar cifre)
- */
-function contacte_whatsapp_url($telefon) {
-    if (empty($telefon)) return null;
-    $nr = preg_replace('/\D/', '', $telefon);
-    if (empty($nr)) return null;
-    if (substr($nr, 0, 1) === '0') $nr = '4' . $nr; // Ro
-    if (strlen($nr) === 10 && $nr[0] === '7') $nr = '4' . $nr;
-    return 'https://wa.me/' . $nr;
-}
-
-/**
- * Link WhatsApp cu mesaj predefinit (pentru aniversări etc.)
- * @param string $telefon Număr telefon
- * @param string $mesaj Text predefinit (va fi url-encodat)
- * @return string|null URL sau null dacă lipsește telefonul
- */
-function contacte_whatsapp_url_cu_mesaj($telefon, $mesaj = '') {
-    $url = contacte_whatsapp_url($telefon);
-    if (!$url) return null;
-    if ($mesaj !== '') {
-        $url .= '?text=' . rawurlencode($mesaj);
-    }
-    return $url;
-}
-
-/**
- * Mapare standard coloane Excel -> câmpuri contacte
+ * Mapare standard coloane Excel -> campuri contacte (compatibilitate)
  */
 function contacte_mapare_coloane() {
-    return [
-        'Nume' => 'nume',
-        'Prenume' => 'prenume',
-        'Companie' => 'companie',
-        'Compania' => 'companie',
-        'Tip contact' => 'tip_contact',
-        'Telefon' => 'telefon',
-        'Telefon mobil' => 'telefon',
-        'Telefon personal' => 'telefon_personal',
-        'Email' => 'email',
-        'Email personal' => 'email_personal',
-        'Website' => 'website',
-        'Data nasterii' => 'data_nasterii',
-        'Data nașterii' => 'data_nasterii',
-        'Notite' => 'notite',
-        'Referinta' => 'referinta_contact',
-        'Contact comun' => 'referinta_contact',
-    ];
+    return contacte_mapare_import();
 }
 
 /**
- * Importă contacte din rânduri mapate
- * @param array $headers Headere din Excel (pt. a accesa row[$headers[$idx]])
- * @param array $mapare index => db_field
+ * Importa contacte din randuri mapate (pastrat aici — folosit de contacte-import.php)
  */
 function importa_contacte(PDO $pdo, array $headers, array $rows, array $mapare) {
     require_once __DIR__ . '/log_helper.php';
-    ensure_contacte_table($pdo);
-    $tipuri_valide = array_keys(CONTACTE_TIPURI);
+    contacte_ensure_table($pdo);
+    $tipuri_valide = array_keys(contacte_tipuri());
     $importati = 0;
     $eroare = [];
     foreach ($rows as $idx => $row) {
