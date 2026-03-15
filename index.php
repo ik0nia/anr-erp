@@ -362,13 +362,13 @@ $interactiuni_v2_azi = registru_v2_interactiuni_azi($pdo);
                                 <p class="text-sm font-medium text-slate-900 dark:text-white truncate"><?php echo htmlspecialchars($ld['nume_document']); ?></p>
                             </div>
                             <span class="flex items-center gap-2 flex-shrink-0">
-                                <a href="descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>&amp;print=1" target="_blank" rel="noopener noreferrer"
+                                <a href="util/descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>&amp;print=1" target="_blank" rel="noopener noreferrer"
                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-slate-500 transition"
                                    aria-label="Print <?php echo htmlspecialchars($ld['nume_document']); ?>">
                                     <i data-lucide="printer" class="w-4 h-4" aria-hidden="true"></i>
                                     <span>Print</span>
                                 </a>
-                                <a href="descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>"
+                                <a href="util/descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>"
                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-blue-500 transition"
                                    aria-label="Descarcă <?php echo htmlspecialchars($ld['nume_document']); ?>">
                                     <i data-lucide="download" class="w-4 h-4" aria-hidden="true"></i>
@@ -665,7 +665,7 @@ function toggleTaskActivV2() {
 // Actualizare automată contoare Registru Interacțiuni v2
 (function() {
     function actualizeazaContoareV2() {
-        fetch('api-registru-v2-stats.php')
+        fetch('/api/registru-v2-stats')
             .then(response => response.json())
             .then(data => {
                 if (data.apel !== undefined) {

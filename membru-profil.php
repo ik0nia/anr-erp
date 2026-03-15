@@ -452,14 +452,14 @@ if ($membru) {
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <div class="flex flex-wrap gap-2">
-                                    <a href="incasari-chitanta-print.php?id=<?php echo (int)$inc['id']; ?>"
+                                    <a href="util/incasari-chitanta-print.php?id=<?php echo (int)$inc['id']; ?>"
                                        target="_blank"
                                        class="inline-flex items-center gap-1 px-2 py-1.5 rounded border border-amber-500 dark:border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30 focus:outline-none focus:ring-2 focus:ring-amber-500"
                                        aria-label="Vizualizează chitanța <?php echo htmlspecialchars(($inc['seria_chitanta'] ?? '') . ' ' . ($inc['nr_chitanta'] ?? '')); ?>">
                                         <i data-lucide="eye" class="w-4 h-4" aria-hidden="true"></i>
                                         Vizualizează
                                     </a>
-                                    <a href="incasari-chitanta-pdf.php?id=<?php echo (int)$inc['id']; ?>"
+                                    <a href="util/incasari-chitanta-pdf.php?id=<?php echo (int)$inc['id']; ?>"
                                        class="inline-flex items-center gap-1 px-2 py-1.5 rounded border border-slate-400 dark:border-gray-500 text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
                                        aria-label="Descarcă PDF chitanța <?php echo htmlspecialchars(($inc['seria_chitanta'] ?? '') . ' ' . ($inc['nr_chitanta'] ?? '')); ?>">
                                         <i data-lucide="file-down" class="w-4 h-4" aria-hidden="true"></i>

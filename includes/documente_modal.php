@@ -183,8 +183,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
         var csrfEl = document.getElementById('doc-csrf-token');
         if (csrfEl && csrfEl.value) fd.append('_csrf_token', csrfEl.value);
         fd.append('include_data_generare', document.getElementById('doc-include-data-generare').checked ? '1' : '0');
-        var apiBase = (modal.getAttribute('data-document-api-base') || '').replace(/\/+$/, '');
-        var urlGenereaza = (apiBase ? apiBase + '/' : '') + 'genereaza-document.php';
+        var urlGenereaza = '/api/genereaza-document';
         fetch(urlGenereaza, { method: 'POST', body: fd, credentials: 'same-origin' })
             .then(function(r) {
                 return r.text().then(function(text) {
@@ -223,7 +222,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                         labelPdfWrap.style.opacity = pdfAvailable ? '1' : '0.6';
                     }
                     rezultatMsg.textContent = 'Document generat. Nr. înregistrare: ' + (data.nr_inregistrare || '-');
-                    linkDocx.href = 'descarca-document.php?token=' + encodeURIComponent(data.docx_token) + '&type=docx';
+                    linkDocx.href = 'util/descarca-document.php?token=' + encodeURIComponent(data.docx_token) + '&type=docx';
                     linkDocx.classList.remove('hidden');
                     etapa2.classList.remove('hidden');
                 } else {
@@ -267,7 +266,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                 logFd.append('template_id', currentTemplateId);
                 logFd.append('template_nume', currentTemplateNume);
                 logFd.append('membru_nume', currentMembruNume || '');
-                fetch('log-print-document.php', { method: 'POST', body: logFd })
+                fetch('/api/log-print-document', { method: 'POST', body: logFd })
                     .catch(function() { /* Ignoră erorile de logging */ });
             }
             var printUrl = linkDocx.href + (linkDocx.href.indexOf('?') !== -1 ? '&' : '?') + 'inline=1';
@@ -283,7 +282,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
         fd.append('membru_id', document.getElementById('email-membru-id').value);
         fd.append('attach_docx', document.getElementById('email-attach-docx').checked ? '1' : '0');
         fd.append('attach_pdf', document.getElementById('email-attach-pdf').checked ? '1' : '0');
-        fetch('trimite-email-document.php', { method: 'POST', body: fd })
+        fetch('/api/trimite-email-document', { method: 'POST', body: fd })
             .then(r => r.json())
             .then(function(data) {
                 if (data.success) {

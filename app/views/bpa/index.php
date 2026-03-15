@@ -303,9 +303,9 @@
                                 <span class="text-slate-900 dark:text-gray-100"><?php echo htmlspecialchars($t['nr_tabel']); ?> – <?php echo date(DATE_FORMAT, strtotime($t['data_tabel'])); ?> (<?php echo number_format($t['cantitate_totala'], 1); ?> kg)</span>
                                 <span class="flex gap-1">
                                     <a href="/ajutoare-bpa?edit=<?php echo (int)$t['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline" aria-label="Editează tabel <?php echo htmlspecialchars($t['nr_tabel']); ?>">Editează</a>
-                                    <a href="print-bpa-tabel.php?id=<?php echo (int)$t['id']; ?>" target="_blank" rel="noopener noreferrer" class="text-slate-600 dark:text-gray-400 hover:underline">Print</a>
-                                    <a href="bpa-tabel-docx.php?id=<?php echo (int)$t['id']; ?>" class="text-slate-600 dark:text-gray-400 hover:underline">DOCX</a>
-                                    <a href="bpa-tabel-pdf.php?id=<?php echo (int)$t['id']; ?>" target="_blank" rel="noopener noreferrer" class="text-slate-600 dark:text-gray-400 hover:underline">PDF</a>
+                                    <a href="util/print-bpa-tabel.php?id=<?php echo (int)$t['id']; ?>" target="_blank" rel="noopener noreferrer" class="text-slate-600 dark:text-gray-400 hover:underline">Print</a>
+                                    <a href="util/bpa-tabel-docx.php?id=<?php echo (int)$t['id']; ?>" class="text-slate-600 dark:text-gray-400 hover:underline">DOCX</a>
+                                    <a href="util/bpa-tabel-pdf.php?id=<?php echo (int)$t['id']; ?>" target="_blank" rel="noopener noreferrer" class="text-slate-600 dark:text-gray-400 hover:underline">PDF</a>
                                 </span>
                             </li>
                             <?php endforeach; ?>
@@ -708,7 +708,7 @@ document.addEventListener('DOMContentLoaded', function(){
             var fd = new FormData();
             if (token) fd.append('_csrf_token', token.value);
             fd.append('creaza_nr_registratura_bpa', '1');
-            fetch('api-bpa-nr-registratura.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+            fetch('/api/bpa-nr-registratura', { method: 'POST', body: fd, credentials: 'same-origin' })
                 .then(function(r){ return r.json(); })
                 .then(function(data){
                     if (data && data.nr_inregistrare !== undefined) {

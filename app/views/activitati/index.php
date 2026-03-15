@@ -232,9 +232,9 @@
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($lp['created_by'] ?? '-'); ?></td>
                                     <td class="py-2 flex gap-1">
                                         <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Modifică lista">Modifică</a>
-                                        <a href="lista-prezenta-print.php?id=<?php echo $lp['id']; ?>" target="_blank" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Printează lista">Print</a>
-                                        <a href="lista-prezenta-pdf.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă PDF">PDF</a>
-                                        <a href="lista-prezenta-docx.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă DOCX cu antet asociație">DOCX</a>
+                                        <a href="util/lista-prezenta-print.php?id=<?php echo $lp['id']; ?>" target="_blank" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Printează lista">Print</a>
+                                        <a href="util/lista-prezenta-pdf.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă PDF">PDF</a>
+                                        <a href="util/lista-prezenta-docx.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă DOCX cu antet asociație">DOCX</a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

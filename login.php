@@ -7,14 +7,14 @@ require_once 'includes/auth_helper.php';
 require_once 'includes/log_helper.php';
 
 $eroare = '';
-$redirect = trim($_POST['redirect'] ?? $_GET['redirect'] ?? 'index.php');
+$redirect = trim($_POST['redirect'] ?? $_GET['redirect'] ?? '/dashboard');
 if ($redirect === '' || strpos($redirect, '//') !== false) {
-    $redirect = 'index.php';
+    $redirect = '/dashboard';
 }
 
 // Dacă e deja autentificat, redirecționează
 if (!empty($_SESSION['user_id']) && !empty($_SESSION['utilizator'])) {
-    header('Location: ' . (strpos($redirect, '.php') !== false ? $redirect : 'index.php'));
+    header('Location: ' . ($redirect !== '' ? $redirect : '/dashboard'));
     exit;
 }
 
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autentificare - <?php echo htmlspecialchars(PLATFORM_NAME); ?></title>
-    <link href="css/tailwind.css" rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <?php endif; ?>
 
-            <form method="post" action="login.php" class="space-y-4" aria-label="Formular autentificare">
+            <form method="post" action="/login" class="space-y-4" aria-label="Formular autentificare">
                 <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect); ?>">
                 <div>
                     <label for="username" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume utilizator <span class="text-red-600" aria-hidden="true">*</span></label>
@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <button type="submit" class="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Autentificare">
                         Autentificare
                     </button>
-                    <a href="recuperare-parola.php?redirect=<?php echo urlencode($redirect); ?>" 
+                    <a href="/recuperare-parola?redirect=<?php echo urlencode($redirect); ?>" 
                        class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500 text-center"
                        aria-label="Recuperare parolă">
                         Recuperare parolă

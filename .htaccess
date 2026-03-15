@@ -8,8 +8,12 @@ RewriteCond %{REQUEST_FILENAME} -f
 RewriteCond %{REQUEST_URI} \.(txt|ico|png|jpg|gif|svg|woff2?|ttf|eot|css|js|map)$
 RewriteRule ^ - [L]
 
+# --- Utility files in util/ subdirectory: serve directly ---
+RewriteRule ^util/ - [L]
+
 # --- Files that must be served directly (APIs, utilities, cron, print/export) ---
-RewriteCond %{REQUEST_URI} ^/(api-|descarca-|export_|print-|bpa-tabel-|lista-prezenta-(pdf|docx|print)|incasari-|genereaza-document|trimite-email|log-print|cron_|aniversari-notificare|backup_|setup|install-auth|contacte-form-fields|contacte-import|import-membri-csv|generare-documente|membri_processing|membri_form|membru-profil-form|newsletter-view|registratura-sumar|actualizezcsv|config|header|footer|sidebar)
+RewriteRule ^cron/ - [L]
+RewriteCond %{REQUEST_URI} ^/(api-|incasari-|genereaza-document|trimite-email|log-print|setup|install-auth|contacte-form-fields|contacte-import|import-membri-csv|generare-documente|membri_processing|membri_form|membru-profil-form|newsletter-view|registratura-sumar|actualizezcsv|config|header|footer|sidebar)
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 

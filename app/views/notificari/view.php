@@ -59,7 +59,7 @@
             <?php if (!empty($notif['atasament_nume']) && !empty($notif['atasament_path']) && is_readable($notif['atasament_path'])): ?>
             <div class="mb-4">
                 <p class="text-sm font-medium text-slate-600 dark:text-gray-400 mb-1">Atașament</p>
-                <a href="descarca-notificare-atasament.php?id=<?php echo (int)$id; ?>" class="inline-flex items-center text-amber-600 dark:text-amber-400 hover:underline" aria-label="Descarcă <?php echo htmlspecialchars($notif['atasament_nume']); ?>">
+                <a href="util/descarca-notificare-atasament.php?id=<?php echo (int)$id; ?>" class="inline-flex items-center text-amber-600 dark:text-amber-400 hover:underline" aria-label="Descarcă <?php echo htmlspecialchars($notif['atasament_nume']); ?>">
                     <i data-lucide="download" class="w-4 h-4 mr-2" aria-hidden="true"></i>
                     <?php echo htmlspecialchars($notif['atasament_nume']); ?>
                 </a>

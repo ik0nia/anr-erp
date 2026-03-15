@@ -144,7 +144,7 @@
         if (['donatie','taxa_participare','alte'].indexOf(tipInput.value) >= 0 && s <= 0) { alert('Introduceți suma.'); return; }
         var fd = new FormData(form);
         fd.set('suma', s);
-        fetch('incasari-salveaza.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+        fetch('/api/incasari-salveaza', { method: 'POST', body: fd, credentials: 'same-origin' })
             .then(function(r){ return r.json(); })
             .then(function(data){
                 if (data.ok && cb) cb(data);
@@ -155,7 +155,7 @@
 
     btnChitanta.addEventListener('click', function(){
         salveazaIncasare(function(data){
-            window.open('incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
+            window.open('util/incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
             dialog.close();
         });
     });

@@ -28,11 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_lista'])) {
         $lista_id = $result['lista_id'];
         $act = $_POST['actiune_dupa'] ?? '';
         if ($act === 'print') {
-            header('Location: lista-prezenta-print.php?id=' . $lista_id);
+            header('Location: util/lista-prezenta-print.php?id=' . $lista_id);
             exit;
         }
         if ($act === 'pdf') {
-            header('Location: lista-prezenta-pdf.php?id=' . $lista_id);
+            header('Location: util/lista-prezenta-pdf.php?id=' . $lista_id);
             exit;
         }
         header('Location: /activitati?succes_lista=1');

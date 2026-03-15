@@ -9,8 +9,8 @@
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Modificare listă: <?php echo htmlspecialchars($lista['tip_titlu']); ?></h1>
         <div class="flex gap-2">
-            <a href="lista-prezenta-print.php?id=<?php echo $id; ?>" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Print</a>
-            <a href="lista-prezenta-pdf.php?id=<?php echo $id; ?>" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">Descarcă PDF</a>
+            <a href="util/lista-prezenta-print.php?id=<?php echo $id; ?>" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Print</a>
+            <a href="util/lista-prezenta-pdf.php?id=<?php echo $id; ?>" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">Descarcă PDF</a>
             <a href="/activitati" class="px-4 py-2 border rounded-lg text-sm">Înapoi</a>
         </div>
     </header>

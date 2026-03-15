@@ -58,10 +58,16 @@ $routes = [
     '/schimba-parola'          => ['type' => 'legacy', 'script' => 'schimba-parola.php',        'file' => 'schimba-parola.php'],
 
     // API endpoints
-    '/api/cauta-membri'        => ['type' => 'legacy', 'script' => 'api-cauta-membri.php',      'file' => 'api-cauta-membri.php'],
-    '/api/cauta-voluntari'     => ['type' => 'legacy', 'script' => 'api-cauta-voluntari.php',   'file' => 'api-cauta-voluntari.php'],
-    '/api/bpa-nr-registratura' => ['type' => 'legacy', 'script' => 'api-bpa-nr-registratura.php','file' => 'api-bpa-nr-registratura.php'],
-    '/api/registru-v2-stats'   => ['type' => 'legacy', 'script' => 'api-registru-v2-stats.php', 'file' => 'api-registru-v2-stats.php'],
+    '/api/cauta-membri'            => ['type' => 'legacy', 'script' => 'api-cauta-membri.php',            'file' => 'api/cauta-membri.php'],
+    '/api/cauta-voluntari'         => ['type' => 'legacy', 'script' => 'api-cauta-voluntari.php',         'file' => 'api/cauta-voluntari.php'],
+    '/api/bpa-nr-registratura'     => ['type' => 'legacy', 'script' => 'api-bpa-nr-registratura.php',    'file' => 'api/bpa-nr-registratura.php'],
+    '/api/registru-v2-stats'       => ['type' => 'legacy', 'script' => 'api-registru-v2-stats.php',      'file' => 'api/registru-v2-stats.php'],
+    '/api/incasari-cauta-membri'   => ['type' => 'legacy', 'script' => 'incasari-cauta-membri.php',      'file' => 'api/incasari-cauta-membri.php'],
+    '/api/incasari-salveaza'       => ['type' => 'legacy', 'script' => 'incasari-salveaza.php',           'file' => 'api/incasari-salveaza.php'],
+    '/api/incasari-dashboard-salveaza' => ['type' => 'legacy', 'script' => 'incasari-dashboard-salveaza.php', 'file' => 'api/incasari-dashboard-salveaza.php'],
+    '/api/genereaza-document'      => ['type' => 'legacy', 'script' => 'genereaza-document.php',          'file' => 'api/genereaza-document.php'],
+    '/api/trimite-email-document'  => ['type' => 'legacy', 'script' => 'trimite-email-document.php',      'file' => 'api/trimite-email-document.php'],
+    '/api/log-print-document'      => ['type' => 'legacy', 'script' => 'log-print-document.php',          'file' => 'api/log-print-document.php'],
 ];
 
 // --- Route matching ---

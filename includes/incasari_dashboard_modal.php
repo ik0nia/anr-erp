@@ -181,12 +181,12 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
         var fd = new FormData(form);
         fd.set('tip_form', 'donatie');
         fd.set('valoare', valoareInput.value.replace(',', '.'));
-        fetch('incasari-dashboard-salveaza.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+        fetch('/api/incasari-dashboard-salveaza', { method: 'POST', body: fd, credentials: 'same-origin' })
             .then(function(r){ return r.json(); })
             .then(function(data){
                 if (data.ok) {
                     dialog.close();
-                    window.open('incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
+                    window.open('util/incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
                     form.reset();
                     document.getElementById('inc-dash-data').value = new Date().toISOString().slice(0,10);
                     reprezentandInput.value = 'Donație';

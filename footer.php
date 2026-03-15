@@ -1,8 +1,1 @@
-    <script>
-        // Inițializare Lucide icons după încărcare DOM
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    </script>
-</body>
-</html>
+<?php require __DIR__ . '/app/views/layout/footer.php';

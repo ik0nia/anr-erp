@@ -801,8 +801,8 @@ if (isset($_GET['succes_email'])) {
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 text-right"><?php echo number_format((float)$don['suma'], 2, ',', '.'); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 text-center"><?php echo htmlspecialchars($seria); ?> / <?php echo htmlspecialchars($nr); ?></td>
                             <td class="px-4 py-3 text-right">
-                                <a href="incasari-chitanta-print.php?id=<?php echo (int)$don['id']; ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Tipărește chitanța <?php echo htmlspecialchars($seria . ' ' . $nr); ?>">Tipărește</a>
-                                <a href="incasari-chitanta-pdf.php?id=<?php echo (int)$don['id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-slate-500" aria-label="Descarcă PDF chitanța <?php echo htmlspecialchars($seria . ' ' . $nr); ?>">PDF</a>
+                                <a href="util/incasari-chitanta-print.php?id=<?php echo (int)$don['id']; ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Tipărește chitanța <?php echo htmlspecialchars($seria . ' ' . $nr); ?>">Tipărește</a>
+                                <a href="util/incasari-chitanta-pdf.php?id=<?php echo (int)$don['id']; ?>" class="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-slate-500" aria-label="Descarcă PDF chitanța <?php echo htmlspecialchars($seria . ' ' . $nr); ?>">PDF</a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -1001,10 +1001,10 @@ if (isset($_GET['succes_email'])) {
                     var q = cautare.value.trim();
                     if (q.length < 2) { rezultate.classList.add('hidden'); return; }
                     timer = setTimeout(function(){
-                        fetch('api-cauta-membri.php?q='+encodeURIComponent(q)).then(function(r){ return r.json(); }).then(function(d){ afiseazaRezultate(d.membri||[]); });
+                        fetch('/api/cauta-membri?q='+encodeURIComponent(q)).then(function(r){ return r.json(); }).then(function(d){ afiseazaRezultate(d.membri||[]); });
                     }, 200);
                 });
-                function executaCautareScutire() { var q = cautare.value.trim(); if (q.length < 2) return; fetch('api-cauta-membri.php?q='+encodeURIComponent(q)).then(function(r){ return r.json(); }).then(function(d){ afiseazaRezultate(d.membri||[]); }); }
+                function executaCautareScutire() { var q = cautare.value.trim(); if (q.length < 2) return; fetch('/api/cauta-membri?q='+encodeURIComponent(q)).then(function(r){ return r.json(); }).then(function(d){ afiseazaRezultate(d.membri||[]); }); }
                 if (btnSelect) btnSelect.addEventListener('click', executaCautareScutire);
                 cautare.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); executaCautareScutire(); } });
             }
@@ -1480,7 +1480,7 @@ if (isset($_GET['succes_email'])) {
                     folosește modulul dedicat de import. Aici poți și exporta lista actuală de membri.
                 </p>
                 <div class="flex flex-wrap gap-3">
-                    <a href="export_membri.php" 
+                    <a href="util/export_membri.php"
                        class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition">
                         <i data-lucide="download" class="mr-2 w-4 h-4" aria-hidden="true"></i>
                         Export membri în CSV
