@@ -274,30 +274,30 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     <button type="button"
                                             data-action="generare-document"
                                             data-membru-id="<?php echo $m['id']; ?>"
-                                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-400 dark:border-blue-500 bg-blue-100 dark:bg-blue-800/70 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-700 font-medium"
+                                            class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-blue-400 dark:border-blue-500 bg-blue-100 dark:bg-blue-800/70 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-700 font-medium"
                                             aria-label="Genereaza document pentru <?php echo htmlspecialchars($m['nume'] . ' ' . $m['prenume']); ?>">
-                                        <i data-lucide="file-text" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
-                                        <span>Genereaza Document</span>
+                                        <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
+                                        <span class="hidden xl:inline">Genereaza Document</span>
                                     </button>
                                     <?php
                                     $cot_achitata_incasari = in_array($m['id'], $membri_cotizatie_achitata_an_curent) || in_array($m['id'], $membri_scutiti_cotizatie_ids);
                                     $val_cot = $valori_cotizatie_an_curent[$m['hgrad'] ?? 'Fara handicap'] ?? 0;
                                     if (in_array($m['id'], $membri_scutiti_cotizatie_ids)): ?>
                                     <a href="/setari?tab=cotizatii"
-                                       class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-400 dark:border-gray-500 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium"
+                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-slate-400 dark:border-gray-500 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium"
                                        aria-label="Scutit de cotizatie - vezi detalii">
-                                        <i data-lucide="shield-check" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
-                                        <span>Scutit de cotizatie</span>
+                                        <i data-lucide="shield-check" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
+                                        <span class="hidden xl:inline">Scutit de cotizatie</span>
                                     </a>
                                     <?php else: ?>
                                     <button type="button"
-                                            class="btn-deschide-incasari inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-purple-400 dark:border-purple-500 bg-purple-100 dark:bg-purple-800/70 text-purple-900 dark:text-purple-100 hover:bg-purple-200 dark:hover:bg-purple-700 font-medium"
+                                            class="btn-deschide-incasari inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-purple-400 dark:border-purple-500 bg-purple-100 dark:bg-purple-800/70 text-purple-900 dark:text-purple-100 hover:bg-purple-200 dark:hover:bg-purple-700 font-medium"
                                             data-membru-id="<?php echo (int)$m['id']; ?>"
                                             data-valoare-cot="<?php echo number_format($val_cot, 2, '.', ''); ?>"
                                             data-cot-achitata="<?php echo $cot_achitata_incasari ? '1' : '0'; ?>"
                                             aria-label="Incaseaza">
-                                        <i data-lucide="dollar-sign" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
-                                        <span>Incaseaza</span>
+                                        <i data-lucide="dollar-sign" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
+                                        <span class="hidden xl:inline">Incaseaza</span>
                                     </button>
                                     <?php endif; ?>
                                     <?php
@@ -312,10 +312,10 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                         }
                                     ?>
                                     <a href="<?php echo $mailto; ?>"
-                                       class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-400 dark:border-emerald-500 bg-emerald-100 dark:bg-emerald-800/70 text-emerald-900 dark:text-emerald-100 hover:bg-emerald-200 dark:hover:bg-emerald-700 font-medium"
+                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-emerald-400 dark:border-emerald-500 bg-emerald-100 dark:bg-emerald-800/70 text-emerald-900 dark:text-emerald-100 hover:bg-emerald-200 dark:hover:bg-emerald-700 font-medium"
                                        aria-label="Trimite email">
-                                        <i data-lucide="mail" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
-                                        <span>Email</span>
+                                        <i data-lucide="mail" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
+                                        <span class="hidden xl:inline">Email</span>
                                     </a>
                                     <?php endif; ?>
                                     <?php if (!empty($m['telefonnev'])):
@@ -325,10 +325,10 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     <a href="<?php echo htmlspecialchars($wa_url); ?>"
                                        target="_blank"
                                        rel="noopener noreferrer"
-                                       class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-green-400 dark:border-green-500 bg-green-100 dark:bg-green-800/70 text-green-900 dark:text-green-100 hover:bg-green-200 dark:hover:bg-green-700 font-medium"
+                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-green-400 dark:border-green-500 bg-green-100 dark:bg-green-800/70 text-green-900 dark:text-green-100 hover:bg-green-200 dark:hover:bg-green-700 font-medium"
                                        aria-label="Mesaj WhatsApp">
-                                        <i data-lucide="message-circle" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
-                                        <span>WhatsApp</span>
+                                        <i data-lucide="message-circle" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
+                                        <span class="hidden xl:inline">WhatsApp</span>
                                     </a>
                                     <?php endif; ?>
                                 </div>
