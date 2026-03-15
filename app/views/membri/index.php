@@ -234,7 +234,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                             $nume_complet = trim($m['nume'] . ' ' . $m['prenume']);
                             $profil_url = '/membru-profil?id=' . $m_id;
                         ?>
-                        <tr class="hover:bg-slate-50/50 dark:hover:bg-gray-750 dark:hover:bg-gray-700/40 membri-table-row cursor-pointer transition-colors"
+                        <tr class="hover:bg-slate-100/60 dark:hover:bg-gray-600/50 membri-table-row cursor-pointer transition-colors"
                             onclick="window.location.href='<?php echo $profil_url; ?>'"
                             role="link"
                             aria-label="Deschide profilul <?php echo htmlspecialchars($nume_complet); ?>">
