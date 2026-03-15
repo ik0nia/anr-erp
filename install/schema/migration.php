@@ -915,5 +915,26 @@ function get_migrations(): array {
             ],
         ],
 
+        // =====================================================================
+        // VERSION 5: Attachment history for members (certificates, ID cards, etc.)
+        // =====================================================================
+        5 => [
+            'description' => 'Create membri_atasamente table for attachment history',
+            'sql' => [
+                "CREATE TABLE IF NOT EXISTS membri_atasamente (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    membru_id INT NOT NULL,
+                    tip ENUM('certificat_handicap', 'act_identitate', 'alt_document') NOT NULL DEFAULT 'certificat_handicap',
+                    fisier VARCHAR(500) NOT NULL,
+                    nota TEXT DEFAULT NULL,
+                    uploaded_by VARCHAR(100) DEFAULT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_membru (membru_id),
+                    INDEX idx_tip (tip),
+                    FOREIGN KEY (membru_id) REFERENCES membri(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            ],
+        ],
+
     ];
 }

@@ -219,37 +219,30 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                             </td>
                         </tr>
                         <?php else: ?>
-                        <?php foreach ($membri as $m): ?>
-                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-700 membri-table-row">
+                        <?php foreach ($membri as $m):
+                            $m_id = (int)($m['id'] ?? 0);
+                            $dosarnr = htmlspecialchars($m['dosarnr'] ?? '-');
+                            $status_afisat = $m['status_dosar'] ?? 'Activ';
+                            $status_colors_dosar = [
+                                'Activ' => 'text-emerald-600 dark:text-emerald-400',
+                                'Expirat' => 'text-orange-500 dark:text-orange-400',
+                                'Suspendat' => 'text-yellow-600 dark:text-yellow-400',
+                                'Retras' => 'text-slate-500 dark:text-gray-400',
+                                'Decedat' => 'text-red-600 dark:text-red-400'
+                            ];
+                            $dosar_color = $status_colors_dosar[$status_afisat] ?? 'text-slate-600 dark:text-gray-400';
+                            $nume_complet = trim($m['nume'] . ' ' . $m['prenume']);
+                            $profil_url = '/membru-profil?id=' . $m_id;
+                        ?>
+                        <tr class="hover:bg-amber-50 dark:hover:bg-gray-700/70 membri-table-row cursor-pointer transition-colors"
+                            onclick="window.location.href='<?php echo $profil_url; ?>'"
+                            role="link"
+                            aria-label="Deschide profilul <?php echo htmlspecialchars($nume_complet); ?>">
                             <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <?php
-                                $dosarnr = htmlspecialchars($m['dosarnr'] ?? '-');
-                                $status_afisat = $m['status_dosar'] ?? 'Activ';
-                                $status_colors = [
-                                    'Activ' => 'text-green-600 dark:text-green-400',
-                                    'Expirat' => 'text-orange-600 dark:text-orange-400',
-                                    'Suspendat' => 'text-yellow-600 dark:text-yellow-400',
-                                    'Retras' => 'text-slate-600 dark:text-gray-400',
-                                    'Decedat' => 'text-red-600 dark:text-red-400'
-                                ];
-                                $color_class = $status_colors[$status_afisat] ?? 'text-slate-600 dark:text-gray-400';
-                                ?>
-                                <a href="/membru-profil?id=<?php echo $m['id']; ?>"
-                                   class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 hover:underline font-medium">
-                                    <?php echo $dosarnr; ?> - <span class="<?php echo $color_class; ?>"><?php echo htmlspecialchars($status_afisat); ?></span>
-                                </a>
+                                <span class="font-bold <?php echo $dosar_color; ?>"><?php echo $dosarnr; ?></span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <?php $m_id = (int)($m['id'] ?? 0); $nume_complet = trim($m['nume'] . ' ' . $m['prenume']); ?>
-                                <?php if ($m_id > 0): ?>
-                                <a href="/membru-profil?id=<?php echo $m_id; ?>"
-                                   class="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300 hover:underline focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 rounded"
-                                   aria-label="Vezi profilul lui <?php echo htmlspecialchars($nume_complet); ?>">
-                                    <?php echo htmlspecialchars($nume_complet); ?>
-                                </a>
-                                <?php else: ?>
-                                <span><?php echo htmlspecialchars($nume_complet); ?></span>
-                                <?php endif; ?>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
+                                <?php echo htmlspecialchars($nume_complet); ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-gray-300">
                                 <?php echo $m['datanastere'] ? date(DATE_FORMAT, strtotime($m['datanastere'])) : '-'; ?>
@@ -277,14 +270,8 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php echo render_alerts_badge($m, $m['id'], $pdo); ?>
                             </td>
-                            <td class="px-6 py-4 text-sm font-medium">
+                            <td class="px-6 py-4 text-sm font-medium" onclick="event.stopPropagation()">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <a href="/membru-profil?id=<?php echo (int)($m['id'] ?? 0); ?>"
-                                       class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-400 dark:border-amber-500 bg-amber-100 dark:bg-amber-800/70 text-amber-900 dark:text-amber-100 hover:bg-amber-200 dark:hover:bg-amber-700 font-medium"
-                                       aria-label="Editeaza membru">
-                                        <i data-lucide="edit" class="w-4 h-4 shrink-0" aria-hidden="true"></i>
-                                        <span>Editeaza</span>
-                                    </a>
                                     <button type="button"
                                             data-action="generare-document"
                                             data-membru-id="<?php echo $m['id']; ?>"

@@ -864,6 +864,140 @@ function membri_calculeaza_varsta($data_nastere) {
     return $today->diff($birth)->y;
 }
 
+// =========================================================================
+// ATASAMENTE (attachment history)
+// =========================================================================
+
+/**
+ * Lista atasamente pentru un membru, optional filtrate dupa tip.
+ *
+ * @return array Lista de atasamente
+ */
+function membri_atasamente_lista(PDO $pdo, int $membru_id, string $tip = null): array {
+    if ($membru_id <= 0) return [];
+
+    try {
+        $sql = "SELECT * FROM membri_atasamente WHERE membru_id = ?";
+        $params = [$membru_id];
+        if ($tip !== null) {
+            $sql .= " AND tip = ?";
+            $params[] = $tip;
+        }
+        $sql .= " ORDER BY created_at DESC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Adauga un atasament pentru un membru.
+ *
+ * @param PDO $pdo
+ * @param int $membru_id
+ * @param string $tip  certificat_handicap|act_identitate|alt_document
+ * @param array $file  $_FILES element
+ * @param string $nota  Nota/detalii
+ * @param string $uploaded_by  Utilizatorul care a incarcat
+ * @return array ['success' => bool, 'error' => string|null, 'id' => int|null]
+ */
+function membri_atasament_adauga(PDO $pdo, int $membru_id, string $tip, array $file, string $nota = '', string $uploaded_by = 'Sistem'): array {
+    if ($membru_id <= 0) {
+        return ['success' => false, 'error' => 'ID membru invalid.', 'id' => null];
+    }
+
+    $tipuri_valide = ['certificat_handicap', 'act_identitate', 'alt_document'];
+    if (!in_array($tip, $tipuri_valide)) {
+        return ['success' => false, 'error' => 'Tip atasament invalid.', 'id' => null];
+    }
+
+    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'Eroare la incarcarea fisierului.', 'id' => null];
+    }
+
+    // Max 5MB
+    if ($file['size'] > 5 * 1024 * 1024) {
+        return ['success' => false, 'error' => 'Fisierul depaseste limita de 5 MB.', 'id' => null];
+    }
+
+    // Validate extension
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $allowed_ext = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+    if (!in_array($ext, $allowed_ext)) {
+        return ['success' => false, 'error' => 'Tip de fisier nepermis. Permise: PDF, JPG, JPEG, PNG, DOC, DOCX.', 'id' => null];
+    }
+
+    // Create directory if not exists
+    $upload_dir = APP_ROOT . '/uploads/membri_atasamente/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+
+    // Generate filename: {membru_id}_{tip}_{timestamp}_{original_name}
+    $original_name = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($file['name']));
+    $filename = $membru_id . '_' . $tip . '_' . time() . '_' . $original_name;
+    $destination = $upload_dir . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $destination)) {
+        return ['success' => false, 'error' => 'Eroare la salvarea fisierului pe disc.', 'id' => null];
+    }
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO membri_atasamente (membru_id, tip, fisier, nota, uploaded_by) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$membru_id, $tip, $filename, $nota ?: null, $uploaded_by]);
+        $id = (int)$pdo->lastInsertId();
+
+        // Log activity
+        $tip_label = ['certificat_handicap' => 'Certificat Handicap', 'act_identitate' => 'Act Identitate', 'alt_document' => 'Alt Document'][$tip] ?? $tip;
+        log_activitate($pdo, "membri: Atasament incarcat ({$tip_label}): {$filename}", $uploaded_by, $membru_id);
+
+        return ['success' => true, 'error' => null, 'id' => $id];
+    } catch (PDOException $e) {
+        // Clean up uploaded file on DB error
+        if (file_exists($destination)) {
+            unlink($destination);
+        }
+        return ['success' => false, 'error' => 'Eroare la salvarea in baza de date: ' . $e->getMessage(), 'id' => null];
+    }
+}
+
+/**
+ * Sterge un atasament dupa ID.
+ *
+ * @return bool True daca stergerea a reusit
+ */
+function membri_atasament_sterge(PDO $pdo, int $id): bool {
+    if ($id <= 0) return false;
+
+    try {
+        // Get file info before deleting
+        $stmt = $pdo->prepare("SELECT * FROM membri_atasamente WHERE id = ?");
+        $stmt->execute([$id]);
+        $atasament = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$atasament) return false;
+
+        // Delete from DB
+        $stmt = $pdo->prepare("DELETE FROM membri_atasamente WHERE id = ?");
+        $stmt->execute([$id]);
+
+        // Delete file from disk
+        $filepath = APP_ROOT . '/uploads/membri_atasamente/' . $atasament['fisier'];
+        if (file_exists($filepath)) {
+            unlink($filepath);
+        }
+
+        // Log activity
+        $tip_label = ['certificat_handicap' => 'Certificat Handicap', 'act_identitate' => 'Act Identitate', 'alt_document' => 'Alt Document'][$atasament['tip']] ?? $atasament['tip'];
+        log_activitate($pdo, "membri: Atasament sters ({$tip_label}): {$atasament['fisier']}", null, (int)$atasament['membru_id']);
+
+        return true;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
 /**
  * Genereaza link de sortare pentru tabel.
  */
