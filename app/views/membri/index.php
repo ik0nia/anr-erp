@@ -321,6 +321,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                             data-membru-id="<?php echo (int)$m['id']; ?>"
                                             data-valoare-cot="<?php echo number_format($val_cot, 2, '.', ''); ?>"
                                             data-cot-achitata="<?php echo $cot_achitata_incasari ? '1' : '0'; ?>"
+                                            onclick="event.stopPropagation(); window.deschideIncasari && window.deschideIncasari(this);"
                                             aria-label="Incaseaza">
                                         <i data-lucide="dollar-sign" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
                                         <span>Incaseaza</span>

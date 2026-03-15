@@ -85,26 +85,31 @@
         dataInput.value = new Date().toISOString().slice(0,10);
     }
 
+    // Functie globala pentru deschidere modal incasari
+    window.deschideIncasari = function(btn) {
+        if (!btn || !dialog) return;
+        mid.value = btn.getAttribute('data-membru-id') || '';
+        valCot.value = btn.getAttribute('data-valoare-cot') || '0';
+        var ach = btn.getAttribute('data-cot-achitata');
+        cotAchitata.value = (ach === '1' || ach === 'true') ? '1' : '0';
+        if (cotAchitata.value === '1') {
+            cotAchitataAfis.classList.remove('hidden');
+            document.querySelector('.incasari-tip-btn[data-tip="cotizatie"]').classList.add('hidden');
+        } else {
+            cotAchitataAfis.classList.add('hidden');
+            document.querySelector('.incasari-tip-btn[data-tip="cotizatie"]').classList.remove('hidden');
+        }
+        resetModal();
+        dialog.showModal();
+    };
+
     document.addEventListener('click', function(e){
-        // Nu intercepta click-uri pe linkuri (ex. nume membru -> profil)
         if (e.target.closest('a[href]')) return;
         var btn = e.target.closest('.btn-deschide-incasari');
         if (btn && dialog) {
             e.preventDefault();
             e.stopPropagation();
-            mid.value = btn.getAttribute('data-membru-id') || '';
-            valCot.value = btn.getAttribute('data-valoare-cot') || '0';
-            var ach = btn.getAttribute('data-cot-achitata');
-            cotAchitata.value = (ach === '1' || ach === 'true') ? '1' : '0';
-            if (cotAchitata.value === '1') {
-                cotAchitataAfis.classList.remove('hidden');
-                document.querySelector('.incasari-tip-btn[data-tip="cotizatie"]').classList.add('hidden');
-            } else {
-                cotAchitataAfis.classList.add('hidden');
-                document.querySelector('.incasari-tip-btn[data-tip="cotizatie"]').classList.remove('hidden');
-            }
-            resetModal();
-            dialog.showModal();
+            window.deschideIncasari(btn);
         }
     });
 
