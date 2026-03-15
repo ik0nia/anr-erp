@@ -11,6 +11,13 @@ require_once APP_ROOT . '/app/services/MembriService.php';
 $eroare = '';
 $succes = '';
 
+// --- Print View (pagina curata, fara layout ERP) ---
+if (isset($_GET['print']) && $_GET['print'] === '1') {
+    $all_members = membri_lista_all($pdo, $_GET);
+    include APP_ROOT . '/app/views/membri/print.php';
+    exit;
+}
+
 // --- CSV Export (inainte de orice output HTML) ---
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     $all_members = membri_lista_all($pdo, $_GET);

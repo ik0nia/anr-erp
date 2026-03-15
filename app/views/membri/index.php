@@ -104,13 +104,17 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
             </form>
 
             <div class="flex items-center gap-2 flex-wrap">
-                <button type="button"
-                        onclick="window.print()"
-                        class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
-                        aria-label="Printeaza lista membrilor">
+                <?php
+                $print_params = $_GET;
+                $print_params['print'] = '1';
+                $print_url = '/membri?' . http_build_query($print_params);
+                ?>
+                <a href="<?php echo htmlspecialchars($print_url); ?>" target="_blank"
+                   class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
+                   aria-label="Printeaza lista membrilor">
                     <i data-lucide="printer" class="mr-2 w-5 h-5" aria-hidden="true"></i>
                     Print lista
-                </button>
+                </a>
 
                 <?php
                 $export_params = $_GET;
