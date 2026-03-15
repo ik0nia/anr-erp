@@ -73,7 +73,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                            id="cautare-membri-live"
                            value="<?php echo htmlspecialchars($cautare); ?>"
                            placeholder="Cauta dupa nume, telefon, email, nr. dosar..."
-                           class="w-96 pl-12 pr-4 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base text-slate-900 dark:text-white dark:bg-gray-700"
+                           class="w-96 pl-14 pr-4 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base text-slate-900 dark:text-white dark:bg-gray-700"
                            aria-label="Cauta membri"
                            autocomplete="off">
                 </div>
@@ -556,16 +556,23 @@ document.addEventListener('DOMContentLoaded', function() {
         lucide.createIcons();
     }
 
-    // Live search — submit automat cu debounce la 400ms
+    // Live search — submit automat cu debounce la 500ms
     var cautareLive = document.getElementById('cautare-membri-live');
     if (cautareLive) {
+        // Restore focus dupa page reload daca avem cautare activa
+        <?php if (!empty($cautare)): ?>
+        cautareLive.focus();
+        // Pune cursorul la sfarsitul textului
+        var len = cautareLive.value.length;
+        cautareLive.setSelectionRange(len, len);
+        <?php endif; ?>
+
         var debounceTimer = null;
         cautareLive.addEventListener('input', function() {
             clearTimeout(debounceTimer);
-            var val = this.value.trim();
             debounceTimer = setTimeout(function() {
                 document.getElementById('form-cautare-membri').submit();
-            }, 400);
+            }, 500);
         });
     }
 

@@ -80,9 +80,9 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
     }
 
     if ($cautare !== '') {
-        $where_parts[] = "(nume LIKE ? OR prenume LIKE ? OR cnp LIKE ? OR dosarnr LIKE ?)";
+        $where_parts[] = "(nume LIKE ? OR prenume LIKE ? OR cnp LIKE ? OR dosarnr LIKE ? OR telefonnev LIKE ? OR email LIKE ? OR domloc LIKE ? OR CONCAT(COALESCE(nume,''),' ',COALESCE(prenume,'')) LIKE ?)";
         $search_term = '%' . $cautare . '%';
-        $params = array_merge($params, [$search_term, $search_term, $search_term, $search_term]);
+        $params = array_merge($params, [$search_term, $search_term, $search_term, $search_term, $search_term, $search_term, $search_term, $search_term]);
     }
 
     $where = !empty($where_parts) ? 'WHERE ' . implode(' AND ', $where_parts) : '';
