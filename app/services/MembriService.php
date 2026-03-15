@@ -488,6 +488,13 @@ function membri_get(PDO $pdo, int $id): ?array {
     if ($id <= 0) return null;
 
     membri_ensure_biblioteca_online_columns($pdo);
+    // Ensure newsletter_opt_in column exists
+    try {
+        $chk = $pdo->query("SHOW COLUMNS FROM membri LIKE 'newsletter_opt_in'");
+        if (!$chk->fetch()) {
+            $pdo->exec("ALTER TABLE membri ADD COLUMN newsletter_opt_in TINYINT(1) DEFAULT 0");
+        }
+    } catch (PDOException $e) {}
 
     try {
         $stmt = $pdo->prepare('SELECT * FROM membri WHERE id = ?');
