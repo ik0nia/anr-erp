@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_contact'])) 
     $result = contacte_create($pdo, $_POST, $_SESSION['utilizator'] ?? 'Sistem');
 
     if ($result['success']) {
-        header('Location: contacte.php?succes=1');
+        header('Location: /contacte?succes=1');
         exit;
     }
     $eroare = $result['error'];

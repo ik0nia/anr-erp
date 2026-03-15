@@ -13,20 +13,20 @@ require_once APP_ROOT . '/app/services/NotificariService.php';
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 $user_id = (int)($_SESSION['user_id'] ?? 0);
 if ($id <= 0 || $user_id <= 0) {
-    header('Location: notificari.php');
+    header('Location: /notificari');
     exit;
 }
 
 notificari_ensure_tables($pdo);
 $notif = notificari_get_by_id($pdo, $id, $user_id);
 if (!$notif) {
-    header('Location: notificari.php');
+    header('Location: /notificari');
     exit;
 }
 
 $succes = '';
 $eroare = '';
-$redirect_after = 'notificare-view.php?id=' . $id;
+$redirect_after = '/notificari/view?id=' . $id;
 
 // --- POST actions ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,14 +34,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['arhiveaza'])) {
         notificari_arhiveaza($pdo, $id, $user_id);
         log_activitate($pdo, "Notificare arhivată: {$notif['titlu']}");
-        $redirect_after = trim($_POST['redirect'] ?? 'notificari.php');
+        $redirect_after = trim($_POST['redirect'] ?? '/notificari');
         header('Location: ' . $redirect_after . '?arhivat=1');
         exit;
     }
     if (isset($_POST['marcheaza_necitit'])) {
         notificari_marcheaza_necitita($pdo, $id, $user_id);
         log_activitate($pdo, "Notificare marcată ca necitită: {$notif['titlu']}");
-        header('Location: notificari.php?necitit=1');
+        header('Location: /notificari?necitit=1');
         exit;
     }
     if (isset($_POST['adauga_task'])) {

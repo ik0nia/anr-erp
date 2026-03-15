@@ -53,7 +53,7 @@
                                 <?php else: foreach ($taskuri_active as $t): ?>
                                 <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
                                     <td class="px-4 py-3">
-                                        <form method="post" action="todo.php" class="inline">
+                                        <form method="post" action="/todo" class="inline">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="finalizeaza_task" value="1">
                                             <input type="hidden" name="task_id" value="<?php echo (int)$t['id']; ?>">
@@ -65,7 +65,7 @@
                                         </form>
                                     </td>
                                     <td class="px-4 py-3 text-left">
-                                        <a href="todo-edit.php?id=<?php echo (int)$t['id']; ?>" class="font-medium text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded"
+                                        <a href="/todo/edit?id=<?php echo (int)$t['id']; ?>" class="font-medium text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded"
                                            aria-label="Editează taskul <?php echo htmlspecialchars($t['nume']); ?>">
                                             <?php echo htmlspecialchars($t['nume']); ?>
                                         </a>
@@ -75,7 +75,7 @@
                                         <span class="inline-flex px-2 py-1 text-xs font-medium rounded <?php echo task_badge_class($t['nivel_urgenta']); ?>"><?php echo htmlspecialchars(ucfirst($t['nivel_urgenta'])); ?></span>
                                     </td>
                                     <td class="px-4 py-3 text-left">
-                                        <a href="todo-edit.php?id=<?php echo (int)$t['id']; ?>" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 hover:bg-amber-200 dark:hover:bg-amber-800 rounded focus:ring-2 focus:ring-amber-500">
+                                        <a href="/todo/edit?id=<?php echo (int)$t['id']; ?>" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 hover:bg-amber-200 dark:hover:bg-amber-800 rounded focus:ring-2 focus:ring-amber-500">
                                             <i data-lucide="edit" class="w-4 h-4" aria-hidden="true"></i> Editează
                                         </a>
                                     </td>
@@ -109,7 +109,7 @@
                                 <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
                                     <td class="px-4 py-3 text-left"><i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 dark:text-emerald-400" aria-hidden="true"></i></td>
                                     <td class="px-4 py-3 text-left">
-                                        <a href="todo-edit.php?id=<?php echo (int)$t['id']; ?>" class="font-medium text-slate-700 dark:text-gray-300 hover:underline focus:ring-2 focus:ring-amber-500 rounded">
+                                        <a href="/todo/edit?id=<?php echo (int)$t['id']; ?>" class="font-medium text-slate-700 dark:text-gray-300 hover:underline focus:ring-2 focus:ring-amber-500 rounded">
                                             <?php echo htmlspecialchars($t['nume']); ?>
                                         </a>
                                     </td>
@@ -119,10 +119,10 @@
                                     </td>
                                     <td class="px-4 py-3 text-left">
                                         <div class="flex items-center justify-start gap-2">
-                                            <a href="todo-edit.php?id=<?php echo (int)$t['id']; ?>" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 hover:bg-amber-200 dark:hover:bg-amber-800 rounded focus:ring-2 focus:ring-amber-500">
+                                            <a href="/todo/edit?id=<?php echo (int)$t['id']; ?>" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/50 hover:bg-amber-200 dark:hover:bg-amber-800 rounded focus:ring-2 focus:ring-amber-500">
                                                 <i data-lucide="edit" class="w-4 h-4" aria-hidden="true"></i> Editează
                                             </a>
-                                            <form method="post" action="todo.php" class="inline">
+                                            <form method="post" action="/todo" class="inline">
                                                 <?php echo csrf_field(); ?>
                                                 <input type="hidden" name="reactivare_task" value="1">
                                                 <input type="hidden" name="task_id" value="<?php echo (int)$t['id']; ?>">
@@ -150,7 +150,7 @@
     <div class="p-6">
         <h2 id="titlu-form-task" class="text-lg font-bold text-slate-900 dark:text-white mb-2">Adaugă task</h2>
         <p id="desc-form-task" class="text-sm text-slate-600 dark:text-gray-400 mb-4">Completați câmpurile pentru noul task.</p>
-        <form method="post" action="todo.php">
+        <form method="post" action="/todo">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="adauga_task" value="1">
             <div class="space-y-4">
@@ -199,11 +199,11 @@
 <dialog id="detalii-task" role="dialog" aria-modal="true" aria-labelledby="titlu-detalii" class="p-0 rounded-lg shadow-xl max-w-lg w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto border border-slate-200 dark:border-gray-700 dark:bg-gray-800 backdrop:bg-black/30">
     <div class="p-6">
         <h2 id="titlu-detalii" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Editează task</h2>
-        <form method="post" action="todo.php" id="form-edit-task">
+        <form method="post" action="/todo" id="form-edit-task">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="actualizeaza_task" value="1">
             <input type="hidden" name="task_id" id="edit-task-id" value="">
-            <input type="hidden" name="redirect_after" id="edit-redirect" value="todo.php">
+            <input type="hidden" name="redirect_after" id="edit-redirect" value="/todo">
             <div class="space-y-4">
                 <div>
                     <label for="edit-nume" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume task <span class="text-red-600">*</span></label>
@@ -254,7 +254,7 @@ function deschideEditare(id, nume, data, ora, detalii, urgenta) {
     document.getElementById('edit-ora').value = ora || '09:00';
     document.getElementById('edit-detalii').value = detalii || '';
     document.getElementById('edit-urgenta').value = urgenta || 'normal';
-    document.getElementById('edit-redirect').value = window.location.pathname.indexOf('index') >= 0 ? 'index.php' : 'todo.php';
+    document.getElementById('edit-redirect').value = window.location.pathname.indexOf('index') >= 0 ? '/dashboard' : '/todo';
     document.getElementById('detalii-task').showModal();
     document.getElementById('edit-nume').focus();
 }

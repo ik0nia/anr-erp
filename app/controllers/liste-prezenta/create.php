@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_lista'])) {
             header('Location: lista-prezenta-pdf.php?id=' . $lista_id);
             exit;
         }
-        header('Location: activitati.php?succes_lista=1');
+        header('Location: /activitati?succes_lista=1');
         exit;
     } else {
         $eroare = $result['error'];

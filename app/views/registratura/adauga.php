@@ -19,7 +19,7 @@
         <?php endif; ?>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-            <form method="post" action="registratura-adauga.php?redirect=<?php echo htmlspecialchars($redirect_param); ?>" id="form-registratura">
+            <form method="post" action="/registratura/adauga?redirect=<?php echo htmlspecialchars($redirect_param); ?>" id="form-registratura">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_registratura" value="1">
                 <div class="space-y-4">

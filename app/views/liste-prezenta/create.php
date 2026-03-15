@@ -11,7 +11,7 @@
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Creare listă prezență / tabel nominal</h1>
-        <a href="activitati.php" class="text-amber-600 dark:text-amber-400 hover:underline">Înapoi la activități</a>
+        <a href="/activitati" class="text-amber-600 dark:text-amber-400 hover:underline">Înapoi la activități</a>
     </header>
 
     <div class="p-6 overflow-y-auto flex-1">
@@ -156,7 +156,7 @@
                 <button type="submit" name="actiune_dupa" value="" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Salvează lista de prezență">Salvează</button>
                 <button type="submit" name="actiune_dupa" value="print" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium" aria-label="Salvează lista de prezență și printează">Salvează și printează</button>
                 <button type="submit" name="actiune_dupa" value="pdf" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium" aria-label="Salvează lista de prezență și descarcă PDF">Salvează și descarcă PDF</button>
-                <a href="activitati.php" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-gray-700" aria-label="Renunță la creare listă">Renunță</a>
+                <a href="/activitati" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-gray-700" aria-label="Renunță la creare listă">Renunță</a>
             </div>
         </form>
     </div>
@@ -206,7 +206,7 @@ function executaCautareLista() {
     if (q.length < 2) { div.classList.add('hidden'); return; }
     div.classList.remove('hidden');
     div.innerHTML = '<p class="text-slate-500 dark:text-gray-400 py-2">Se caută…</p>';
-    fetch('api-cauta-membri.php?q=' + encodeURIComponent(q))
+    fetch('/api/cauta-membri?q=' + encodeURIComponent(q))
         .then(r => r.json())
         .then(d => {
             const membri = d && d.membri ? d.membri : [];

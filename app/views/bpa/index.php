@@ -2,11 +2,11 @@
     <header class="bg-white dark:bg-gray-800 shadow p-4"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white mb-3">Ajutoare BPA</h1>
         <nav class="flex gap-2 flex-wrap" role="tablist" aria-label="Tab-uri modul BPA">
-            <a href="ajutoare-bpa.php" role="tab" aria-selected="<?php echo $tab === 'management' ? 'true' : 'false'; ?>"
+            <a href="/ajutoare-bpa" role="tab" aria-selected="<?php echo $tab === 'management' ? 'true' : 'false'; ?>"
                class="px-4 py-2 rounded-lg font-medium <?php echo $tab === 'management' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
                 Management distributie
             </a>
-            <a href="ajutoare-bpa.php?tab=rapoarte" role="tab" aria-selected="<?php echo $tab === 'rapoarte' ? 'true' : 'false'; ?>"
+            <a href="/ajutoare-bpa?tab=rapoarte" role="tab" aria-selected="<?php echo $tab === 'rapoarte' ? 'true' : 'false'; ?>"
                class="px-4 py-2 rounded-lg font-medium <?php echo $tab === 'rapoarte' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
                 Rapoarte
             </a>
@@ -30,7 +30,7 @@
                 <option value="luna" <?php echo $perioada === 'luna' ? 'selected' : ''; ?>>Luna curentă</option>
                 <option value="toata" <?php echo $perioada === 'toata' ? 'selected' : ''; ?>>Toată perioada</option>
             </select>
-            <script>document.getElementById('perioada-bpa').onchange = function(){ window.location = 'ajutoare-bpa.php?tab=rapoarte&perioada=' + this.value; };</script>
+            <script>document.getElementById('perioada-bpa').onchange = function(){ window.location = '/ajutoare-bpa?tab=rapoarte&perioada=' + this.value; };</script>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4">
@@ -195,7 +195,7 @@
                     <?php if ($tabel_edit): ?>
                     <p class="text-sm font-medium text-amber-700 dark:text-amber-300 mb-2">Editare: <?php echo htmlspecialchars($tabel_edit['nr_tabel']); ?> (<?php echo date(DATE_FORMAT, strtotime($tabel_edit['data_tabel'])); ?>)</p>
                     <?php endif; ?>
-                    <form method="post" action="ajutoare-bpa.php" id="form-tabel-bpa">
+                    <form method="post" action="/ajutoare-bpa" id="form-tabel-bpa">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="salveaza_tabel" value="1">
                         <input type="hidden" name="tabel_id" value="<?php echo $tabel_edit ? (int)$tabel_edit['id'] : 0; ?>">
@@ -291,7 +291,7 @@
                         <div class="mt-4 flex flex-wrap gap-2">
                             <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Salvează tabelul">Salvează tabelul</button>
                             <?php if ($tabel_edit): ?>
-                            <a href="ajutoare-bpa.php" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700">Anulare editare</a>
+                            <a href="/ajutoare-bpa" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700">Anulare editare</a>
                             <?php endif; ?>
                         </div>
                     </form>
@@ -302,7 +302,7 @@
                             <li class="flex items-center justify-between gap-2 py-1 border-b border-slate-200 dark:border-gray-600 last:border-0">
                                 <span class="text-slate-900 dark:text-gray-100"><?php echo htmlspecialchars($t['nr_tabel']); ?> – <?php echo date(DATE_FORMAT, strtotime($t['data_tabel'])); ?> (<?php echo number_format($t['cantitate_totala'], 1); ?> kg)</span>
                                 <span class="flex gap-1">
-                                    <a href="ajutoare-bpa.php?edit=<?php echo (int)$t['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline" aria-label="Editează tabel <?php echo htmlspecialchars($t['nr_tabel']); ?>">Editează</a>
+                                    <a href="/ajutoare-bpa?edit=<?php echo (int)$t['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline" aria-label="Editează tabel <?php echo htmlspecialchars($t['nr_tabel']); ?>">Editează</a>
                                     <a href="print-bpa-tabel.php?id=<?php echo (int)$t['id']; ?>" target="_blank" rel="noopener noreferrer" class="text-slate-600 dark:text-gray-400 hover:underline">Print</a>
                                     <a href="bpa-tabel-docx.php?id=<?php echo (int)$t['id']; ?>" class="text-slate-600 dark:text-gray-400 hover:underline">DOCX</a>
                                     <a href="bpa-tabel-pdf.php?id=<?php echo (int)$t['id']; ?>" target="_blank" rel="noopener noreferrer" class="text-slate-600 dark:text-gray-400 hover:underline">PDF</a>
@@ -369,7 +369,7 @@
                                     <td class="px-3 py-2 text-right text-slate-900 dark:text-gray-100 font-medium"><?php echo $g['tip_document'] === 'aviz' ? '+' : ''; ?><?php echo number_format($g['cantitate'], 1, ',', '.'); ?></td>
                                     <td class="px-3 py-2 text-center">
                                         <button type="button" class="btn-editeaza-gestiune-bpa inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 border border-amber-400 dark:border-amber-500 rounded focus:ring-2 focus:ring-amber-500" data-id="<?php echo (int)$g['id']; ?>" data-nr="<?php echo htmlspecialchars($g['nr_document']); ?>" data-data="<?php echo htmlspecialchars($g['data_document']); ?>" data-tip="<?php echo htmlspecialchars($g['tip_document']); ?>" data-cantitate="<?php echo number_format(abs((float)$g['cantitate']), 2, '.', ''); ?>" data-loc="<?php echo htmlspecialchars($g['loc_distributie'] ?? ''); ?>" data-nrbenef="<?php echo (int)($g['nr_beneficiari'] ?? 0); ?>" aria-label="Editează document <?php echo htmlspecialchars($g['nr_document']); ?>">Editează</button>
-                                        <form method="post" action="ajutoare-bpa.php" class="inline-block ml-1" onsubmit="return confirm('Ștergeți acest document din gestiune?');">
+                                        <form method="post" action="/ajutoare-bpa" class="inline-block ml-1" onsubmit="return confirm('Ștergeți acest document din gestiune?');">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="sterge_gestiune_bpa" value="1">
                                             <input type="hidden" name="id_gestiune" value="<?php echo (int)$g['id']; ?>">
@@ -392,7 +392,7 @@
         <dialog id="modal-document-bpa" role="dialog" aria-modal="true" aria-labelledby="titlu-modal-document-bpa" class="p-0 rounded-lg shadow-xl max-w-md w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-700 dark:bg-gray-800">
             <div class="p-6">
                 <h2 id="titlu-modal-document-bpa" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Adaugă document</h2>
-                <form method="post" action="ajutoare-bpa.php" id="form-document-bpa">
+                <form method="post" action="/ajutoare-bpa" id="form-document-bpa">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="adauga_document" value="1">
                     <div class="space-y-3">
@@ -444,7 +444,7 @@
         <dialog id="modal-edit-gestiune-bpa" role="dialog" aria-modal="true" aria-labelledby="titlu-edit-gestiune-bpa" class="p-0 rounded-lg shadow-xl max-w-md w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-600 dark:bg-gray-800">
             <div class="p-6 bg-white dark:bg-gray-800">
                 <h2 id="titlu-edit-gestiune-bpa" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Editează document</h2>
-                <form method="post" action="ajutoare-bpa.php" id="form-edit-gestiune-bpa">
+                <form method="post" action="/ajutoare-bpa" id="form-edit-gestiune-bpa">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="editeaza_gestiune_bpa" value="1">
                     <input type="hidden" name="id_gestiune" id="edit-gestiune-id" value="">
@@ -662,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function(){
             var q = cautaInput.value.trim();
             rezultateDiv.innerHTML = '';
             if (q.length < 2) return;
-            var url = 'api-cauta-membri.php?q=' + encodeURIComponent(q);
+            var url = '/api/cauta-membri?q=' + encodeURIComponent(q);
             fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
                 .then(function(r){ return r.text(); })
                 .then(function(text){

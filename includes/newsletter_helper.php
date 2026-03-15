@@ -11,6 +11,9 @@ define('NEWSLETTER_ATAŞAMENT_MAX_MB', 5);
  * Asigură existența tabelelor pentru newsletter
  */
 function newsletter_ensure_tables(PDO $pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS newsletter (
         id INT AUTO_INCREMENT PRIMARY KEY,
         subiect VARCHAR(500) NOT NULL,

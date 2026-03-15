@@ -9,10 +9,10 @@ require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/app/services/ListePrezentaService.php';
 
 $id = (int)($_GET['id'] ?? 0);
-if ($id <= 0) { header('Location: activitati.php'); exit; }
+if ($id <= 0) { header('Location: /activitati'); exit; }
 
 $data = liste_prezenta_load($pdo, $id);
-if (!$data) { header('Location: activitati.php'); exit; }
+if (!$data) { header('Location: /activitati'); exit; }
 
 $lista = $data['lista'];
 $participanti = $data['participanti'];
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_lista'])) {
     $result = liste_prezenta_update($pdo, $id, $_POST);
 
     if ($result['success']) {
-        header('Location: activitati.php?succes_lista=1');
+        header('Location: /activitati?succes_lista=1');
         exit;
     } else {
         $eroare = $result['error'];

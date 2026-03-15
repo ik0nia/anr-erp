@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_gestiune_bpa']
     csrf_require_valid();
     $id = (int)($_POST['id_gestiune'] ?? 0);
     if (bpa_service_sterge_gestiune($pdo, $id)) {
-        header('Location: ajutoare-bpa.php?succes=sterge_gestiune');
+        header('Location: /ajutoare-bpa?succes=sterge_gestiune');
         exit;
     }
 }
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['editeaza_gestiune_bpa
     $loc = trim($_POST['loc_distributie'] ?? '');
     $nr_benef = isset($_POST['nr_beneficiari']) && $_POST['nr_beneficiari'] !== '' ? (int)$_POST['nr_beneficiari'] : null;
     if (bpa_service_editeaza_gestiune($pdo, $id, $nr, $data_doc, $tip, $cantitate, $loc ?: null, $nr_benef)) {
-        header('Location: ajutoare-bpa.php?succes=editeaza_gestiune');
+        header('Location: /ajutoare-bpa?succes=editeaza_gestiune');
         exit;
     }
 }
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_document'])) {
     $nr_benef = isset($_POST['nr_beneficiari']) && $_POST['nr_beneficiari'] !== '' ? (int)$_POST['nr_beneficiari'] : null;
     $result = bpa_service_adauga_document($pdo, $tip, $nr, $data_doc, $cantitate, $loc ?: null, $nr_benef, $utilizator);
     if ($result['success']) {
-        header('Location: ajutoare-bpa.php?succes=document');
+        header('Location: /ajutoare-bpa?succes=document');
         exit;
     } else {
         $eroare = $result['error'];
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_tabel'])) {
     $randuri_raw = $_POST['randuri'] ?? [];
     $result = bpa_service_salveaza_tabel($pdo, $tabel_id, $nr_tabel, $data_tabel, $predare_sediul, $predare_centru, $livrare_domiciliu, $randuri_raw, $utilizator);
     if ($result['success']) {
-        header('Location: ajutoare-bpa.php?succes=tabel&id=' . (int)$result['id']);
+        header('Location: /ajutoare-bpa?succes=tabel&id=' . (int)$result['id']);
         exit;
     } else {
         $eroare = $result['error'];

@@ -7,14 +7,14 @@ require_once APP_ROOT . '/app/services/RegistraturaService.php';
 
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 if ($id <= 0) {
-    header('Location: registratura.php');
+    header('Location: /registratura');
     exit;
 }
 
 $eroare = '';
 $r = registratura_get($pdo, $id);
 if (!$r) {
-    header('Location: registratura.php');
+    header('Location: /registratura');
     exit;
 }
 
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_registra
     $result = registratura_update($pdo, $id, $_POST, $_SESSION['utilizator'] ?? 'Sistem');
 
     if ($result['success']) {
-        header('Location: registratura.php?succes=1');
+        header('Location: /registratura?succes=1');
         exit;
     }
     $eroare = $result['error'];

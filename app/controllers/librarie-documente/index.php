@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nume_document = trim($_POST['nume_document'] ?? '');
         $result = librarie_documente_service_incarca($pdo, $institutie, $nume_document, $_FILES['document'] ?? []);
         if ($result['success']) {
-            header('Location: librarie-documente.php?succes=1');
+            header('Location: /librarie-documente?succes=1');
             exit;
         }
         $eroare = $result['error'];
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int)($_POST['id'] ?? 0);
         $result = librarie_documente_service_sterge($pdo, $id);
         if ($result['success']) {
-            header('Location: librarie-documente.php?succes=2');
+            header('Location: /librarie-documente?succes=2');
             exit;
         }
         $eroare = $result['error'];
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nume_document = trim($_POST['nume_document'] ?? '');
         $result = librarie_documente_service_actualizeaza($pdo, $id, $institutie, $nume_document);
         if ($result['success']) {
-            header('Location: librarie-documente.php?succes=3');
+            header('Location: /librarie-documente?succes=3');
             exit;
         }
         $eroare = $result['error'];

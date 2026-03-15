@@ -1,0 +1,59 @@
+RewriteEngine On
+
+# --- Static assets: serve directly ---
+RewriteRule ^(css|js|vendor|docs|logs|install)/ - [L]
+
+# --- Robots, favicon etc: serve directly ---
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_URI} \.(txt|ico|png|jpg|gif|svg|woff2?|ttf|eot|css|js|map)$
+RewriteRule ^ - [L]
+
+# --- Files that must be served directly (APIs, utilities, cron, print/export) ---
+RewriteCond %{REQUEST_URI} ^/(api-|descarca-|export_|print-|bpa-tabel-|lista-prezenta-(pdf|docx|print)|incasari-|genereaza-document|trimite-email|log-print|cron_|aniversari-notificare|backup_|setup|install-auth|contacte-form-fields|contacte-import|import-membri-csv|generare-documente|membri_processing|membri_form|membru-profil-form|newsletter-view|registratura-sumar|actualizezcsv|config|header|footer|sidebar)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# --- index.php -> /dashboard (must be before generic .php redirect) ---
+RewriteCond %{THE_REQUEST} \s/index\.php[\s?]
+RewriteRule ^index\.php$ /dashboard [R=301,L,QSA]
+
+# --- Old .php URLs: redirect to clean URLs ---
+RewriteCond %{THE_REQUEST} \s/([^?]*?)\.php[\s?]
+RewriteRule ^contacte\.php$ /contacte [R=301,L,QSA]
+RewriteRule ^contacte-adauga\.php$ /contacte/adauga [R=301,L,QSA]
+RewriteRule ^contacte-edit\.php$ /contacte/edit [R=301,L,QSA]
+RewriteRule ^todo\.php$ /todo [R=301,L,QSA]
+RewriteRule ^todo-adauga\.php$ /todo/adauga [R=301,L,QSA]
+RewriteRule ^todo-edit\.php$ /todo/edit [R=301,L,QSA]
+RewriteRule ^activitati\.php$ /activitati [R=301,L,QSA]
+RewriteRule ^activitati-istoric\.php$ /activitati/istoric [R=301,L,QSA]
+RewriteRule ^registratura\.php$ /registratura [R=301,L,QSA]
+RewriteRule ^registratura-adauga\.php$ /registratura/adauga [R=301,L,QSA]
+RewriteRule ^registratura-edit\.php$ /registratura/edit [R=301,L,QSA]
+RewriteRule ^voluntariat\.php$ /voluntariat [R=301,L,QSA]
+RewriteRule ^rapoarte\.php$ /rapoarte [R=301,L,QSA]
+RewriteRule ^notificari\.php$ /notificari [R=301,L,QSA]
+RewriteRule ^notificare-view\.php$ /notificari/view [R=301,L,QSA]
+RewriteRule ^librarie-documente\.php$ /librarie-documente [R=301,L,QSA]
+RewriteRule ^ajutoare-bpa\.php$ /ajutoare-bpa [R=301,L,QSA]
+RewriteRule ^registru-interactiuni-v2\.php$ /registru-interactiuni [R=301,L,QSA]
+RewriteRule ^lista-prezenta-create\.php$ /liste-prezenta/adauga [R=301,L,QSA]
+RewriteRule ^lista-prezenta-edit\.php$ /liste-prezenta/edit [R=301,L,QSA]
+RewriteRule ^membri\.php$ /membri [R=301,L,QSA]
+RewriteRule ^setari\.php$ /setari [R=301,L,QSA]
+RewriteRule ^administrativ\.php$ /administrativ [R=301,L,QSA]
+RewriteRule ^fundraising\.php$ /fundraising [R=301,L,QSA]
+RewriteRule ^formular-230\.php$ /formular-230 [R=301,L,QSA]
+RewriteRule ^aniversari\.php$ /aniversari [R=301,L,QSA]
+RewriteRule ^log-activitate\.php$ /log-activitate [R=301,L,QSA]
+RewriteRule ^login\.php$ /login [R=301,L,QSA]
+RewriteRule ^logout\.php$ /logout [R=301,L,QSA]
+RewriteRule ^recuperare-parola\.php$ /recuperare-parola [R=301,L,QSA]
+RewriteRule ^reset-parola\.php$ /reset-parola [R=301,L,QSA]
+RewriteRule ^schimba-parola\.php$ /schimba-parola [R=301,L,QSA]
+RewriteRule ^membru-profil\.php$ /membru-profil [R=301,L,QSA]
+
+# --- Everything else: route through router.php ---
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ router.php [QSA,L]

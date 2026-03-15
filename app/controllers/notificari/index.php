@@ -15,7 +15,7 @@ notificari_ensure_tables($pdo);
 
 $user_id = (int)($_SESSION['user_id'] ?? 0);
 if ($user_id <= 0) {
-    header('Location: login.php');
+    header('Location: /login');
     exit;
 }
 
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['marcheaza_necitit']))
     if ($notif_id > 0) {
         notificari_marcheaza_necitita($pdo, $notif_id, $user_id);
         log_activitate($pdo, "Notificare marcată ca necitită: ID {$notif_id}");
-        header('Location: notificari.php?necitit=1');
+        header('Location: /notificari?necitit=1');
         exit;
     }
 }
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_notificare']))
             if ($id > 0) {
                 log_activitate($pdo, "Notificare adăugată: {$titlu}");
                 $succes = 'Notificarea a fost salvată.' . ($trimite_email ? ' Emailurile au fost trimise utilizatorilor.' : '');
-                header('Location: notificari.php?succes=1');
+                header('Location: /notificari?succes=1');
                 exit;
             } else {
                 $eroare = 'Eroare la salvare sau la încărcarea atașamentului.';

@@ -11,6 +11,9 @@ define('LIBRARIE_DOC_EXTENSII', ['pdf', 'doc', 'docx', 'xls', 'xlsx']);
  * Asigură tabelul librarie_documente
  */
 function librarie_documente_ensure_tables(PDO $pdo): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS librarie_documente (
         id INT AUTO_INCREMENT PRIMARY KEY,
         institutie VARCHAR(255) NOT NULL,

@@ -64,6 +64,9 @@ function get_setare_registratura(PDO $pdo, string $cheie, $default = null) {
  * Asigură existența tabelului registratura cu toate coloanele necesare
  */
 function ensure_registratura_table(PDO $pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS setari (
         id INT AUTO_INCREMENT PRIMARY KEY,
         cheie VARCHAR(100) NOT NULL UNIQUE,

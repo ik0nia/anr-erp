@@ -79,7 +79,7 @@
             <!-- Coloana dreapta: Formular încărcare -->
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="titlu-incarcare">
                 <h2 id="titlu-incarcare" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Încarcă document nou</h2>
-                <form method="post" action="librarie-documente.php" enctype="multipart/form-data" class="space-y-4">
+                <form method="post" action="/librarie-documente" enctype="multipart/form-data" class="space-y-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="incarca_document" value="1">
                     <div>
@@ -117,7 +117,7 @@
             <div class="p-6">
                 <h2 id="modal-sterge-titlu" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Confirmare ștergere</h2>
                 <p class="text-sm text-slate-700 dark:text-gray-300 mb-6">Sunteți sigur că doriți să ștergeți documentul <strong id="sterge-nume-doc" class="text-slate-900 dark:text-white"></strong>?</p>
-                <form method="post" action="librarie-documente.php" id="form-sterge-doc">
+                <form method="post" action="/librarie-documente" id="form-sterge-doc">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="sterge_document" value="1">
                     <input type="hidden" name="id" id="sterge-id" value="">
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var formData = new FormData();
             formData.append('_csrf_token', document.querySelector('input[name="_csrf_token"]') ? document.querySelector('input[name="_csrf_token"]').value : '');
             ids.forEach(function(id, i) { formData.append('reordoneaza_ids[]', id); });
-            fetch('librarie-documente.php', { method: 'POST', body: formData, credentials: 'same-origin' })
+            fetch('/librarie-documente', { method: 'POST', body: formData, credentials: 'same-origin' })
                 .then(function(r) { return r.json(); })
                 .then(function(d) { if (d && d.ok) {} })
                 .catch(function() {});

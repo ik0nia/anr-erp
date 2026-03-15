@@ -5,19 +5,19 @@
 
     <div class="p-6 overflow-y-auto flex-1">
         <nav class="mb-6 flex gap-2 border-b border-slate-200 dark:border-gray-700" role="tablist" aria-label="Tab-uri rapoarte">
-            <a href="rapoarte.php" role="tab" aria-selected="<?php echo $tab_rapoarte === 'membri' ? 'true' : 'false'; ?>"
+            <a href="/rapoarte" role="tab" aria-selected="<?php echo $tab_rapoarte === 'membri' ? 'true' : 'false'; ?>"
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_rapoarte === 'membri' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Indicatori Membri
             </a>
-            <a href="rapoarte.php?tab=interactiuni" role="tab" aria-selected="<?php echo $tab_rapoarte === 'interactiuni' ? 'true' : 'false'; ?>"
+            <a href="/rapoarte?tab=interactiuni" role="tab" aria-selected="<?php echo $tab_rapoarte === 'interactiuni' ? 'true' : 'false'; ?>"
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_rapoarte === 'interactiuni' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Registru Interacțiuni
             </a>
-            <a href="rapoarte.php?tab=newsletter" role="tab" aria-selected="<?php echo $tab_rapoarte === 'newsletter' ? 'true' : 'false'; ?>"
+            <a href="/rapoarte?tab=newsletter" role="tab" aria-selected="<?php echo $tab_rapoarte === 'newsletter' ? 'true' : 'false'; ?>"
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_rapoarte === 'newsletter' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Newsletter
             </a>
-            <a href="rapoarte.php?tab=statistici" role="tab" aria-selected="<?php echo $tab_rapoarte === 'statistici' ? 'true' : 'false'; ?>"
+            <a href="/rapoarte?tab=statistici" role="tab" aria-selected="<?php echo $tab_rapoarte === 'statistici' ? 'true' : 'false'; ?>"
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_rapoarte === 'statistici' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Statistici
             </a>
@@ -240,7 +240,7 @@
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($nl['categoria_contacte']); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo $nl['data_trimiterii'] ? date('d.m.Y H:i', strtotime($nl['data_trimiterii'])) : '-'; ?></td>
                                 <td class="px-4 py-3">
-                                    <a href="newsletter-view.php?id=<?php echo (int)$nl['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline" aria-label="Vizualizează newsletter <?php echo htmlspecialchars($nl['subiect']); ?>">Vizualizează</a>
+                                    <a href="/newsletter-view?id=<?php echo (int)$nl['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline" aria-label="Vizualizează newsletter <?php echo htmlspecialchars($nl['subiect']); ?>">Vizualizează</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

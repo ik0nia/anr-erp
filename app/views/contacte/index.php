@@ -12,7 +12,7 @@
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Contacte</h1>
         <div class="flex items-center gap-3">
-            <a href="contacte-adauga.php" class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Adaugă contact">
+            <a href="/contacte/adauga" class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Adaugă contact">
                 <i data-lucide="plus" class="w-4 h-4 mr-2" aria-hidden="true"></i>
                 Adaugă
             </a>
@@ -98,7 +98,7 @@
                         <?php if (empty($contacte)): ?>
                         <tr>
                             <td colspan="7" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">
-                                Nu există contacte. <a href="contacte-adauga.php" class="text-amber-600 dark:text-amber-400 hover:underline">Adaugă primul contact</a>
+                                Nu există contacte. <a href="/contacte/adauga" class="text-amber-600 dark:text-amber-400 hover:underline">Adaugă primul contact</a>
                             </td>
                         </tr>
                         <?php else: ?>
@@ -106,7 +106,7 @@
                             $nume_complet = trim(($c['nume'] ?? '') . ' ' . ($c['prenume'] ?? ''));
                             $email_princ = $c['email'] ?? $c['email_personal'] ?? '';
                             $whatsapp_url = contacte_whatsapp($c['telefon'] ?? $c['telefon_personal'] ?? '');
-                            $edit_url = 'contacte-edit.php?id=' . (int)$c['id'];
+                            $edit_url = '/contacte/edit?id=' . (int)$c['id'];
                         ?>
                         <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-3 text-left">
@@ -136,7 +136,7 @@
                                             <i data-lucide="more-vertical" class="w-4 h-4" aria-hidden="true"></i>
                                         </button>
                                         <div class="hidden absolute right-0 mt-1 w-48 py-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-10 contacte-menu-panel" role="menu">
-                                            <form method="post" action="contacte.php" onsubmit="return confirm('Ștergeți acest contact?');" class="block">
+                                            <form method="post" action="/contacte" onsubmit="return confirm('Ștergeți acest contact?');" class="block">
                                                 <?php echo csrf_field(); ?>
                                                 <input type="hidden" name="sterge_contact" value="1">
                                                 <input type="hidden" name="contact_id" value="<?php echo (int)$c['id']; ?>">

@@ -7,6 +7,9 @@
  * Asigură tabelele modulului Voluntariat și setarea mesajului zilei
  */
 function voluntariat_ensure_tables(PDO $pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS voluntari (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nume VARCHAR(100) NOT NULL,

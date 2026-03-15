@@ -47,19 +47,19 @@
                         <?php echo $afiseaza_tot ? 'Tot calendarul' : 'Activități Programate'; ?> — <?php echo date(DATE_FORMAT); ?>
                     </h2>
                     <div class="flex items-center gap-2 flex-wrap">
-                        <a href="activitati.php<?php echo $afiseaza_tot ? '' : '?afiseaza_tot=1'; ?>"
+                        <a href="/activitati<?php echo $afiseaza_tot ? '' : '?afiseaza_tot=1'; ?>"
                            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium <?php echo $afiseaza_tot ? 'bg-amber-600 text-white' : 'border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-600'; ?>">
                             <i data-lucide="calendar" class="w-5 h-5" aria-hidden="true"></i>
                             <?php echo $afiseaza_tot ? 'Afișează doar viitor' : 'Afișează tot calendarul'; ?>
                         </a>
-                        <a href="activitati-istoric.php"
+                        <a href="/activitati/istoric"
                            class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-600 font-medium focus:ring-2 focus:ring-amber-500"
                            aria-label="Istoric activități trecute">
                             <i data-lucide="history" class="w-5 h-5" aria-hidden="true"></i>
                             Istoric activități
                         </a>
                         <button type="button"
-                                onclick="document.getElementById('formular-activitate').showModal(); document.getElementById('formular-activitate').querySelector('form').action = 'activitati.php?redirect=' + encodeURIComponent(window.location.href);"
+                                onclick="document.getElementById('formular-activitate').showModal(); document.getElementById('formular-activitate').querySelector('form').action = '/activitati?redirect=' + encodeURIComponent(window.location.href);"
                                 class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition"
                                 aria-label="Adaugă activitate nouă"
                                 aria-haspopup="dialog">
@@ -149,7 +149,7 @@
                                         <?php endif; ?>
                                         <?php if ($id_original && $a['status'] === 'Planificata'): ?>
                                         <div id="dropdown-status-<?php echo $id_original; ?>-<?php echo $dt->format('Ymd'); ?>" class="mt-2 hidden" role="menu">
-                                            <form method="post" action="activitati.php<?php echo $afiseaza_tot ? '?afiseaza_tot=1' : ''; ?>" class="flex items-center gap-2">
+                                            <form method="post" action="/activitati<?php echo $afiseaza_tot ? '?afiseaza_tot=1' : ''; ?>" class="flex items-center gap-2">
                                                 <?php echo csrf_field(); ?>
                                                 <input type="hidden" name="actualizeaza_status" value="1">
                                                 <input type="hidden" name="id" value="<?php echo $id_original; ?>">
@@ -181,7 +181,7 @@
                                             Editare
                                         </button>
                                         <?php elseif (!empty($a['lista_prezenta_id'])): ?>
-                                        <a href="lista-prezenta-edit.php?id=<?php echo $a['lista_prezenta_id']; ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-400 bg-blue-100 dark:bg-blue-800/70 text-blue-900 dark:text-blue-100 hover:bg-blue-200 text-sm">
+                                        <a href="/liste-prezenta/edit?id=<?php echo $a['lista_prezenta_id']; ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-400 bg-blue-100 dark:bg-blue-800/70 text-blue-900 dark:text-blue-100 hover:bg-blue-200 text-sm">
                                             <i data-lucide="list" class="w-4 h-4" aria-hidden="true"></i> Listă
                                         </a>
                                         <?php else: ?>
@@ -202,7 +202,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Liste de prezență și tabele nominale</h2>
                     <button type="button"
-                            onclick="window.location.href='lista-prezenta-create.php'"
+                            onclick="window.location.href='/liste-prezenta/adauga'"
                             class="w-full mb-4 inline-flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
                         <i data-lucide="plus" class="w-5 h-5" aria-hidden="true"></i>
                         Creare listă nouă
@@ -224,14 +224,14 @@
                                 <tr class="border-b border-slate-100 dark:border-gray-700">
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo (int)$lp['id']; ?></td>
                                     <td class="py-2 text-left">
-                                        <a href="lista-prezenta-edit.php?id=<?php echo $lp['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline font-medium">
+                                        <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline font-medium">
                                             <?php echo htmlspecialchars($lp['tip_titlu'] . ($lp['detalii_activitate'] ? ': ' . mb_substr($lp['detalii_activitate'], 0, 30) : '')); ?>
                                         </a>
                                     </td>
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo date(DATE_FORMAT, strtotime($lp['data_lista'])); ?></td>
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($lp['created_by'] ?? '-'); ?></td>
                                     <td class="py-2 flex gap-1">
-                                        <a href="lista-prezenta-edit.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Modifică lista">Modifică</a>
+                                        <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Modifică lista">Modifică</a>
                                         <a href="lista-prezenta-print.php?id=<?php echo $lp['id']; ?>" target="_blank" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Printează lista">Print</a>
                                         <a href="lista-prezenta-pdf.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă PDF">PDF</a>
                                         <a href="lista-prezenta-docx.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă DOCX cu antet asociație">DOCX</a>
@@ -253,10 +253,10 @@
 <!-- Modal adăugare activitate -->
 <dialog id="formular-activitate" class="rounded-lg shadow-xl p-0 max-w-lg w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto"
         aria-labelledby="titlu-formular-activitate" aria-modal="true">
-    <form method="post" action="activitati.php<?php echo isset($_GET['redirect']) ? '?redirect=' . urlencode($_GET['redirect']) : ''; ?>">
+    <form method="post" action="/activitati<?php echo isset($_GET['redirect']) ? '?redirect=' . urlencode($_GET['redirect']) : ''; ?>">
         <?php echo csrf_field(); ?>
         <input type="hidden" name="adauga_activitate" value="1">
-        <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($_GET['redirect'] ?? $_SERVER['REQUEST_URI'] ?? 'activitati.php'); ?>">
+        <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($_GET['redirect'] ?? $_SERVER['REQUEST_URI'] ?? '/activitati'); ?>">
         <div class="p-6">
             <h2 id="titlu-formular-activitate" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Adaugă activitate</h2>
             <div class="space-y-4">
@@ -367,7 +367,7 @@ document.getElementById('btn-adauga-participanti')?.addEventListener('click', fu
         return;
     }
     document.getElementById('formular-activitate').close();
-    var q = 'lista-prezenta-create.php?din_activitate=1&nume=' + encodeURIComponent(nume) + '&data=' + encodeURIComponent(data) + '&ora=' + encodeURIComponent(ora);
+    var q = '/liste-prezenta/adauga?din_activitate=1&nume=' + encodeURIComponent(nume) + '&data=' + encodeURIComponent(data) + '&ora=' + encodeURIComponent(ora);
     if (locatie) q += '&locatie=' + encodeURIComponent(locatie);
     if (responsabili) q += '&responsabili=' + encodeURIComponent(responsabili);
     window.location.href = q;

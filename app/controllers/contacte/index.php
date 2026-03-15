@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_contact'])) {
         contacte_delete($pdo, $id, $_SESSION['utilizator'] ?? 'Sistem');
     }
 
-    $url = 'contacte.php';
+    $url = '/contacte';
     if ($redirect_tab) $url .= '?tab=' . urlencode($redirect_tab);
     header('Location: ' . $url);
     exit;
@@ -50,7 +50,7 @@ if ($tab !== 'toate' && !isset($tipuri[$tab])) $tab = 'toate';
 function build_contacte_url($params = []) {
     $p = array_merge($_GET, $params);
     $p['page'] = $p['page'] ?? 1;
-    return 'contacte.php?' . http_build_query($p);
+    return '/contacte?' . http_build_query($p);
 }
 
 // Variabile pentru view

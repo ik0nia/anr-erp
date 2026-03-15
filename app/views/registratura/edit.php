@@ -8,7 +8,7 @@
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Editează înregistrare nr. <?php echo htmlspecialchars($r['nr_inregistrare']); ?></h1>
-        <a href="registratura.php" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded" aria-label="Înapoi la management">← Înapoi</a>
+        <a href="/registratura" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded" aria-label="Înapoi la management">← Înapoi</a>
     </header>
 
     <div class="p-6 overflow-y-auto flex-1 max-w-2xl">
@@ -19,7 +19,7 @@
         <?php endif; ?>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-            <form method="post" action="registratura-edit.php?id=<?php echo (int)$id; ?>">
+            <form method="post" action="/registratura/edit?id=<?php echo (int)$id; ?>">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="actualizeaza_registratura" value="1">
                 <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
@@ -76,7 +76,7 @@
                     </div>
                 </div>
                 <div class="mt-6 flex gap-3">
-                    <a href="registratura.php" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Anulează">Anulare</a>
+                    <a href="/registratura" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Anulează">Anulare</a>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Salvează modificările">Salvează</button>
                 </div>
             </form>

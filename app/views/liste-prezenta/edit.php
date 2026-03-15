@@ -11,7 +11,7 @@
         <div class="flex gap-2">
             <a href="lista-prezenta-print.php?id=<?php echo $id; ?>" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Print</a>
             <a href="lista-prezenta-pdf.php?id=<?php echo $id; ?>" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">Descarcă PDF</a>
-            <a href="activitati.php" class="px-4 py-2 border rounded-lg text-sm">Înapoi</a>
+            <a href="/activitati" class="px-4 py-2 border rounded-lg text-sm">Înapoi</a>
         </div>
     </header>
     <div class="p-6 overflow-y-auto flex-1">
@@ -93,7 +93,7 @@
             </div>
             <div class="flex gap-4">
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Salvează modificările listei de prezență">Salvează</button>
-                <a href="activitati.php" class="px-4 py-2 border rounded-lg">Renunță</a>
+                <a href="/activitati" class="px-4 py-2 border rounded-lg">Renunță</a>
             </div>
         </form>
     </div>
@@ -111,7 +111,7 @@ function renderLista(){const c=document.getElementById('lista-participanti');con
 function stergeParticipant(id,ordineManual){let i;if(id){i=membriSelectati.findIndex(m=>m.id==id);}else if(ordineManual){i=membriSelectati.findIndex(m=>!m.id&&m.ordine==ordineManual);}else{return;}if(i>=0){membriSelectati.splice(i,1);renderLista();}}
 function adaugaParticipant(m){if(m&&m.id&&membriSelectati.some(x=>x.id==m.id))return;if(m){membriSelectati.push(m);}else{contorManual++;membriSelectati.push({id:null,numeManual:'',ordine:contorManual});}renderLista();}
 function actualizeazaNumeManual(ordine,nume){const m=membriSelectati.find(x=>!x.id&&x.ordine==ordine);if(m){m.numeManual=nume.trim();const jManual=document.getElementById('participanti_manuali_json');jManual.value=JSON.stringify(membriSelectati.filter(m=>!m.id&&m.numeManual).map(m=>({nume:m.numeManual,ordine:m.ordine})));}}
-function executaCautareEdit(){var q=document.getElementById('cauta-membru').value.trim();if(q.length<2)return;fetch('api-cauta-membri.php?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{var div=document.getElementById('rezultate-cautare');div.classList.remove('hidden');var membri=d.membri||[];div.innerHTML=membri.map(m=>'<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-gray-600"><span>'+(m.nume||'')+' '+(m.prenume||'')+'</span><button type="button" class="btn-add px-2 py-1 bg-amber-600 text-white rounded text-xs" data-id="'+m.id+'" data-nume="'+(m.nume||'')+'" data-prenume="'+(m.prenume||'')+'">Adaugă</button></div>').join('')||'<p class="text-slate-500 dark:text-gray-400">Niciun rezultat.</p>';div.querySelectorAll('.btn-add').forEach(btn=>{btn.onclick=()=>adaugaParticipant({id:parseInt(btn.dataset.id),nume:btn.dataset.nume||'',prenume:btn.dataset.prenume||''});});});}
+function executaCautareEdit(){var q=document.getElementById('cauta-membru').value.trim();if(q.length<2)return;fetch('/api/cauta-membri?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{var div=document.getElementById('rezultate-cautare');div.classList.remove('hidden');var membri=d.membri||[];div.innerHTML=membri.map(m=>'<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-gray-600"><span>'+(m.nume||'')+' '+(m.prenume||'')+'</span><button type="button" class="btn-add px-2 py-1 bg-amber-600 text-white rounded text-xs" data-id="'+m.id+'" data-nume="'+(m.nume||'')+'" data-prenume="'+(m.prenume||'')+'">Adaugă</button></div>').join('')||'<p class="text-slate-500 dark:text-gray-400">Niciun rezultat.</p>';div.querySelectorAll('.btn-add').forEach(btn=>{btn.onclick=()=>adaugaParticipant({id:parseInt(btn.dataset.id),nume:btn.dataset.nume||'',prenume:btn.dataset.prenume||''});});});}
 document.getElementById('btn-cauta').onclick=executaCautareEdit;
 document.getElementById('cauta-membru').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();executaCautareEdit();}});
 document.getElementById('btn-adauga-manual').onclick=function(){adaugaParticipant();};

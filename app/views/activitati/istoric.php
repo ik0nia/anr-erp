@@ -8,13 +8,13 @@
 <main class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <div class="flex items-center gap-4">
-            <a href="activitati.php" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded inline-flex items-center gap-1">
+            <a href="/activitati" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded inline-flex items-center gap-1">
                 <i data-lucide="arrow-left" class="w-5 h-5" aria-hidden="true"></i>
                 Înapoi
             </a>
             <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Istoric activități (doar trecute) — <?php echo $an; ?></h1>
         </div>
-        <form method="get" action="activitati-istoric.php" class="flex items-center gap-2">
+        <form method="get" action="/activitati/istoric" class="flex items-center gap-2">
             <label for="an-select" class="text-sm text-slate-700 dark:text-gray-300">An:</label>
             <select id="an-select" name="an" onchange="this.form.submit()"
                     class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"

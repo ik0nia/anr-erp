@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_task'])) {
     csrf_require_valid();
     $result = task_service_create($pdo, $_POST, $utilizator);
     if ($result['success']) {
-        header('Location: todo.php?succes=1');
+        header('Location: /todo?succes=1');
         exit;
     }
     $eroare = $result['error'];
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['finalizeaza_task'])) 
     if ($id > 0) {
         $result = task_finalize($pdo, $id, $user_id, $utilizator);
         if ($result['success']) {
-            header('Location: todo.php?succes=2');
+            header('Location: /todo?succes=2');
             exit;
         }
         $eroare = $result['error'] ?? 'Eroare la finalizare.';
@@ -48,8 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_task']))
     if ($id > 0) {
         $result = task_update($pdo, $id, $_POST, $user_id, $utilizator);
         if ($result['success']) {
-            $redirect = $_POST['redirect_after'] ?? 'todo.php';
-            $target = (strpos($redirect, 'index') !== false ? 'index.php' : 'todo.php') . '?succes=4';
+            $redirect = $_POST['redirect_after'] ?? '/todo';
+            $target = (strpos($redirect, 'index') !== false || strpos($redirect, 'dashboard') !== false ? '/dashboard' : '/todo') . '?succes=4';
             header('Location: ' . $target);
             exit;
         }
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reactivare_task'])) {
     if ($id > 0) {
         $result = task_reactivate($pdo, $id, $user_id, $utilizator);
         if ($result['success']) {
-            header('Location: todo.php?succes=3');
+            header('Location: /todo?succes=3');
             exit;
         }
         $eroare = $result['error'] ?? 'Eroare la reactivare.';

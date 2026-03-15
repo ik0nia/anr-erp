@@ -11,7 +11,7 @@
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Notificări</h1>
         <div class="flex flex-wrap items-center gap-2">
-            <a href="notificari.php<?php echo $istoric ? '' : '?istoric=1'; ?>"
+            <a href="/notificari<?php echo $istoric ? '' : '?istoric=1'; ?>"
                class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 <?php echo $istoric ? 'bg-slate-100 dark:bg-gray-700' : ''; ?>"
                aria-label="<?php echo $istoric ? 'Ascunde istoric' : 'Afișează istoric notificări'; ?>">
                 <i data-lucide="history" class="w-4 h-4 mr-2" aria-hidden="true"></i>
@@ -63,7 +63,7 @@
                             <tr class="<?php echo $n['status'] === 'nou' ? 'bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 border-l-4 border-amber-500 dark:border-amber-400' : 'hover:bg-slate-50 dark:hover:bg-gray-700'; ?>" <?php echo $n['status'] === 'nou' ? 'aria-label="Notificare necitită"' : ''; ?>>
                                 <td class="px-4 py-3 text-sm <?php echo $n['status'] === 'nou' ? 'text-slate-800 dark:text-gray-100 font-medium' : 'text-slate-600 dark:text-gray-400'; ?>"><?php echo (int)$n['id']; ?></td>
                                 <td class="px-4 py-3 text-left">
-                                    <a href="notificare-view.php?id=<?php echo (int)$n['id']; ?>" class="<?php echo $n['status'] === 'nou' ? 'text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 font-bold' : 'text-amber-600 dark:text-amber-400 hover:underline font-medium'; ?> hover:underline"><?php echo htmlspecialchars($n['titlu']); ?></a>
+                                    <a href="/notificari/view?id=<?php echo (int)$n['id']; ?>" class="<?php echo $n['status'] === 'nou' ? 'text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 font-bold' : 'text-amber-600 dark:text-amber-400 hover:underline font-medium'; ?> hover:underline"><?php echo htmlspecialchars($n['titlu']); ?></a>
                                 </td>
                                 <td class="px-4 py-3 text-sm <?php echo $n['status'] === 'nou' ? 'text-slate-800 dark:text-gray-100 font-medium' : 'text-slate-700 dark:text-gray-300'; ?>"><?php echo htmlspecialchars($n['importanta']); ?></td>
                                 <td class="px-4 py-3">
@@ -75,7 +75,7 @@
                                 <td class="px-4 py-3 text-right">
                                     <div class="flex items-center justify-end gap-2">
                                         <?php if ($n['status'] !== 'arhivat' && $n['status'] !== 'nou'): ?>
-                                        <form method="post" action="notificari.php" class="inline">
+                                        <form method="post" action="/notificari" class="inline">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="marcheaza_necitit" value="1">
                                             <input type="hidden" name="notif_id" value="<?php echo (int)$n['id']; ?>">
@@ -83,11 +83,11 @@
                                         </form>
                                         <?php endif; ?>
                                         <?php if ($n['status'] !== 'arhivat'): ?>
-                                        <form method="post" action="notificare-view.php" class="inline">
+                                        <form method="post" action="/notificari/view" class="inline">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="arhiveaza" value="1">
                                             <input type="hidden" name="id" value="<?php echo (int)$n['id']; ?>">
-                                            <input type="hidden" name="redirect" value="notificari.php<?php echo $istoric ? '?istoric=1' : ''; ?>">
+                                            <input type="hidden" name="redirect" value="/notificari<?php echo $istoric ? '?istoric=1' : ''; ?>">
                                             <button type="submit" class="text-slate-600 dark:text-gray-400 hover:text-amber-600 text-sm" aria-label="Arhivează notificarea">Arhivează</button>
                                         </form>
                                         <?php endif; ?>
@@ -107,7 +107,7 @@
                     <i data-lucide="bell-plus" class="mr-2 w-5 h-5" aria-hidden="true"></i>
                     Adaugă notificare
                 </h2>
-                <form method="post" action="notificari.php" enctype="multipart/form-data" class="space-y-4">
+                <form method="post" action="/notificari" enctype="multipart/form-data" class="space-y-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="adauga_notificare" value="1">
                     <div>

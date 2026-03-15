@@ -9,7 +9,7 @@
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Editează task</h1>
-        <a href="todo.php" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">
+        <a href="/todo" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-2" aria-hidden="true"></i> Înapoi la Taskuri
         </a>
     </header>
@@ -23,7 +23,7 @@
         <?php endif; ?>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 max-w-2xl">
-            <form method="post" action="todo-edit.php?id=<?php echo (int)$task_id; ?>" class="space-y-4">
+            <form method="post" action="/todo/edit?id=<?php echo (int)$task_id; ?>" class="space-y-4">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="actualizeaza_task" value="1">
 
@@ -62,14 +62,14 @@
                 </div>
 
                 <div class="flex gap-3 justify-end pt-4 border-t border-slate-200 dark:border-gray-700">
-                    <a href="todo.php" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">Anulează</a>
+                    <a href="/todo" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">Anulează</a>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Salvează</button>
                 </div>
             </form>
 
             <!-- Buton notificare -->
             <div class="mt-6 pt-6 border-t border-slate-200 dark:border-gray-700">
-                <form method="post" action="todo-edit.php?id=<?php echo (int)$task_id; ?>" class="inline">
+                <form method="post" action="/todo/edit?id=<?php echo (int)$task_id; ?>" class="inline">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="trimite_notificare" value="1">
                     <button type="submit"

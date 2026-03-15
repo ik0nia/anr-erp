@@ -9,6 +9,9 @@
  * Creează tabelele registrului v2 dacă nu există.
  */
 function ensure_registru_v2_tables($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     try {
         $pdo->exec("CREATE TABLE IF NOT EXISTS registru_interactiuni_v2_subiecte (
             id INT AUTO_INCREMENT PRIMARY KEY,

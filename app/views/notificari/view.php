@@ -12,7 +12,7 @@
         <div>
             <h1 class="text-xl font-semibold text-slate-900 dark:text-white"><?php echo htmlspecialchars($notif['titlu']); ?> - ID: <?php echo (int)$notif['id']; ?></h1>
         </div>
-        <a href="notificari.php" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700" aria-label="Înapoi la Notificări">
+        <a href="/notificari" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700" aria-label="Înapoi la Notificări">
             <i data-lucide="arrow-left" class="w-4 h-4 mr-2" aria-hidden="true"></i>
             Înapoi la Notificări
         </a>
@@ -67,7 +67,7 @@
             <?php endif; ?>
 
             <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-200 dark:border-gray-600">
-                <form method="post" action="notificare-view.php" class="inline">
+                <form method="post" action="/notificari/view" class="inline">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
                     <input type="hidden" name="adauga_task" value="1">
@@ -77,7 +77,7 @@
                     </button>
                 </form>
                 <?php if (($notif['user_status'] ?? '') !== 'arhivat' && ($notif['user_status'] ?? '') !== 'nou'): ?>
-                <form method="post" action="notificare-view.php" class="inline">
+                <form method="post" action="/notificari/view" class="inline">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="marcheaza_necitit" value="1">
                     <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
@@ -88,11 +88,11 @@
                 </form>
                 <?php endif; ?>
                 <?php if (($notif['user_status'] ?? '') !== 'arhivat'): ?>
-                <form method="post" action="notificare-view.php" class="inline">
+                <form method="post" action="/notificari/view" class="inline">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="arhiveaza" value="1">
                     <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
-                    <input type="hidden" name="redirect" value="notificari.php">
+                    <input type="hidden" name="redirect" value="/notificari">
                     <button type="submit" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700" aria-label="Arhivează notificarea">
                         <i data-lucide="archive" class="w-4 h-4 mr-2" aria-hidden="true"></i>
                         Arhivează Notificarea

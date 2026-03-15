@@ -18,9 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_task'])) {
     $result = task_service_create($pdo, $_POST, $_SESSION['utilizator'] ?? 'Sistem');
 
     if ($result['success']) {
-        $redirect = trim($_GET['redirect'] ?? $_POST['redirect'] ?? 'index.php');
+        $redirect = trim($_GET['redirect'] ?? $_POST['redirect'] ?? '/dashboard');
         if (empty($redirect) || strpos($redirect, '//') !== false) {
-            $redirect = 'index.php';
+            $redirect = '/dashboard';
         }
         $redirect_url = $redirect . '?succes_task=1';
         while (ob_get_level()) { ob_end_clean(); }

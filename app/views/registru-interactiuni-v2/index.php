@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Actualizare automată a contoarelor la fiecare 30 secunde
     setInterval(function() {
-        fetch('api-registru-v2-stats.php')
+        fetch('/api/registru-v2-stats')
             .then(response => response.json())
             .then(data => {
                 if (data.apel !== undefined) {

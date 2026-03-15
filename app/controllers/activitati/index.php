@@ -26,8 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_activitate']))
     csrf_require_valid();
     $result = activitati_create($pdo, $_POST, $utilizator);
     if ($result['success']) {
-        $redirect = trim($_GET['redirect'] ?? $_POST['redirect'] ?? 'activitati.php');
-        if (empty($redirect) || strpos($redirect, '//') !== false) $redirect = 'activitati.php';
+        $redirect = trim($_GET['redirect'] ?? $_POST['redirect'] ?? '/activitati');
+        if (empty($redirect) || strpos($redirect, '//') !== false) $redirect = '/activitati';
         header('Location: ' . $redirect . '?succes=1');
         exit;
     }
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_status']
     if ($id > 0 && $status) {
         $result = activitati_update_status($pdo, $id, $status, $utilizator);
         if ($result['success']) {
-            header('Location: activitati.php' . ($afiseaza_tot ? '?afiseaza_tot=1' : '') . '&succes_status=1');
+            header('Location: /activitati' . ($afiseaza_tot ? '?afiseaza_tot=1' : '') . '&succes_status=1');
             exit;
         }
         $eroare = $result['error'];

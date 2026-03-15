@@ -8,6 +8,9 @@
  * Asigură existența tabelelor BPA
  */
 function bpa_ensure_tables(PDO $pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS bpa_gestiune (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nr_document VARCHAR(100) NOT NULL,

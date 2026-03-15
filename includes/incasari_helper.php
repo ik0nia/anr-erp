@@ -18,6 +18,9 @@ if (!defined('INCASARI_MOD_NUMERAR')) {
 }
 
 function incasari_ensure_tables($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS incasari (
         id INT AUTO_INCREMENT PRIMARY KEY,
         membru_id INT DEFAULT NULL,

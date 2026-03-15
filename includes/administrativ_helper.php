@@ -5,6 +5,9 @@
  */
 
 function administrativ_ensure_tables(PDO $pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $tables = [
         "CREATE TABLE IF NOT EXISTS administrativ_achizitii (id INT AUTO_INCREMENT PRIMARY KEY, denumire VARCHAR(500) NOT NULL, cumparat TINYINT(1) NOT NULL DEFAULT 0, data_cumparare DATE DEFAULT NULL, ordine INT NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, INDEX idx_cumparat (cumparat)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         "CREATE TABLE IF NOT EXISTS administrativ_achizitii_istoric (id INT AUTO_INCREMENT PRIMARY KEY, achizitie_id INT NOT NULL, denumire VARCHAR(500) NOT NULL, data_cumparare DATE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_achizitie (achizitie_id), INDEX idx_data (data_cumparare)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",

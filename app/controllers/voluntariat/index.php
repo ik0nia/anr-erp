@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['adauga_voluntar'])) {
         $rez = voluntariat_store_voluntar($pdo, $_POST);
         if ($rez['success']) {
-            header('Location: voluntariat.php?tab=nomenclator&succes=voluntar');
+            header('Location: /voluntariat?tab=nomenclator&succes=voluntar');
             exit;
         }
         $eroare = $rez['error'] ?? 'Eroare la salvare.';
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['actualizeaza_voluntar'])) {
         $rez = voluntariat_update_voluntar($pdo, (int)($_POST['voluntar_id'] ?? 0), $_POST);
         if ($rez['success']) {
-            header('Location: voluntariat.php?tab=nomenclator&succes=actualizat');
+            header('Location: /voluntariat?tab=nomenclator&succes=actualizat');
             exit;
         }
         $eroare = $rez['error'] ?? 'Eroare la actualizare.';
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             trim($_POST['ora_sfarsit'] ?? '') ?: null
         );
         if ($rez['success']) {
-            header('Location: voluntariat.php?tab=activitati&succes=activitate');
+            header('Location: /voluntariat?tab=activitati&succes=activitate');
             exit;
         }
         $eroare = $rez['error'] ?? 'Eroare la salvare.';
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ore !== '' ? (float)$ore : null
         );
         if ($rez['success']) {
-            header('Location: voluntariat.php?tab=activitati&succes=participant');
+            header('Location: /voluntariat?tab=activitati&succes=participant');
             exit;
         }
         $eroare = $rez['error'] ?? 'Selectați activitatea și voluntarul.';

@@ -7,7 +7,7 @@ require_once APP_ROOT . '/app/services/RegistraturaService.php';
 
 $eroare = '';
 $redirect_param = isset($_GET['redirect']) && $_GET['redirect'] === 'dashboard' ? 'dashboard' : 'registratura';
-$redirect_url = $redirect_param === 'dashboard' ? 'index.php' : 'registratura.php';
+$redirect_url = $redirect_param === 'dashboard' ? '/dashboard' : '/registratura';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_registratura'])) {
     csrf_require_valid();

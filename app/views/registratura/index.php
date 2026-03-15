@@ -9,7 +9,7 @@
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Management Registratura</h1>
         <div class="flex items-center gap-4">
-            <a href="registratura-adauga.php?redirect=registratura" class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Adaugă înregistrare în registratură">
+            <a href="/registratura/adauga?redirect=registratura" class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Adaugă înregistrare în registratură">
                 <i data-lucide="plus" class="w-4 h-4 mr-2" aria-hidden="true"></i>
                 Adaugă înregistrare
             </a>
@@ -59,11 +59,11 @@
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                         <?php if (empty($inregistrari)): ?>
                         <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu există înregistrări. <a href="registratura-adauga.php?redirect=registratura" class="text-amber-600 dark:text-amber-400 hover:underline">Adaugă prima înregistrare</a></td>
+                            <td colspan="8" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu există înregistrări. <a href="/registratura/adauga?redirect=registratura" class="text-amber-600 dark:text-amber-400 hover:underline">Adaugă prima înregistrare</a></td>
                         </tr>
                         <?php else: ?>
                         <?php foreach ($inregistrari as $r): ?>
-                        <tr role="button" tabindex="0" onclick="window.location.href='registratura-edit.php?id=<?php echo (int)$r['id']; ?>'" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); window.location.href='registratura-edit.php?id=<?php echo (int)$r['id']; ?>'; }"
+                        <tr role="button" tabindex="0" onclick="window.location.href='/registratura/edit?id=<?php echo (int)$r['id']; ?>'" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); window.location.href='/registratura/edit?id=<?php echo (int)$r['id']; ?>'; }"
                             class="hover:bg-slate-50 dark:hover:bg-gray-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-inset"
                             aria-label="Editează înregistrarea nr. <?php echo htmlspecialchars($r['nr_inregistrare']); ?>">
                             <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white"><?php echo htmlspecialchars($r['nr_inregistrare'] ?? '-'); ?></td>

@@ -17,14 +17,14 @@ $user_id = $_SESSION['user_id'] ?? null;
 $utilizator = $_SESSION['utilizator'] ?? 'Sistem';
 
 if ($task_id <= 0) {
-    header('Location: todo.php');
+    header('Location: /todo');
     exit;
 }
 
 // Incarca taskul
 $task = task_get($pdo, $task_id, $user_id);
 if (!$task) {
-    header('Location: todo.php');
+    header('Location: /todo');
     exit;
 }
 

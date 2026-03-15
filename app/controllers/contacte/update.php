@@ -10,7 +10,7 @@ require_once APP_ROOT . '/app/services/ContacteService.php';
 
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 if ($id <= 0) {
-    header('Location: contacte.php');
+    header('Location: /contacte');
     exit;
 }
 
@@ -20,7 +20,7 @@ $eroare = '';
 // Incarca contactul
 $contact = contacte_get($pdo, $id);
 if (!$contact) {
-    header('Location: contacte.php');
+    header('Location: /contacte');
     exit;
 }
 
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_contact'
     $result = contacte_update($pdo, $id, $_POST, $_SESSION['utilizator'] ?? 'Sistem');
 
     if ($result['success']) {
-        header('Location: contacte.php?succes=1');
+        header('Location: /contacte?succes=1');
         exit;
     }
     $eroare = $result['error'];

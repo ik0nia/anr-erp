@@ -26,8 +26,8 @@ function require_login() {
         return;
     }
     if (empty($_SESSION['user_id']) || empty($_SESSION['utilizator'])) {
-        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? 'index.php');
-        header('Location: login.php?redirect=' . $redirect);
+        $redirect = urlencode($_SERVER['REQUEST_URI'] ?? '/dashboard');
+        header('Location: /login?redirect=' . $redirect);
         exit;
     }
     return true;
@@ -45,7 +45,7 @@ function is_admin() {
  */
 function require_admin() {
     if (!is_admin()) {
-        header('Location: index.php');
+        header('Location: /dashboard');
         exit;
     }
 }
@@ -54,6 +54,9 @@ function require_admin() {
  * Asigură că tabelele utilizatori există.
  */
 function auth_ensure_tables(PDO $pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS utilizatori (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nume_complet VARCHAR(255) NOT NULL,
@@ -204,7 +207,7 @@ function auth_schimba_parola(PDO $pdo, $user_id, $parola_actuala, $parola_noua) 
  * Trimite email recuperare parolă. Returnează true/false.
  */
 function auth_trimite_email_recuperare($email, $token) {
-    $url = (defined('PLATFORM_BASE_URL') ? PLATFORM_BASE_URL : '') . '/reset-parola.php?token=' . urlencode($token);
+    $url = (defined('PLATFORM_BASE_URL') ? PLATFORM_BASE_URL : '') . '/reset-parola?token=' . urlencode($token);
     $subiect = '[' . PLATFORM_NAME . '] Recuperare parolă';
     $mesaj = "Bună ziua,\n\nAți solicitat resetarea parolei pentru " . PLATFORM_NAME . ".\n\n";
     $mesaj .= "Accesați linkul de mai jos pentru a seta o parolă nouă (valid 1 oră):\n" . $url . "\n\n";
@@ -217,7 +220,7 @@ function auth_trimite_email_recuperare($email, $token) {
  * Trimite email confirmare cont nou (fără parolă, cu link login).
  */
 function auth_trimite_email_confirmare_utilizator($nume_complet, $email, $username, $functie, $rol) {
-    $url_login = (defined('PLATFORM_BASE_URL') ? PLATFORM_BASE_URL : '') . '/login.php';
+    $url_login = (defined('PLATFORM_BASE_URL') ? PLATFORM_BASE_URL : '') . '/login';
     $subiect = '[' . PLATFORM_NAME . '] Cont creat';
     $mesaj = "Bună ziua, " . $nume_complet . ",\n\n";
     $mesaj .= "Vi s-a creat un cont în platforma " . PLATFORM_NAME . ".\n\n";

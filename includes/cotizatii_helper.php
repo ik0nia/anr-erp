@@ -4,6 +4,9 @@
  */
 
 function cotizatii_ensure_tables($pdo) {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS cotizatii_opts_grad_handicap (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nume VARCHAR(100) NOT NULL,

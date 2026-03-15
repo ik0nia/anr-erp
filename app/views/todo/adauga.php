@@ -9,7 +9,7 @@
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Adaugă task</h1>
-        <a href="index.php" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">← Înapoi la Dashboard</a>
+        <a href="/dashboard" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">← Înapoi la Dashboard</a>
     </header>
 
     <div class="p-6 overflow-y-auto flex-1 max-w-2xl">
@@ -19,7 +19,7 @@
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Date task nou</h2>
-            <form method="post" action="todo-adauga.php">
+            <form method="post" action="/todo/adauga">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="adauga_task" value="1">
                 <div class="space-y-4">
@@ -57,7 +57,7 @@
                     </div>
                 </div>
                 <div class="mt-6 flex gap-3">
-                    <a href="index.php" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">Anulare</a>
+                    <a href="/dashboard" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">Anulare</a>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Salvează</button>
                 </div>
             </form>

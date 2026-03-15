@@ -15,7 +15,7 @@
         <section class="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4" aria-labelledby="mesaj-voluntari-heading">
             <h2 id="mesaj-voluntari-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Mesaj pentru voluntari</h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">Acest mesaj este folosit ca șablon pentru invitații rapide (link WhatsApp).</p>
-            <form method="post" action="voluntariat.php?tab=<?php echo urlencode($tab); ?>" class="flex flex-wrap gap-3 items-end">
+            <form method="post" action="/voluntariat?tab=<?php echo urlencode($tab); ?>" class="flex flex-wrap gap-3 items-end">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_mesaj_voluntari" value="1">
                 <div class="flex-1 min-w-[200px]">
@@ -26,7 +26,7 @@
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500 focus:ring-offset-2" aria-label="Salvează mesajul pentru voluntari">Salvează Mesajul</button>
             </form>
             <?php if ($mesaj_zilei !== ''): ?>
-            <form method="post" action="voluntariat.php?tab=<?php echo urlencode($tab); ?>" class="mt-2 inline">
+            <form method="post" action="/voluntariat?tab=<?php echo urlencode($tab); ?>" class="mt-2 inline">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="sterge_mesaj_voluntari" value="1">
                 <button type="submit" class="px-3 py-1.5 text-sm border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Șterge mesajul pentru voluntari">Șterge</button>
@@ -36,9 +36,9 @@
 
         <!-- Tab-uri -->
         <div class="mb-4 flex gap-2 border-b border-slate-200 dark:border-gray-700" role="tablist" aria-label="Secțiuni Voluntariat">
-            <a href="voluntariat.php?tab=nomenclator" role="tab" aria-selected="<?php echo $tab === 'nomenclator' ? 'true' : 'false'; ?>" class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab === 'nomenclator' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border-b-2 border-amber-600' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">Nomenclator Voluntari</a>
-            <a href="voluntariat.php?tab=activitati" role="tab" aria-selected="<?php echo $tab === 'activitati' ? 'true' : 'false'; ?>" class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab === 'activitati' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border-b-2 border-amber-600' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">Gestiune Activități</a>
-            <a href="voluntariat.php?tab=registru" role="tab" aria-selected="<?php echo $tab === 'registru' ? 'true' : 'false'; ?>" class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab === 'registru' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border-b-2 border-amber-600' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">Registru Activități</a>
+            <a href="/voluntariat?tab=nomenclator" role="tab" aria-selected="<?php echo $tab === 'nomenclator' ? 'true' : 'false'; ?>" class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab === 'nomenclator' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border-b-2 border-amber-600' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">Nomenclator Voluntari</a>
+            <a href="/voluntariat?tab=activitati" role="tab" aria-selected="<?php echo $tab === 'activitati' ? 'true' : 'false'; ?>" class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab === 'activitati' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border-b-2 border-amber-600' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">Gestiune Activități</a>
+            <a href="/voluntariat?tab=registru" role="tab" aria-selected="<?php echo $tab === 'registru' ? 'true' : 'false'; ?>" class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab === 'registru' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border-b-2 border-amber-600' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">Registru Activități</a>
         </div>
 
         <?php if ($tab === 'nomenclator'): ?>
@@ -52,7 +52,7 @@
             </div>
             <?php if (!empty($templates_doc)): ?>
             <div class="mb-4 p-3 bg-slate-50 dark:bg-gray-700/50 rounded-lg">
-                <form method="post" action="voluntariat.php?tab=nomenclator" class="flex flex-wrap items-center gap-2">
+                <form method="post" action="/voluntariat?tab=nomenclator" class="flex flex-wrap items-center gap-2">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="setare_template_contract" value="1">
                     <label for="template_contract_id" class="text-sm font-medium text-slate-700 dark:text-gray-300">Șablon contract voluntariat:</label>
@@ -114,7 +114,7 @@
             <h2 id="activitati-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Gestiune Activități</h2>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 mb-6">
                 <h3 class="font-medium text-slate-900 dark:text-white mb-3">Adaugă activitate</h3>
-                <form method="post" action="voluntariat.php?tab=activitati">
+                <form method="post" action="/voluntariat?tab=activitati">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="adauga_activitate" value="1">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -219,7 +219,7 @@
 <!-- Modal Adaugă voluntar -->
 <dialog id="modal-adauga-voluntar" class="rounded-lg shadow-xl bg-white dark:bg-gray-800 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto" aria-labelledby="modal-adauga-voluntar-title" aria-modal="true">
     <h3 id="modal-adauga-voluntar-title" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Adaugă voluntar</h3>
-    <form method="post" action="voluntariat.php?tab=nomenclator" id="form-adauga-voluntar">
+    <form method="post" action="/voluntariat?tab=nomenclator" id="form-adauga-voluntar">
         <?php echo csrf_field(); ?>
         <input type="hidden" name="adauga_voluntar" value="1">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -250,7 +250,7 @@
 <!-- Modal Editează voluntar -->
 <dialog id="modal-editeaza-voluntar" class="rounded-lg shadow-xl bg-white dark:bg-gray-800 p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto" aria-labelledby="modal-editeaza-voluntar-title" aria-modal="true">
     <h3 id="modal-editeaza-voluntar-title" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Editează voluntar</h3>
-    <form method="post" action="voluntariat.php?tab=nomenclator" id="form-editeaza-voluntar">
+    <form method="post" action="/voluntariat?tab=nomenclator" id="form-editeaza-voluntar">
         <?php echo csrf_field(); ?>
         <input type="hidden" name="actualizeaza_voluntar" value="1">
         <input type="hidden" name="voluntar_id" id="edit_voluntar_id" value="">
@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var q = inp.value.trim();
             var list = document.getElementById('sugestii-' + actId);
             if (q.length < 1) { if (list) { list.classList.add('hidden'); list.innerHTML = ''; } return; }
-            fetch('api-cauta-voluntari.php?q=' + encodeURIComponent(q))
+            fetch('/api/cauta-voluntari?q=' + encodeURIComponent(q))
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     list.innerHTML = '';
@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var tok = document.querySelector('input[name="_csrf_token"]');
             var form = document.createElement('form');
             form.method = 'post';
-            form.action = 'voluntariat.php?tab=activitati';
+            form.action = '/voluntariat?tab=activitati';
             form.innerHTML = '<input type="hidden" name="_csrf_token" value="' + (tok ? tok.value : '') + '">' +
                 '<input type="hidden" name="adauga_participant" value="1">' +
                 '<input type="hidden" name="activitate_id" value="' + actId + '">' +
@@ -326,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     window.editeazaVoluntar = function(id) {
-        window.location.href = 'voluntariat.php?tab=nomenclator&editeaza=' + id;
+        window.location.href = '/voluntariat?tab=nomenclator&editeaza=' + id;
     };
 });
 </script>

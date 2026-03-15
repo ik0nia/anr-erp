@@ -8,6 +8,9 @@
  * Asigură existența tabelei settings_email și returnează setările (un singur rând, id=1).
  */
 function mailer_ensure_table(PDO $pdo): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS settings_email (
         id INT AUTO_INCREMENT PRIMARY KEY,
         smtp_host VARCHAR(255) DEFAULT NULL,

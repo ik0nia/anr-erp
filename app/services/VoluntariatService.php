@@ -32,7 +32,7 @@ function voluntariat_mesaje_succes(): array {
 function voluntariat_salveaza_mesaj(PDO $pdo, string $mesaj, string $tab): void {
     voluntariat_set_mesaj_zilei($pdo, $mesaj);
     log_activitate($pdo, 'Voluntariat: Mesaj pentru voluntari salvat.');
-    header('Location: voluntariat.php?tab=' . urlencode($tab) . '&succes=mesaj');
+    header('Location: /voluntariat?tab=' . urlencode($tab) . '&succes=mesaj');
     exit;
 }
 
@@ -42,7 +42,7 @@ function voluntariat_salveaza_mesaj(PDO $pdo, string $mesaj, string $tab): void 
 function voluntariat_sterge_mesaj(PDO $pdo, string $tab): void {
     voluntariat_sterge_mesaj_zilei($pdo);
     log_activitate($pdo, 'Voluntariat: Mesaj pentru voluntari șters.');
-    header('Location: voluntariat.php?tab=' . urlencode($tab) . '&succes=mesaj_sters');
+    header('Location: /voluntariat?tab=' . urlencode($tab) . '&succes=mesaj_sters');
     exit;
 }
 
@@ -53,7 +53,7 @@ function voluntariat_seteaza_template(PDO $pdo, int $tid): void {
     $stmt = $pdo->prepare("INSERT INTO setari (cheie, valoare) VALUES ('voluntariat_template_contract_id', ?) ON DUPLICATE KEY UPDATE valoare = ?, updated_at = CURRENT_TIMESTAMP");
     $val = $tid ? (string)$tid : '';
     $stmt->execute([$val, $val]);
-    header('Location: voluntariat.php?tab=nomenclator&succes=template');
+    header('Location: /voluntariat?tab=nomenclator&succes=template');
     exit;
 }
 
