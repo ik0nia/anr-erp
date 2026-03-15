@@ -647,12 +647,13 @@
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Nume utilizator</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Rol</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Status</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Email notif.</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                         <?php if (empty($lista_utilizatori)): ?>
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-slate-600 dark:text-gray-400">Niciun utilizator. Adăugați un utilizator cu butonul de mai sus.</td>
+                            <td colspan="7" class="px-4 py-6 text-center text-slate-600 dark:text-gray-400">Niciun utilizator. Adăugați un utilizator cu butonul de mai sus.</td>
                         </tr>
                         <?php else: ?>
                         <?php foreach ($lista_utilizatori as $u): ?>
@@ -665,6 +666,18 @@
                                 <span class="inline-flex px-2 py-1 text-xs font-medium rounded <?php echo $u['rol'] === 'administrator' ? 'bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100' : 'bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-200'; ?>"><?php echo htmlspecialchars($u['rol']); ?></span>
                             </td>
                             <td class="px-4 py-3 text-sm <?php echo $u['activ'] ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-gray-400'; ?>"><?php echo $u['activ'] ? 'Activ' : 'Dezactivat'; ?></td>
+                            <td class="px-4 py-3">
+                                <form method="post" action="/setari" class="inline">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="toggle_email_notif" value="1">
+                                    <input type="hidden" name="utilizator_id" value="<?php echo (int)$u['id']; ?>">
+                                    <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium <?php echo !empty($u['primeste_notificari_email']) ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-600' : 'bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400 border border-slate-300 dark:border-gray-600'; ?>"
+                                            aria-label="<?php echo !empty($u['primeste_notificari_email']) ? 'Dezactivează notificări email' : 'Activează notificări email'; ?>">
+                                        <i data-lucide="<?php echo !empty($u['primeste_notificari_email']) ? 'bell' : 'bell-off'; ?>" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                        <?php echo !empty($u['primeste_notificari_email']) ? 'Da' : 'Nu'; ?>
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                         <?php endif; ?>

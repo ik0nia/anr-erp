@@ -25,6 +25,20 @@ if (isset($_GET['tab']) && in_array($_GET['tab'], $valid_tabs)) {
 }
 
 // ---------------------------------------------------------------------------
+// POST: Toggle email notifications for user
+// ---------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_email_notif']) && is_admin()) {
+    csrf_require_valid();
+    $uid = (int)($_POST['utilizator_id'] ?? 0);
+    if ($uid > 0) {
+        try {
+            $pdo->prepare("UPDATE utilizatori SET primeste_notificari_email = NOT primeste_notificari_email WHERE id = ?")->execute([$uid]);
+        } catch (PDOException $e) {}
+    }
+    header('Location: /setari?tab=general&succes=notif_email');
+    exit;
+}
+
 // POST: Add user
 // ---------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_utilizator']) && !empty($_SESSION['user_id']) && is_admin()) {
