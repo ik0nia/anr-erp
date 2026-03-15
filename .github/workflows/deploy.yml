@@ -1,6 +1,8 @@
 name: Deploy to Server
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -16,6 +18,6 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /srv/jail/anrbihor/home/anrbihor/web/erp.anrbihor.ro/public_html
+            cd ~/web/erp.anrbihor.ro/public_html
             git pull origin main 2>&1 || true
             composer install --no-dev --no-interaction 2>&1 || true
