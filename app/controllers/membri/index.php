@@ -75,7 +75,7 @@ $sort_dir = $_GET['dir'] ?? 'asc';
 $cautare = trim($_GET['cautare'] ?? '');
 $per_page = (int)($_GET['per_page'] ?? 25);
 $page = max(1, (int)($_GET['page'] ?? 1));
-$status_filter = $_GET['status'] ?? 'activi';
+$status_filter = $_GET['status'] ?? 'toti';
 $avertizari_filter = isset($_GET['avertizari']) && $_GET['avertizari'] == '1';
 $aniversari_azi_filter = isset($_GET['aniversari_azi']) && $_GET['aniversari_azi'] == '1';
 $actualizare_cnp_ci_filter = isset($_GET['actualizare_cnp_ci']) && $_GET['actualizare_cnp_ci'] == '1';

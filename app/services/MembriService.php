@@ -53,9 +53,10 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
             $where_parts[] = "status_dosar IN ('Suspendat', 'Expirat')";
         } elseif ($status_filter === 'arhiva') {
             $where_parts[] = "status_dosar = 'Decedat'";
-        } else {
+        } elseif ($status_filter === 'activi') {
             $where_parts[] = "status_dosar = 'Activ'";
         }
+        // 'toti' = fara filtru de status
     }
 
     if ($avertizari_filter) {
@@ -342,9 +343,10 @@ function membri_lista_all(PDO $pdo, array $get_params): array {
             $where_parts[] = "status_dosar IN ('Suspendat', 'Expirat')";
         } elseif ($status_filter === 'arhiva') {
             $where_parts[] = "status_dosar = 'Decedat'";
-        } else {
+        } elseif ($status_filter === 'activi') {
             $where_parts[] = "status_dosar = 'Activ'";
         }
+        // 'toti' = fara filtru de status
     }
 
     if ($avertizari_filter) {
