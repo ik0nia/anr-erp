@@ -36,7 +36,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                 <?php endforeach; ?>
             </select>
             <?php if (empty($templates_active)): ?>
-            <p class="text-amber-600 dark:text-amber-400 text-sm mb-4">Nu există templateuri active. Adăugați templateuri în <a href="generare-documente.php" class="underline">Management Generare Documente</a>.</p>
+            <p class="text-amber-600 dark:text-amber-400 text-sm mb-4">Nu există templateuri active. Adăugați templateuri în <a href="/generare-documente" class="underline">Management Generare Documente</a>.</p>
             <?php endif; ?>
             <div class="mb-4">
                 <label class="inline-flex items-center gap-2 cursor-pointer">

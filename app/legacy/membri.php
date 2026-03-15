@@ -5,17 +5,18 @@
  */
 // Activează output buffering pentru a preveni probleme cu redirect-uri
 ob_start();
-require_once __DIR__ . '/config.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require_once 'includes/log_helper.php';
-require_once 'includes/cnp_validator.php';
-require_once 'includes/file_helper.php';
-require_once 'includes/membri_alerts.php';
-require_once 'includes/cotizatii_helper.php';
-require_once 'includes/incasari_helper.php';
-require_once 'membri_processing.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/cnp_validator.php';
+require_once APP_ROOT . '/includes/file_helper.php';
+require_once APP_ROOT . '/includes/membri_alerts.php';
+require_once APP_ROOT . '/includes/cotizatii_helper.php';
+require_once APP_ROOT . '/includes/incasari_helper.php';
+require_once APP_ROOT . '/app/views/partials/membri_processing.php';
 
 $eroare = '';
 $succes = '';
@@ -30,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_membru'])) {
     if ($result['success']) {
         // Curăță buffer-ul înainte de redirect
         ob_clean();
-        header('Location: membri.php?succes=1');
+        header('Location: /membri?succes=1');
         exit;
     } else {
         $eroare = $result['error'];
@@ -66,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_mesaj_precomplet
 }
 
 // Include header și sidebar DUPĂ procesarea POST (pentru a permite redirect-uri)
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 
 // Afișare mesaj succes după redirect
 if (isset($_GET['succes']) && $_GET['succes'] == '1') {
@@ -392,7 +393,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
 
         <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
             <!-- Stânga: câmp căutare + butoane -->
-            <form method="get" action="membri.php" class="flex items-center gap-2 shrink-0">
+            <form method="get" action="/membri" class="flex items-center gap-2 shrink-0">
                 <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort_col); ?>">
                 <input type="hidden" name="dir" value="<?php echo htmlspecialchars(strtolower($sort_dir)); ?>">
                 <input type="hidden" name="per_page" value="<?php echo $per_page; ?>">
@@ -792,7 +793,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                     Mesaj pentru WhatsApp / Email
                 </h2>
                 <p class="text-sm text-slate-600 dark:text-gray-400 mb-3">Subiectul și mesajul se precompletează la linkurile Email și WhatsApp din tabel. Se resetează la schimbarea afișării (butoanele de filtrare).</p>
-                <form method="post" action="membri.php" id="form-mesaj-precompletat">
+                <form method="post" action="/membri" id="form-mesaj-precompletat">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="save_mesaj_precompletat" value="1">
                     <input type="hidden" name="redirect_status" value="<?php echo htmlspecialchars($status_filter); ?>">
@@ -844,13 +845,13 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
         </div>
         <p id="desc-formular" class="text-sm text-slate-600 dark:text-gray-400 mb-4">Completați câmpurile de mai jos. Câmpurile marcate cu * sunt obligatorii.</p>
 
-        <?php require_once 'membri_form.php'; ?>
+        <?php require_once APP_ROOT . '/app/views/partials/membri_form.php'; ?>
         <?php render_formular_membru(null, $eroare); ?>
     </div>
 </dialog>
 
-<?php require_once 'includes/documente_modal.php'; ?>
-<?php require_once 'includes/incasari_modal.php'; ?>
+<?php require_once APP_ROOT . '/includes/documente_modal.php'; ?>
+<?php require_once APP_ROOT . '/includes/incasari_modal.php'; ?>
 
 <style>
 .resizable-th {

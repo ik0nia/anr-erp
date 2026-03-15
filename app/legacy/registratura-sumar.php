@@ -3,12 +3,13 @@
  * Pagină sumar după salvare înregistrare Registratura
  * Parametri: id, redirect=dashboard|registratura
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/db_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/db_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
 $redirect_param = isset($_GET['redirect']) && $_GET['redirect'] === 'dashboard' ? 'dashboard' : 'registratura';
-$redirect_url = $redirect_param === 'dashboard' ? 'index.php' : 'registratura.php';
+$redirect_url = $redirect_param === 'dashboard' ? '/dashboard' : '/registratura';
 
 if ($id <= 0) {
     header('Location: ' . $redirect_url);
@@ -26,8 +27,8 @@ if (!$r) {
     exit;
 }
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 ?>
 
 <main class="flex-1 flex flex-col overflow-hidden" role="main">

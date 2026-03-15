@@ -1,12 +1,13 @@
 <?php
 // Output buffering pentru redirect-uri după POST (finalizare task, interacțiuni etc.)
 ob_start();
-require_once __DIR__ . '/config.php';
-require_once 'includes/log_helper.php';
-require_once 'includes/registru_interactiuni_v2_helper.php';
-require_once 'includes/librarie_documente_helper.php';
-require_once 'includes/contacte_helper.php';
-require_once 'includes/incasari_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/registru_interactiuni_v2_helper.php';
+require_once APP_ROOT . '/includes/librarie_documente_helper.php';
+require_once APP_ROOT . '/includes/contacte_helper.php';
+require_once APP_ROOT . '/includes/incasari_helper.php';
 
 $eroare = '';
 $succes = '';
@@ -31,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['finalizeaza_task'])) 
                 $stmt = $pdo->prepare('UPDATE taskuri SET finalizat = 1, data_finalizare = NOW() WHERE id = ?');
                 $stmt->execute([$id]);
                 log_activitate($pdo, "Sarcină finalizată: {$task['nume']}");
-                $redirect_url = 'index.php?succes=1';
+                $redirect_url = '/dashboard?succes=1';
                 if (function_exists('ob_get_level')) {
                     while (ob_get_level()) { ob_end_clean(); }
                 }
@@ -126,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_interactiune_v
             log_activitate($pdo, "Task creat din interacțiune v2: {$nume_task}");
         }
         log_activitate($pdo, "registru_interactiuni_v2: " . ($tip === 'apel' ? 'Apel telefonic' : 'Vizită sediu') . " înregistrat: {$persoana}");
-        $redirect_url = 'index.php?succes_interact_v2=1';
+        $redirect_url = '/dashboard?succes_interact_v2=1';
         while (ob_get_level()) { ob_end_clean(); }
         if (!headers_sent()) {
             header('Location: ' . $redirect_url);
@@ -139,8 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_interactiune_v
     }
 }
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 
 if (isset($_GET['succes'])) {
     $succes = $_GET['succes'] == '4' ? 'Taskul a fost actualizat cu succes.' : 'Taskul a fost marcat ca finalizat.';
@@ -279,7 +280,7 @@ $interactiuni_v2_azi = registru_v2_interactiuni_azi($pdo);
                 <!-- Bloc Caută membru -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Caută Membru</h2>
-                    <form method="get" action="index.php" id="form-cautare-membru" class="mb-4">
+                    <form method="get" action="/dashboard" id="form-cautare-membru" class="mb-4">
                         <div class="relative">
                             <input type="search" 
                                    name="cautare_membru" 
@@ -338,7 +339,7 @@ $interactiuni_v2_azi = registru_v2_interactiuni_azi($pdo);
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">
                         <a href="librarie-documente.php" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">Librărie documente</a>
                     </h2>
-                    <form method="get" action="index.php" id="form-cautare-librarie" class="mb-4">
+                    <form method="get" action="/dashboard" id="form-cautare-librarie" class="mb-4">
                         <input type="hidden" name="cautare_membru" value="<?php echo htmlspecialchars($_GET['cautare_membru'] ?? ''); ?>">
                         <div class="relative">
                             <input type="search" name="cautare_librarie" id="cautare_librarie"
@@ -427,7 +428,7 @@ $interactiuni_v2_azi = registru_v2_interactiuni_azi($pdo);
                                 <?php foreach ($taskuri_active as $t): ?>
                                 <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
                                     <td class="px-4 py-3">
-                                        <form method="post" action="index.php" class="inline">
+                                        <form method="post" action="/dashboard" class="inline">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="finalizeaza_task" value="1">
                                             <input type="hidden" name="task_id" value="<?php echo (int)$t['id']; ?>">
@@ -468,7 +469,7 @@ $interactiuni_v2_azi = registru_v2_interactiuni_azi($pdo);
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                         <a href="registru-interactiuni-v2.php" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">Registru Interacțiuni</a>
                     </h2>
-                    <form method="post" action="index.php" id="form-interactiuni-v2">
+                    <form method="post" action="/dashboard" id="form-interactiuni-v2">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="adauga_interactiune_v2" value="1">
                         <input type="hidden" name="tip_interactiune_v2" id="tip-interact-v2-input" value="apel">
@@ -767,6 +768,6 @@ if (dlgTask) {
     });
 })();
 </script>
-<?php require_once 'includes/incasari_dashboard_modal.php'; ?>
+<?php require_once APP_ROOT . '/includes/incasari_dashboard_modal.php'; ?>
 </body>
 </html>

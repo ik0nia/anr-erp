@@ -38,7 +38,7 @@ $redirect_uri = htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'index.php');
                 <i data-lucide="key" class="w-4 h-4 flex-shrink-0" aria-hidden="true"></i>
                 Schimbă parola
             </button>
-            <a href="logout.php" 
+            <a href="/logout" 
                class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 focus:bg-slate-100 dark:focus:bg-gray-700 focus:outline-none border-t border-slate-200 dark:border-gray-600 mt-1 pt-2"
                role="menuitem">
                 <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0" aria-hidden="true"></i>
@@ -60,7 +60,7 @@ $redirect_uri = htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'index.php');
         <?php if ($schimba_succes !== ''): ?>
         <div class="mb-4 p-3 bg-emerald-100 dark:bg-emerald-900/30 border-l-4 border-emerald-600 text-emerald-800 dark:text-emerald-200 rounded-r text-sm" role="status"><?php echo htmlspecialchars($schimba_succes); ?></div>
         <?php endif; ?>
-        <form method="post" action="schimba-parola.php" id="form-schimba-parola">
+        <form method="post" action="/schimba-parola" id="form-schimba-parola">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="redirect" value="<?php echo $redirect_uri; ?>">
             <div class="space-y-4">

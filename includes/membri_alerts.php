@@ -305,7 +305,7 @@ function render_alerts_badge($membru, $membru_id = null, $pdo = null) {
     }
     
     $membru_id = $membru_id ?? ($membru['id'] ?? null);
-    $link_start = $membru_id ? '<a href="membru-profil.php?id=' . $membru_id . '" class="inline-block">' : '';
+    $link_start = $membru_id ? '<a href="/membru-profil?id=' . $membru_id . '" class="inline-block">' : '';
     $link_end = $membru_id ? '</a>' : '';
     
     $html = '<div class="flex flex-row flex-nowrap gap-1 items-center">';

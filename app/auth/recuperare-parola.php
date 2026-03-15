@@ -2,12 +2,13 @@
 /**
  * Cerere recuperare parolă - CRM ANR Bihor
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/auth_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/auth_helper.php';
 
 $mesaj = '';
 $succes = false;
-$redirect = trim($_GET['redirect'] ?? 'login.php');
+$redirect = trim($_GET['redirect'] ?? '/login');
 
 auth_ensure_tables($pdo);
 
@@ -30,10 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="utf-8">
-    
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperare parolă - <?php echo htmlspecialchars(PLATFORM_NAME); ?></title>
-    <link href="css/tailwind.css" rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -53,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <?php if (!$succes): ?>
-            <form method="post" action="recuperare-parola.php" class="space-y-4" aria-label="Formular recuperare parolă">
+            <form method="post" action="/recuperare-parola" class="space-y-4" aria-label="Formular recuperare parolă">
                 <?php echo csrf_field(); ?>
                 <div>
                     <label for="email" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Email <span class="text-red-600" aria-hidden="true">*</span></label>
@@ -66,13 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <button type="submit" class="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Trimite link recuperare">
                         Trimite link
                     </button>
-                    <a href="login.php?redirect=<?php echo urlencode($redirect); ?>" class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">
+                    <a href="/login?redirect=<?php echo urlencode($redirect); ?>" class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">
                         Înapoi la login
                     </a>
                 </div>
             </form>
             <?php else: ?>
-            <a href="login.php?redirect=<?php echo urlencode($redirect); ?>" class="inline-flex items-center justify-center w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
+            <a href="/login?redirect=<?php echo urlencode($redirect); ?>" class="inline-flex items-center justify-center w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
                 Înapoi la login
             </a>
             <?php endif; ?>

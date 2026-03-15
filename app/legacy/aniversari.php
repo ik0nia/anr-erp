@@ -2,9 +2,10 @@
 /**
  * Aniversări – afișează aniversările zilei (membri și contacte)
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/contacte_helper.php';
-require_once 'includes/membri_alerts.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/contacte_helper.php';
+require_once APP_ROOT . '/includes/membri_alerts.php';
 
 ensure_contacte_table($pdo);
 
@@ -12,7 +13,7 @@ ensure_contacte_table($pdo);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mesaj_azi'])) {
     csrf_require_valid();
     $_SESSION['aniversari_mesaj_azi'] = trim((string)$_POST['mesaj_azi']);
-    header('Location: aniversari.php');
+    header('Location: /aniversari');
     exit;
 }
 $mesaj_azi = isset($_SESSION['aniversari_mesaj_azi']) ? (string)$_SESSION['aniversari_mesaj_azi'] : '';
@@ -94,8 +95,8 @@ $prima_zi_luna = (int)date('w', mktime(0, 0, 0, $luna_curenta, 1, $anul_curent))
 $luni_ro = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
 $zile_sapt = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 ?>
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-4"><meta charset="utf-8">
@@ -153,7 +154,7 @@ include 'sidebar.php';
             </div>
             <!-- Mesajul de azi dreapta -->
             <div class="lg:col-span-1">
-                <form method="post" action="aniversari.php" class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4">
+                <form method="post" action="/aniversari" class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4">
                     <?php echo csrf_field(); ?>
                     <label for="mesaj-azi" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Mesajul de azi</label>
                     <textarea id="mesaj-azi" name="mesaj_azi" rows="4" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500" placeholder="Text predefinit pentru WhatsApp și email..."><?php echo htmlspecialchars($mesaj_azi); ?></textarea>

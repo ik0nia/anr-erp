@@ -2,8 +2,9 @@
 /**
  * Deconectare - CRM ANR Bihor
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/log_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/log_helper.php';
 
 // Log logout înainte de distrugerea sesiunii
 if (!empty($_SESSION['username']) && !empty($_SESSION['utilizator'])) {
@@ -16,5 +17,5 @@ if (ini_get('session.use_cookies')) {
     setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
 }
 session_destroy();
-header('Location: login.php');
+header('Location: /login');
 exit;

@@ -14,8 +14,8 @@ $path = '/' . trim($path, '/');
 // --- Route definitions ---
 $routes = [
     // MVC Controller routes
-    '/'                        => ['type' => 'legacy', 'script' => 'index.php', 'file' => 'index.php'],
-    '/dashboard'               => ['type' => 'legacy', 'script' => 'index.php', 'file' => 'index.php'],
+    '/'                        => ['type' => 'legacy', 'script' => 'index.php', 'file' => 'app/legacy/index.php'],
+    '/dashboard'               => ['type' => 'legacy', 'script' => 'index.php', 'file' => 'app/legacy/index.php'],
     '/activitati'              => ['type' => 'controller', 'script' => 'activitati.php',              'file' => 'app/controllers/activitati/index.php'],
     '/activitati/istoric'      => ['type' => 'controller', 'script' => 'activitati-istoric.php',      'file' => 'app/controllers/activitati/istoric.php'],
     '/ajutoare-bpa'            => ['type' => 'controller', 'script' => 'ajutoare-bpa.php',            'file' => 'app/controllers/bpa/index.php'],
@@ -38,24 +38,27 @@ $routes = [
     '/voluntariat'             => ['type' => 'controller', 'script' => 'voluntariat.php',             'file' => 'app/controllers/voluntariat/index.php'],
 
     // Legacy modules (not yet migrated to MVC)
-    '/membri'                  => ['type' => 'legacy', 'script' => 'membri.php',                'file' => 'membri.php'],
-    '/setari'                  => ['type' => 'legacy', 'script' => 'setari.php',                'file' => 'setari.php'],
-    '/administrativ'           => ['type' => 'legacy', 'script' => 'administrativ.php',         'file' => 'administrativ.php'],
-    '/formular-230'            => ['type' => 'legacy', 'script' => 'formular-230.php',          'file' => 'formular-230.php'],
-    '/fundraising'             => ['type' => 'legacy', 'script' => 'fundraising.php',           'file' => 'fundraising.php'],
-    '/membru-profil'           => ['type' => 'legacy', 'script' => 'membru-profil.php',         'file' => 'membru-profil.php'],
-    '/aniversari'              => ['type' => 'legacy', 'script' => 'aniversari.php',            'file' => 'aniversari.php'],
-    '/generare-documente'      => ['type' => 'legacy', 'script' => 'generare-documente.php',    'file' => 'generare-documente.php'],
-    '/log-activitate'          => ['type' => 'legacy', 'script' => 'log-activitate.php',        'file' => 'log-activitate.php'],
-    '/newsletter-view'         => ['type' => 'legacy', 'script' => 'newsletter-view.php',       'file' => 'newsletter-view.php'],
-    '/registratura/sumar'      => ['type' => 'legacy', 'script' => 'registratura-sumar.php',    'file' => 'registratura-sumar.php'],
+    '/membri'                  => ['type' => 'legacy', 'script' => 'membri.php',                'file' => 'app/legacy/membri.php'],
+    '/setari'                  => ['type' => 'legacy', 'script' => 'setari.php',                'file' => 'app/legacy/setari.php'],
+    '/administrativ'           => ['type' => 'legacy', 'script' => 'administrativ.php',         'file' => 'app/legacy/administrativ.php'],
+    '/formular-230'            => ['type' => 'legacy', 'script' => 'formular-230.php',          'file' => 'app/legacy/formular-230.php'],
+    '/fundraising'             => ['type' => 'legacy', 'script' => 'fundraising.php',           'file' => 'app/legacy/fundraising.php'],
+    '/membru-profil'           => ['type' => 'legacy', 'script' => 'membru-profil.php',         'file' => 'app/legacy/membru-profil.php'],
+    '/aniversari'              => ['type' => 'legacy', 'script' => 'aniversari.php',            'file' => 'app/legacy/aniversari.php'],
+    '/generare-documente'      => ['type' => 'legacy', 'script' => 'generare-documente.php',    'file' => 'app/legacy/generare-documente.php'],
+    '/log-activitate'          => ['type' => 'legacy', 'script' => 'log-activitate.php',        'file' => 'app/legacy/log-activitate.php'],
+    '/newsletter-view'         => ['type' => 'legacy', 'script' => 'newsletter-view.php',       'file' => 'app/legacy/newsletter-view.php'],
+    '/registratura/sumar'      => ['type' => 'legacy', 'script' => 'registratura-sumar.php',    'file' => 'app/legacy/registratura-sumar.php'],
+    '/actualizezcsv'           => ['type' => 'legacy', 'script' => 'actualizezcsv.php',         'file' => 'app/legacy/actualizezcsv.php'],
+    '/import-membri-csv'       => ['type' => 'legacy', 'script' => 'import-membri-csv.php',     'file' => 'app/legacy/import-membri-csv.php'],
+    '/contacte/import'         => ['type' => 'legacy', 'script' => 'contacte-import.php',       'file' => 'app/views/partials/contacte-import.php'],
 
     // Auth pages
-    '/login'                   => ['type' => 'legacy', 'script' => 'login.php',                 'file' => 'login.php'],
-    '/logout'                  => ['type' => 'legacy', 'script' => 'logout.php',                'file' => 'logout.php'],
-    '/recuperare-parola'       => ['type' => 'legacy', 'script' => 'recuperare-parola.php',     'file' => 'recuperare-parola.php'],
-    '/reset-parola'            => ['type' => 'legacy', 'script' => 'reset-parola.php',          'file' => 'reset-parola.php'],
-    '/schimba-parola'          => ['type' => 'legacy', 'script' => 'schimba-parola.php',        'file' => 'schimba-parola.php'],
+    '/login'                   => ['type' => 'legacy', 'script' => 'login.php',                 'file' => 'app/auth/login.php'],
+    '/logout'                  => ['type' => 'legacy', 'script' => 'logout.php',                'file' => 'app/auth/logout.php'],
+    '/recuperare-parola'       => ['type' => 'legacy', 'script' => 'recuperare-parola.php',     'file' => 'app/auth/recuperare-parola.php'],
+    '/reset-parola'            => ['type' => 'legacy', 'script' => 'reset-parola.php',          'file' => 'app/auth/reset-parola.php'],
+    '/schimba-parola'          => ['type' => 'legacy', 'script' => 'schimba-parola.php',        'file' => 'app/auth/schimba-parola.php'],
 
     // API endpoints
     '/api/cauta-membri'            => ['type' => 'legacy', 'script' => 'api-cauta-membri.php',            'file' => 'api/cauta-membri.php'],
@@ -83,7 +86,6 @@ if (!$route) {
 
 // Spoof SCRIPT_NAME so config.php auth checks and PLATFORM_BASE_URL work correctly
 $_SERVER['SCRIPT_NAME'] = '/' . $route['script'];
-$_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/' . $route['script'];
 
 $file = __DIR__ . '/' . $route['file'];
 

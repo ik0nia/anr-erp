@@ -11,7 +11,7 @@ if (ob_get_level()) {
 }
 
 // Previne accesarea dacă platforma e deja instalată
-$installedFile = __DIR__ . '/.installed';
+$installedFile = dirname(__DIR__) . '/.installed';
 if (file_exists($installedFile)) {
     die('Platforma este deja instalată. Ștergeți fișierul .installed pentru a reinstala.');
 }
@@ -20,9 +20,9 @@ if (file_exists($installedFile)) {
 // IMPORTANT: Nu încărcăm config.php dacă are setări default (pentru XAMPP local)
 // pentru că va genera eroare de conexiune și va opri scriptul cu die()
 $skipConfigCheck = false;
-if (file_exists(__DIR__ . '/config.php')) {
+if (file_exists(dirname(__DIR__) . '/config.php')) {
     // Citește conținutul config.php pentru a verifica dacă e configurat pentru hosting
-    $configContent = @file_get_contents(__DIR__ . '/config.php');
+    $configContent = @file_get_contents(dirname(__DIR__) . '/config.php');
     
     if ($configContent !== false) {
         // Verifică dacă are setări default XAMPP (root, fără parolă, localhost)
@@ -43,7 +43,7 @@ if (file_exists(__DIR__ . '/config.php')) {
 }
 
 // Dacă config.php nu e default, verifică dacă platforma e deja instalată
-if (!$skipConfigCheck && file_exists(__DIR__ . '/config.php')) {
+if (!$skipConfigCheck && file_exists(dirname(__DIR__) . '/config.php')) {
     // Config.php pare să fie configurat pentru hosting
     // Verifică dacă există fișier .installed (mai sigur decât să încărci config.php)
     // Dacă .installed există, platforma e deja instalată
@@ -62,7 +62,7 @@ if (!isset($_SESSION['install_step'])) {
 }
 
 // Include clasa installer
-require_once __DIR__ . '/install/installer.php';
+require_once __DIR__ . '/installer.php';
 
 $step = (int)($_GET['step'] ?? $_SESSION['install_step']);
 $max_step = 8;
@@ -372,7 +372,7 @@ $success = $result['success'] ?? false;
             <?php endif; ?>
             
             <?php 
-            $stepFile = __DIR__ . '/install/steps/step-' . $step . '.php';
+            $stepFile = __DIR__ . '/steps/step-' . $step . '.php';
             $stepHasForm = in_array($step, [2, 4, 5], true); // Pașii care au câmpuri de completat
             $formAction = htmlspecialchars($_SERVER['PHP_SELF'] ?? 'setup.php') . '?step=' . $step;
             ?>

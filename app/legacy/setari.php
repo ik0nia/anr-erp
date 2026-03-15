@@ -3,15 +3,16 @@
  * Pagină Setări - CRM ANR Bihor
  * Gestionează setările platformei
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/auth_helper.php';
-require_once 'includes/log_helper.php';
-require_once 'includes/excel_import.php';
-require_once 'includes/file_helper.php';
-require_once 'includes/registru_interactiuni_v2_helper.php';
-require_once 'includes/mailer_functions.php';
-require_once 'includes/cotizatii_helper.php';
-require_once 'includes/incasari_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/auth_helper.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/excel_import.php';
+require_once APP_ROOT . '/includes/file_helper.php';
+require_once APP_ROOT . '/includes/registru_interactiuni_v2_helper.php';
+require_once APP_ROOT . '/includes/mailer_functions.php';
+require_once APP_ROOT . '/includes/cotizatii_helper.php';
+require_once APP_ROOT . '/includes/incasari_helper.php';
 
 $eroare = '';
 $succes = '';
@@ -63,8 +64,8 @@ if (!empty($_SESSION['user_id']) && is_admin()) {
     } catch (PDOException $e) {}
 }
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 
 if (isset($_GET['succes_util'])) {
     $succes = 'Utilizatorul a fost creat. Un email de confirmare a fost trimis.';
@@ -159,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['incarca_antet_asociat
             $eroare = 'Fișierul depășește 10 MB.';
         }
         if (empty($eroare)) {
-            $upload_dir = __DIR__ . '/uploads/antet/';
+            $upload_dir = APP_ROOT . '/uploads/antet/';
             if (!file_exists($upload_dir)) {
                 mkdir($upload_dir, 0755, true);
             }
@@ -197,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_excel'])) {
         } elseif ($file['size'] > 10 * 1024 * 1024) {
             $eroare = 'Fișierul depășește 10 MB.';
         } else {
-            $upload_dir = __DIR__ . '/uploads/import/';
+            $upload_dir = APP_ROOT . '/uploads/import/';
             if (!file_exists($upload_dir)) {
                 mkdir($upload_dir, 0755, true);
             }
@@ -687,7 +688,7 @@ if (isset($_GET['succes_email'])) {
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 mb-6" aria-labelledby="incasari-serii-heading">
             <h2 id="incasari-serii-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Serii chitanțe</h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Definiți seria și intervalul de numerotare pentru chitanțe donații și pentru chitanțe încasări (donații, taxe participare, alte încasări).</p>
-            <form method="post" action="setari.php?tab=incasari">
+            <form method="post" action="/setari?tab=incasari">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_serii_incasari" value="1">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
@@ -722,7 +723,7 @@ if (isset($_GET['succes_email'])) {
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 mb-6" aria-labelledby="incasari-design-heading">
             <h2 id="incasari-design-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Design chitanțe</h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Logo-ul se afișează în dreapta sus pe chitanță (format A5). Datele asociației în stânga sus.</p>
-            <form method="post" action="setari.php?tab=incasari">
+            <form method="post" action="/setari?tab=incasari">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_design_chitante" value="1">
                 <div class="space-y-3 mb-4">
@@ -737,7 +738,7 @@ if (isset($_GET['succes_email'])) {
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="incasari-fgo-heading">
             <h2 id="incasari-fgo-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Integrare FGO.ro (API)</h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Conectare la platforma FGO.ro pentru transmiterea documentelor de încasare. Consultați <a href="https://www.fgo.ro" target="_blank" rel="noopener noreferrer" class="text-amber-600 dark:text-amber-400 hover:underline">FGO.ro</a> și documentația API (PDF) pentru parametrii exacti.</p>
-            <form method="post" action="setari.php?tab=incasari">
+            <form method="post" action="/setari?tab=incasari">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_fgo_api" value="1">
                 <div class="space-y-3 mb-4">
@@ -870,7 +871,7 @@ if (isset($_GET['succes_email'])) {
                             <td class="px-3 text-right text-slate-900 dark:text-white"><?php echo number_format((float)$c['valoare_cotizatie'], 2, ',', '.'); ?></td>
                             <td class="px-3 text-right">
                                 <a href="setari.php?tab=cotizatii&edit_cotizatie=<?php echo (int)$c['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline text-sm">Modificare</a>
-                                <form method="post" action="setari.php?tab=cotizatii" class="inline ml-2" onsubmit="return confirm('Ștergeți această cotizație?');">
+                                <form method="post" action="/setari?tab=cotizatii" class="inline ml-2" onsubmit="return confirm('Ștergeți această cotizație?');">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="sterge_cotizatie_anuala" value="1">
                                     <input type="hidden" name="id_cotizatie_anuala" value="<?php echo (int)$c['id']; ?>">
@@ -892,7 +893,7 @@ if (isset($_GET['succes_email'])) {
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Adăugați membri care sunt scutiți (permanent sau până la o dată) și motivul scutirii.</p>
             <div class="mb-4 p-4 bg-slate-50 dark:bg-gray-700/50 rounded-lg border border-slate-200 dark:border-gray-600">
                 <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3"><?php echo $edit_scutire_cotizatie ? 'Modifică scutire' : 'Adaugă membru scutit'; ?></h3>
-                <form method="post" action="setari.php?tab=cotizatii" id="form-scutire-cotizatie">
+                <form method="post" action="/setari?tab=cotizatii" id="form-scutire-cotizatie">
                     <?php echo csrf_field(); ?>
                     <?php if ($edit_scutire_cotizatie): ?>
                     <input type="hidden" name="actualizeaza_scutire_cotizatie" value="1">
@@ -949,7 +950,7 @@ if (isset($_GET['succes_email'])) {
                             <td class="px-4 py-3 text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars(mb_substr($s['motiv'] ?? '', 0, 80)); ?><?php echo mb_strlen($s['motiv'] ?? '') > 80 ? '…' : ''; ?></td>
                             <td class="px-4 py-3 text-right">
                                 <a href="setari.php?tab=cotizatii&edit_scutire=<?php echo (int)$s['id']; ?>#form-scutire-cotizatie" class="text-amber-600 dark:text-amber-400 hover:underline text-sm">Editează</a>
-                                <form method="post" action="setari.php?tab=cotizatii" class="inline ml-2" onsubmit="return confirm('Ștergeți această scutire?');">
+                                <form method="post" action="/setari?tab=cotizatii" class="inline ml-2" onsubmit="return confirm('Ștergeți această scutire?');">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="sterge_scutire_cotizatie" value="1">
                                     <input type="hidden" name="id_scutire" value="<?php echo (int)$s['id']; ?>">
@@ -1020,7 +1021,7 @@ if (isset($_GET['succes_email'])) {
             </h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-6">Configurare trimitere emailuri automate din platformă. Folosit de notificări și alte module.</p>
 
-            <form method="post" action="setari.php?tab=email" class="space-y-6">
+            <form method="post" action="/setari?tab=email" class="space-y-6">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_setari_email" value="1">
 
@@ -1092,7 +1093,7 @@ if (isset($_GET['succes_email'])) {
 
             <div class="mt-6 pt-6 border-t border-slate-200 dark:border-gray-600">
                 <h3 class="text-sm font-semibold text-slate-800 dark:text-gray-200 mb-2">Verificare setări</h3>
-                <form method="post" action="setari.php?tab=email" class="flex flex-wrap items-end gap-3">
+                <form method="post" action="/setari?tab=email" class="flex flex-wrap items-end gap-3">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="trimite_email_test" value="1">
                     <div class="flex-1 min-w-[200px]">
@@ -1145,7 +1146,7 @@ if (isset($_GET['succes_email'])) {
                 Registru Interacțiuni – Subiecte dropdown
             </h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Creați și activați sau dezactivați subiectele afișate în meniul dropdown din formularul de interacțiuni (Dashboard și pagina Registru Interacțiuni). Subiectele dezactivate nu apar în dropdown.</p>
-            <form method="post" action="setari.php?tab=dashboard" class="mb-4">
+            <form method="post" action="/setari?tab=dashboard" class="mb-4">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="adauga_subiect_interactiune_v2" value="1">
                 <div class="flex gap-2">
@@ -1180,7 +1181,7 @@ if (isset($_GET['succes_email'])) {
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <form method="post" action="setari.php?tab=dashboard" class="inline">
+                                <form method="post" action="/setari?tab=dashboard" class="inline">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="toggle_subiect_activ_v2" value="1">
                                     <input type="hidden" name="subiect_id_v2" value="<?php echo (int)$s['id']; ?>">
@@ -1216,7 +1217,7 @@ if (isset($_GET['succes_email'])) {
                 Antet asociație
             </h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Încărcați un document DOCX care conține antetul asociației. Acest antet se va folosi la toate documentele generate în platformă, cu excepția modulului <strong>Generare documente</strong> precompletate cu datele membrului și a modulului <strong>Încasări</strong>.</p>
-            <form method="post" action="setari.php" enctype="multipart/form-data" class="space-y-4">
+            <form method="post" action="/setari" enctype="multipart/form-data" class="space-y-4">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="incarca_antet_asociatie" value="1">
                 <div class="flex flex-wrap items-end gap-4">
@@ -1229,7 +1230,7 @@ if (isset($_GET['succes_email'])) {
                     </div>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500 focus:ring-offset-2" aria-label="Încarcă antet asociație">Încarcă antet</button>
                 </div>
-                <?php if (!empty($antet_asociatie_docx) && file_exists(__DIR__ . '/' . $antet_asociatie_docx)): ?>
+                <?php if (!empty($antet_asociatie_docx) && file_exists(APP_ROOT . '/' . $antet_asociatie_docx)): ?>
                 <div class="pt-2 border-t border-slate-200 dark:border-gray-600">
                     <p class="text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Antet curent</p>
                     <a href="<?php echo htmlspecialchars($antet_asociatie_docx); ?>" download class="inline-flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded" aria-label="Descarcă antetul curent">
@@ -1305,7 +1306,7 @@ if (isset($_GET['succes_email'])) {
                     Logo Platformă
                 </h2>
                 
-                <form method="post" action="setari.php" class="space-y-4">
+                <form method="post" action="/setari" class="space-y-4">
                     <input type="hidden" name="actualizeaza_logo" value="1">
                     
                     <div>
@@ -1354,7 +1355,7 @@ if (isset($_GET['succes_email'])) {
                     Nume Platformă
                 </h2>
                 
-                <form method="post" action="setari.php" class="space-y-4">
+                <form method="post" action="/setari" class="space-y-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="actualizeaza_nume_platforma" value="1">
                     
@@ -1392,7 +1393,7 @@ if (isset($_GET['succes_email'])) {
                     <i data-lucide="file-text" class="mr-2 w-5 h-5" aria-hidden="true"></i>
                     Generare Documente
                 </h2>
-                <form method="post" action="setari.php" class="space-y-4">
+                <form method="post" action="/setari" class="space-y-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="actualizeaza_documente" value="1">
                     <div>
@@ -1421,7 +1422,7 @@ if (isset($_GET['succes_email'])) {
                     Newsletter
                 </h2>
                 <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Emailul de pe care se trimit newsletterele către contacte. Numele expeditorului se setează în formularul de trimitere.</p>
-                <form method="post" action="setari.php" class="space-y-4">
+                <form method="post" action="/setari" class="space-y-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="actualizeaza_newsletter" value="1">
                     <div>
@@ -1445,10 +1446,10 @@ if (isset($_GET['succes_email'])) {
                 <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Numărul de pornire pentru numerotarea automată a înregistrărilor în registratură.</p>
                 <?php
                 // Calculează următorul număr care va fi alocat
-                require_once 'includes/registratura_helper.php';
+                require_once APP_ROOT . '/includes/registratura_helper.php';
                 $urmatorul_nr = registratura_urmatorul_nr($pdo);
                 ?>
-                <form method="post" action="setari.php" class="space-y-4">
+                <form method="post" action="/setari" class="space-y-4">
                     <input type="hidden" name="actualizeaza_registratura" value="1">
                     <div>
                         <label for="registratura_nr_pornire" class="block text-sm font-medium text-slate-900 dark:text-white mb-2">Număr pornire înregistrări</label>
@@ -1504,7 +1505,7 @@ if (isset($_GET['succes_email'])) {
     <div class="p-6">
         <h2 id="modal-utilizator-title" class="text-lg font-bold text-slate-900 dark:text-white mb-2">Adaugă utilizator</h2>
         <p id="modal-utilizator-desc" class="text-sm text-slate-600 dark:text-gray-400 mb-4">Completați datele. După salvare, utilizatorul primește un email de confirmare (fără parolă) și link către platformă.</p>
-        <form method="post" action="setari.php" id="form-adauga-utilizator">
+        <form method="post" action="/setari" id="form-adauga-utilizator">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="adauga_utilizator" value="1">
             <div class="space-y-4">

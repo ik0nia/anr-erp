@@ -2,8 +2,9 @@
 /**
  * Fundraising – Formular 230 și Lista donatori
  */
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/incasari_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/incasari_helper.php';
 
 $tab = isset($_GET['tab']) && in_array($_GET['tab'], ['formular230', 'donatori'], true) ? $_GET['tab'] : 'formular230';
 
@@ -13,8 +14,8 @@ if ($tab === 'donatori') {
     $lista_donatori = incasari_lista_donatori($pdo, 1000);
 }
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 ?>
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
@@ -110,4 +111,4 @@ include 'sidebar.php';
 <script>
 if (typeof lucide !== 'undefined') lucide.createIcons();
 </script>
-<?php include 'footer.php'; ?>
+<?php include APP_ROOT . '/app/views/layout/footer.php'; ?>

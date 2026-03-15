@@ -5,29 +5,30 @@
  */
 // Activează output buffering pentru a preveni probleme cu redirect-uri
 ob_start();
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/liste_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/liste_helper.php';
 
 // Scrie mesaje de debug într-un fișier din proiect (nu depinde de php.ini / Apache)
 function debug_profil_log($mesaj) {
     $line = date('Y-m-d H:i:s') . ' ' . $mesaj . "\n";
-    $dir = __DIR__ . DIRECTORY_SEPARATOR . 'logs';
+    $dir = APP_ROOT . DIRECTORY_SEPARATOR . 'logs';
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
     $f = $dir . DIRECTORY_SEPARATOR . 'debug-profil.txt';
     if (!@file_put_contents($f, $line, FILE_APPEND | LOCK_EX)) {
         // Fallback: scrie în rădăcina proiectului
-        @file_put_contents(__DIR__ . DIRECTORY_SEPARATOR . 'debug-profil-last.txt', $line, FILE_APPEND | LOCK_EX);
+        @file_put_contents(APP_ROOT . DIRECTORY_SEPARATOR . 'debug-profil-last.txt', $line, FILE_APPEND | LOCK_EX);
     }
 }
-require_once 'includes/log_helper.php';
-require_once 'includes/cnp_validator.php';
-require_once 'includes/file_helper.php';
-require_once 'includes/membri_alerts.php';
-require_once 'includes/cotizatii_helper.php';
-require_once 'includes/incasari_helper.php';
-require_once 'membri_processing.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/cnp_validator.php';
+require_once APP_ROOT . '/includes/file_helper.php';
+require_once APP_ROOT . '/includes/membri_alerts.php';
+require_once APP_ROOT . '/includes/cotizatii_helper.php';
+require_once APP_ROOT . '/includes/incasari_helper.php';
+require_once APP_ROOT . '/app/views/partials/membri_processing.php';
 
 $eroare = '';
 $succes = '';
@@ -35,7 +36,7 @@ $membru = null;
 $membru_id = (int)($_GET['id'] ?? 0);
 
 if ($membru_id <= 0) {
-    header('Location: membri.php');
+    header('Location: /membri');
     exit;
 }
 
@@ -76,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['marcheaza_alert_infor
                 }
             }
 
-            header('Location: membru-profil.php?id=' . $membru_id_alert);
+            header('Location: /membru-profil?id=' . $membru_id_alert);
             exit;
         } catch (PDOException $e) {
             $eroare = $debifa ? 'Eroare la debifarea avertismentului.' : 'Eroare la marcarea avertismentului.';
@@ -149,7 +150,7 @@ try {
     $membru = $stmt->fetch();
     if (!$membru) {
         while (ob_get_level()) { ob_end_clean(); }
-        header('Location: membri.php');
+        header('Location: /membri');
         exit;
     }
     try {
@@ -165,8 +166,8 @@ try {
 }
 
 // Include header și sidebar DUPĂ încărcarea membrului (redirect-ul la „membru negăsit” funcționează acum)
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 
 // Afișare mesaj succes
 if (isset($_GET['succes']) && $_GET['succes'] == '1') {
@@ -383,7 +384,7 @@ if ($membru) {
                 <i data-lucide="<?php echo $is_error ? 'alert-circle' : 'alert-triangle'; ?>" class="w-4 h-4 flex-shrink-0" aria-hidden="true"></i>
                 <span class="text-sm font-medium"><?php echo htmlspecialchars($alert['mesaj']); ?></span>
                 <?php if ($alert_key && in_array($alert_key, ['ci', 'ch', 'cotizatie'])): ?>
-                <form method="post" action="membru-profil.php?id=<?php echo $membru_id; ?>" class="inline ml-1">
+                <form method="post" action="/membru-profil?id=<?php echo $membru_id; ?>" class="inline ml-1">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="marcheaza_alert_informat" value="1">
                     <input type="hidden" name="membru_id" value="<?php echo $membru_id; ?>">
@@ -402,7 +403,7 @@ if ($membru) {
         <?php endif; ?>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-            <?php require_once 'membru-profil-form.php'; ?>
+            <?php require_once APP_ROOT . '/app/views/partials/membru-profil-form.php'; ?>
             <?php render_formular_profil_membru($membru, $eroare, $istoric_modificari); ?>
         </div>
 
@@ -478,8 +479,8 @@ if ($membru) {
     <?php endif; ?>
 </main>
 
-<?php require_once 'includes/documente_modal.php'; ?>
-<?php require_once 'includes/incasari_modal.php'; ?>
+<?php require_once APP_ROOT . '/includes/documente_modal.php'; ?>
+<?php require_once APP_ROOT . '/includes/incasari_modal.php'; ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

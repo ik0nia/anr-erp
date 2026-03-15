@@ -3,9 +3,9 @@
  * Procesare formular membri - CRM ANR Bihor
  * Include validare și salvare pentru toate câmpurile
  */
-require_once 'includes/cnp_validator.php';
-require_once 'includes/file_helper.php';
-require_once 'includes/log_helper.php';
+require_once APP_ROOT . '/includes/cnp_validator.php';
+require_once APP_ROOT . '/includes/file_helper.php';
+require_once APP_ROOT . '/includes/log_helper.php';
 
 function proceseaza_formular_membru($pdo, $post_data, $files) {
     $eroare = '';

@@ -16,7 +16,7 @@
         <?php if (!empty($schimba_succes)): ?>
         <div class="mb-4 p-3 bg-emerald-100 dark:bg-emerald-900/30 border-l-4 border-emerald-600 text-emerald-800 dark:text-emerald-200 rounded-r text-sm" role="status"><?php echo htmlspecialchars($schimba_succes); ?></div>
         <?php endif; ?>
-        <form method="post" action="schimba-parola.php" id="form-schimba-parola">
+        <form method="post" action="/schimba-parola" id="form-schimba-parola">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect_uri ?? $_SERVER['REQUEST_URI'] ?? 'index.php'); ?>">
             <div class="space-y-4">

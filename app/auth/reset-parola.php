@@ -2,8 +2,9 @@
 /**
  * Resetare parolă cu token - CRM ANR Bihor
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/auth_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/auth_helper.php';
 
 auth_ensure_tables($pdo);
 
@@ -38,10 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token !== '') {
 <!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="utf-8">
-    
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resetare parolă - <?php echo htmlspecialchars(PLATFORM_NAME); ?></title>
-    <link href="css/tailwind.css" rel="stylesheet">
+    <link href="/css/tailwind.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -58,14 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token !== '') {
             <div class="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border-l-4 border-red-600 text-red-800 dark:text-red-200 rounded-r text-sm" role="alert">
                 Link invalid sau expirat. Solicitați din nou recuperarea parolei.
             </div>
-            <a href="recuperare-parola.php" class="inline-flex items-center justify-center w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
+            <a href="/recuperare-parola" class="inline-flex items-center justify-center w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
                 Recuperare parolă
             </a>
             <?php elseif ($succes): ?>
             <div class="mb-4 p-3 bg-emerald-100 dark:bg-emerald-900/30 border-l-4 border-emerald-600 text-emerald-800 dark:text-emerald-200 rounded-r text-sm" role="status">
                 <?php echo htmlspecialchars($mesaj); ?>
             </div>
-            <a href="login.php" class="inline-flex items-center justify-center w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
+            <a href="/login" class="inline-flex items-center justify-center w-full px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
                 Mergi la autentificare
             </a>
             <?php else: ?>
@@ -74,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token !== '') {
                 <?php echo htmlspecialchars($mesaj); ?>
             </div>
             <?php endif; ?>
-            <form method="post" action="reset-parola.php" class="space-y-4" aria-label="Formular parolă nouă">
+            <form method="post" action="/reset-parola" class="space-y-4" aria-label="Formular parolă nouă">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
                 <div>
@@ -94,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $token !== '') {
                     <button type="submit" class="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Salvează parola nouă">
                         Salvează parola
                     </button>
-                    <a href="login.php" class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">
+                    <a href="/login" class="inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">
                         Anulare
                     </a>
                 </div>

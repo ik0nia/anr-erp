@@ -21,7 +21,7 @@ $c = $contact ?? [];
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="actualizeaza_contact" value="1">
                 <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
-                <?php include APP_ROOT . '/contacte-form-fields.php'; ?>
+                <?php include APP_ROOT . '/app/views/partials/contacte-form-fields.php'; ?>
                 <div class="mt-6 flex gap-3">
                     <a href="/contacte" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">Anulare</a>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg" aria-label="Salvează modificările contactului">Salvează</button>

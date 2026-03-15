@@ -3,10 +3,11 @@
  * Modul Administrativ - CRM ANR Bihor
  * Necesar achiziții, Echipa, Calendar administrativ, Consiliul Director, Adunarea Generală, Juridic ANR, Parteneriate, Proceduri
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/administrativ_helper.php';
-require_once 'includes/log_helper.php';
-require_once 'includes/auth_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/administrativ_helper.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/auth_helper.php';
 
 require_login();
 administrativ_ensure_tables($pdo);
@@ -29,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $aid = administrativ_achizitie_adauga($pdo, $denumire, $locatie, $urgenta, $furnizor ?: null);
             log_activitate($pdo, 'Administrativ: achiziție adăugată ' . $denumire . ($locatie ? ' (Loc: ' . $locatie . ')' : '') . ' Urgență: ' . $urgenta);
             if ($urgenta === 'urgent') {
-                require_once __DIR__ . '/includes/notificari_helper.php';
+                require_once APP_ROOT . '/includes/notificari_helper.php';
                 notificari_adauga($pdo, ['titlu' => 'Achiziție urgentă: ' . $denumire, 'importanta' => 'Important', 'continut' => 'A fost adăugată o achiziție marcată ca urgentă în modulul Administrativ. Denumire: ' . $denumire . ($furnizor ? '. Furnizor: ' . $furnizor : ''), 'trimite_email' => 0], null, $user_id);
             }
             header('Location: administrativ.php?tab=achizitii&succes=achizitie');
@@ -156,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $continut = $_POST['continut'] ?? '';
         administrativ_procedura_salveaza($pdo, $id, $titlu, $continut);
         if (!empty($_POST['trimite_notificare_procedura'])) {
-            require_once __DIR__ . '/includes/notificari_helper.php';
+            require_once APP_ROOT . '/includes/notificari_helper.php';
             notificari_adauga($pdo, ['titlu' => 'Procedură internă: ' . $titlu, 'importanta' => 'Informativ', 'continut' => 'A fost adăugată/actualizată o procedură internă. ' . (mb_strlen($continut) > 200 ? mb_substr(strip_tags($continut), 0, 200) . '…' : strip_tags($continut)), 'trimite_email' => 0], null, $user_id);
         }
         log_activitate($pdo, 'Administrativ: procedură internă salvată');
@@ -197,8 +198,8 @@ $edit_ag = $edit_ag_id > 0 ? administrativ_ag_get($pdo, $edit_ag_id) : null;
 $tipuri_doc = administrativ_tipuri_document_calendar();
 $categorii_juridic = administrativ_categorii_juridic();
 
-require_once 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 ?>
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4"><meta charset="utf-8">
@@ -237,7 +238,7 @@ include 'sidebar.php';
         <div class="max-w-3xl">
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4 mb-4" aria-labelledby="titlu-achizitii">
                 <h2 id="titlu-achizitii" class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Lista achiziții</h2>
-                <form method="post" action="administrativ.php?tab=achizitii" class="space-y-3 mb-4">
+                <form method="post" action="/administrativ?tab=achizitii" class="space-y-3 mb-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="adauga_achizitie" value="1">
                     <div class="flex flex-wrap gap-2 items-end">
@@ -264,7 +265,7 @@ include 'sidebar.php';
                 <ul class="space-y-1 text-slate-900 dark:text-gray-100 border-t border-slate-200 dark:border-gray-600 pt-3">
                     <?php foreach ($lista_achizitii as $a): ?>
                     <li class="flex items-center gap-3 py-1.5 border-b border-slate-100 dark:border-gray-600 last:border-0 flex-wrap">
-                        <form method="post" action="administrativ.php?tab=achizitii" class="flex items-center gap-2 flex-1 min-w-0">
+                        <form method="post" action="/administrativ?tab=achizitii" class="flex items-center gap-2 flex-1 min-w-0">
                             <?php echo csrf_field(); ?>
                             <input type="hidden" name="marcheaza_cumparat" value="1">
                             <input type="hidden" name="id" value="<?php echo (int)$a['id']; ?>">
@@ -277,7 +278,7 @@ include 'sidebar.php';
                             <span class="text-xs text-slate-500 dark:text-gray-400">(<?php echo date(DATE_FORMAT, strtotime($a['data_cumparare'])); ?>)</span>
                             <?php endif; ?>
                         </form>
-                        <form method="post" action="administrativ.php?tab=achizitii" class="inline" onsubmit="return confirm('Ștergeți acest item?');">
+                        <form method="post" action="/administrativ?tab=achizitii" class="inline" onsubmit="return confirm('Ștergeți acest item?');">
                             <?php echo csrf_field(); ?>
                             <input type="hidden" name="sterge_achizitie" value="1">
                             <input type="hidden" name="id" value="<?php echo (int)$a['id']; ?>">
@@ -309,7 +310,7 @@ include 'sidebar.php';
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4" aria-labelledby="titlu-angajati">
                 <h2 id="titlu-angajati" class="text-lg font-semibold text-slate-900 dark:text-white mb-3"><?php echo $edit_angajat ? 'Modifică angajat' : 'Angajați'; ?></h2>
-                <form method="post" action="administrativ.php?tab=echipa" class="space-y-2 mb-4">
+                <form method="post" action="/administrativ?tab=echipa" class="space-y-2 mb-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="salveaza_angajat" value="1">
                     <input type="hidden" name="id_angajat" value="<?php echo $edit_angajat ? (int)$edit_angajat['id'] : 0; ?>">
@@ -353,7 +354,7 @@ include 'sidebar.php';
             </section>
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4" aria-labelledby="titlu-cd">
                 <h2 id="titlu-cd" class="text-lg font-semibold text-slate-900 dark:text-white mb-3"><?php echo $edit_cd ? 'Modifică membru C.D.' : 'Consiliul Director'; ?></h2>
-                <form method="post" action="administrativ.php?tab=echipa" class="space-y-2 mb-4">
+                <form method="post" action="/administrativ?tab=echipa" class="space-y-2 mb-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="salveaza_cd" value="1">
                     <input type="hidden" name="id_cd" value="<?php echo $edit_cd ? (int)$edit_cd['id'] : 0; ?>">
@@ -389,7 +390,7 @@ include 'sidebar.php';
             </section>
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4" aria-labelledby="titlu-ag">
                 <h2 id="titlu-ag" class="text-lg font-semibold text-slate-900 dark:text-white mb-3"><?php echo $edit_ag ? 'Modifică membru A.G.' : 'Adunarea Generală'; ?></h2>
-                <form method="post" action="administrativ.php?tab=echipa" class="space-y-2 mb-4">
+                <form method="post" action="/administrativ?tab=echipa" class="space-y-2 mb-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="salveaza_ag" value="1">
                     <input type="hidden" name="id_ag" value="<?php echo $edit_ag ? (int)$edit_ag['id'] : 0; ?>">
@@ -431,7 +432,7 @@ include 'sidebar.php';
         <div class="max-w-4xl">
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4 mb-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Adaugă termen valabilitate</h2>
-                <form method="post" action="administrativ.php?tab=calendar" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <form method="post" action="/administrativ?tab=calendar" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="salveaza_termen" value="1">
                     <input type="hidden" name="id_termen" value="0">
@@ -517,7 +518,7 @@ include 'sidebar.php';
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4 mb-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Programează sedință Consiliul Director</h2>
                 <p class="text-sm text-slate-600 dark:text-gray-400 mb-3">Sedința va apărea în Calendarul administrativ și în Calendarul de activități.</p>
-                <form method="post" action="administrativ.php?tab=cd" class="flex flex-wrap gap-3 items-end">
+                <form method="post" action="/administrativ?tab=cd" class="flex flex-wrap gap-3 items-end">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="adauga_sedinta_cd" value="1">
                     <label class="block"><span class="text-sm text-slate-700 dark:text-gray-300">Data</span>
@@ -553,7 +554,7 @@ include 'sidebar.php';
         <div class="max-w-4xl">
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4 mb-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Programează sedință Adunare Generală</h2>
-                <form method="post" action="administrativ.php?tab=ag" class="flex flex-wrap gap-3 items-end">
+                <form method="post" action="/administrativ?tab=ag" class="flex flex-wrap gap-3 items-end">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="adauga_sedinta_ag" value="1">
                     <label class="block"><span class="text-sm text-slate-700 dark:text-gray-300">Data</span>
@@ -589,7 +590,7 @@ include 'sidebar.php';
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Adaugă informație Juridic ANR</h2>
-                <form method="post" action="administrativ.php?tab=juridic" class="space-y-3">
+                <form method="post" action="/administrativ?tab=juridic" class="space-y-3">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="adauga_juridic" value="1">
                     <div>
@@ -701,7 +702,7 @@ include 'sidebar.php';
             </section>
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4">
                 <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Adaugă parteneriat</h2>
-                <form method="post" action="administrativ.php?tab=parteneriate" class="space-y-3">
+                <form method="post" action="/administrativ?tab=parteneriate" class="space-y-3">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="salveaza_parteneriat" value="1">
                     <input type="hidden" name="id_parteneriat" value="0">
@@ -735,7 +736,7 @@ include 'sidebar.php';
             <div>
                 <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4 mb-4">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Căutare proceduri</h2>
-                    <form method="get" action="administrativ.php" class="flex gap-2">
+                    <form method="get" action="/administrativ" class="flex gap-2">
                         <input type="hidden" name="tab" value="proceduri">
                         <label for="cautare-proceduri" class="sr-only">Caută</label>
                         <input type="search" id="cautare-proceduri" name="cautare_proceduri" value="<?php echo htmlspecialchars($cautare_proceduri); ?>" placeholder="Caută în titlu sau conținut..." class="flex-1 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-3 py-2">
@@ -744,7 +745,7 @@ include 'sidebar.php';
                 </section>
                 <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-4">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3"><?php echo $edit_procedura ? 'Modifică procedură' : 'Adaugă procedură internă'; ?></h2>
-                    <form method="post" action="administrativ.php?tab=proceduri<?php echo $cautare_proceduri !== '' ? '&cautare_proceduri=' . urlencode($cautare_proceduri) : ''; ?>" class="space-y-3">
+                    <form method="post" action="/administrativ?tab=proceduri<?php echo $cautare_proceduri !== '' ? '&cautare_proceduri=' . urlencode($cautare_proceduri) : ''; ?>" class="space-y-3">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="salveaza_procedura" value="1">
                         <input type="hidden" name="id_procedura" value="<?php echo $edit_procedura ? (int)$edit_procedura['id'] : 0; ?>">
@@ -801,4 +802,4 @@ include 'sidebar.php';
         <?php endif; ?>
     </div>
 </main>
-<?php require_once 'footer.php'; ?>
+<?php include APP_ROOT . '/app/views/layout/footer.php'; ?>

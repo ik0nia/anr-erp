@@ -4,8 +4,9 @@
  */
 
 ob_start();
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/membri_import_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/membri_import_helper.php';
 
 $eroare = '';
 $succes = '';
@@ -33,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($file['size'] > 10 * 1024 * 1024) {
                 $eroare = 'Fișierul depășește 10 MB.';
             } else {
-                $upload_dir = __DIR__ . '/uploads/import/';
+                $upload_dir = APP_ROOT . '/uploads/import/';
                 if (!file_exists($upload_dir)) {
                     mkdir($upload_dir, 0755, true);
                 }
@@ -151,8 +152,8 @@ if ($step === 'map' && $excel_data === null && !empty($_SESSION['membri_import_c
     $excel_data = membri_import_parse_csv($_SESSION['membri_import_csv_path']);
 }
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 
 $campuri_membri = membri_import_available_fields($pdo);
 ?>
@@ -196,7 +197,7 @@ $campuri_membri = membri_import_available_fields($pdo);
                 <h2 id="upload-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                     1. Încarcă fișierul CSV
                 </h2>
-                <form method="post" action="import-membri-csv.php" enctype="multipart/form-data" class="space-y-4">
+                <form method="post" action="/import-membri-csv" enctype="multipart/form-data" class="space-y-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="membri_import_upload" value="1">
 
@@ -242,7 +243,7 @@ $campuri_membri = membri_import_available_fields($pdo);
                     Poți <strong>adăuga membri noi</strong> sau <strong>actualiza membri existenți după Nr. Dosar</strong>.
                 </p>
 
-                <form method="post" action="import-membri-csv.php" class="space-y-4">
+                <form method="post" action="/import-membri-csv" class="space-y-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="membri_import_execute" value="1">
 

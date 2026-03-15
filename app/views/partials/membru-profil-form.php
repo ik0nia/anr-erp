@@ -269,7 +269,7 @@ function render_formular_profil_membru($membru, $eroare = '', $istoric_modificar
                     </h3>
                     <?php
                     $documente_generate = [];
-                    $doc_dir = __DIR__ . DIRECTORY_SEPARATOR . 'documentegenerate';
+                    $doc_dir = APP_ROOT . DIRECTORY_SEPARATOR . 'documentegenerate';
                     if (is_dir($doc_dir)) {
                         $pattern = $doc_dir . DIRECTORY_SEPARATOR . '*-' . preg_replace('/\s+/', '', ($membru['nume'] ?? '')) . ($membru['prenume'] ?? '') . '-*.pdf';
                         foreach (glob($pattern) as $file_path) {

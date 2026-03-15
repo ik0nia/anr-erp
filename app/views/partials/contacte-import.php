@@ -2,9 +2,9 @@
 /**
  * Import contacte din Excel/CSV cu mapare câmpuri
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/contacte_helper.php';
-require_once 'includes/excel_import.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(dirname(__DIR__))); require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/contacte_helper.php';
+require_once APP_ROOT . '/includes/excel_import.php';
 
 ensure_contacte_table($pdo);
 $eroare = '';
@@ -31,7 +31,7 @@ $tipuri = get_contacte_tipuri();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_contacte'])) {
     csrf_require_valid();
-    $upload_dir = __DIR__ . '/uploads/import/';
+    $upload_dir = APP_ROOT . '/uploads/import/';
     if (!file_exists($upload_dir)) mkdir($upload_dir, 0755, true);
 
     if (isset($_POST['executa_import']) && isset($_SESSION['contacte_import_path']) && file_exists($_SESSION['contacte_import_path'])) {
@@ -104,8 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['import_contacte'])) {
     }
 }
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 ?>
 
 <main class="flex-1 flex flex-col overflow-hidden" role="main">
@@ -123,7 +123,7 @@ include 'sidebar.php';
 
         <?php if ($excel_data === null): ?>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-            <form method="post" action="contacte-import.php" enctype="multipart/form-data">
+            <form method="post" action="/contacte/import" enctype="multipart/form-data">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="import_contacte" value="1">
                 <div>
@@ -137,7 +137,7 @@ include 'sidebar.php';
         </div>
         <?php else: ?>
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-            <form method="post" action="contacte-import.php" enctype="multipart/form-data">
+            <form method="post" action="/contacte/import" enctype="multipart/form-data">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="import_contacte" value="1">
                 <input type="hidden" name="executa_import" value="1">

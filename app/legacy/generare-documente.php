@@ -3,9 +3,10 @@
  * Management Generare Documente - CRM ANR
  * Upload templateuri, editare nume, activare/dezactivare, listă taguri
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/log_helper.php';
-require_once 'includes/document_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/document_helper.php';
 
 $eroare = '';
 $succes = '';
@@ -51,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_template'])) {
                     $stmt = $pdo->prepare('INSERT INTO documente_template (nume_afisare, nume_fisier, activ) VALUES (?, ?, 1)');
                     $stmt->execute([$nume_afisare, $filename]);
                     log_activitate($pdo, 'Template document adăugat: ' . $nume_afisare);
-                    header('Location: generare-documente.php?succes=1');
+                    header('Location: /generare-documente?succes=1');
                     exit;
                 } catch (PDOException $e) {
                     unlink($filepath);
@@ -80,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_template'])) {
                     @unlink($fisier);
                 }
                 log_activitate($pdo, 'Template document șters: ' . $row['nume_afisare'] . ' (ID ' . $id . ')');
-                header('Location: generare-documente.php?succes=3');
+                header('Location: /generare-documente?succes=3');
                 exit;
             }
         } catch (PDOException $e) {
@@ -121,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_template
             } else {
                 log_activitate($pdo, "documente_template: Template actualizat ID {$id}");
             }
-            header('Location: generare-documente.php?succes=2');
+            header('Location: /generare-documente?succes=2');
             exit;
         } catch (PDOException $e) {
             $eroare = 'Eroare la actualizare.';
@@ -138,8 +139,8 @@ try {
 }
 
 $taguri = get_taguri_disponibile();
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 ?>
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">

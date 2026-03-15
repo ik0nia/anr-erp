@@ -4,8 +4,9 @@
  */
 
 ob_start();
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/contacte_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/contacte_helper.php';
 
 // Asigură tabelele necesare (în caz că nu a rulat încă scriptul de update)
 try {
@@ -205,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             f230_sync_contact($pdo, array_merge($fields, ['cnp' => $cnp]));
 
             // Refresh pentru a evita double submit
-            header('Location: formular-230.php');
+            header('Location: /formular-230');
             exit;
         }
     } elseif (isset($_POST['arhiveaza_persoana_230'])) {
@@ -251,8 +252,8 @@ $stmtList = $pdo->prepare("
 $stmtList->execute($params);
 $persoane = $stmtList->fetchAll(PDO::FETCH_ASSOC);
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 ?>
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
@@ -278,7 +279,7 @@ include 'sidebar.php';
         <?php endif; ?>
 
         <div class="mb-6 flex flex-wrap justify-between items-center gap-3">
-            <form method="post" action="formular-230.php" class="flex items-center gap-2">
+            <form method="post" action="/formular-230" class="flex items-center gap-2">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="toggle_hide_bifat" value="1">
                 <label class="flex items-center text-sm text-slate-700 dark:text-gray-200">
@@ -348,7 +349,7 @@ include 'sidebar.php';
                                         <!-- Editează: setăm un dataset pe buton și populăm dialogul prin JS simplu -->
                                         <button type="button"
                                                 class="inline-flex items-center px-2 py-1 text-xs bg-slate-100 dark:bg-gray-700 text-slate-800 dark:text-gray-100 rounded hover:bg-slate-200 dark:hover:bg-gray-600"
-                                                onclick="window.location.href='formular-230.php?edit=<?php echo (int)$p['id']; ?>'">
+                                                onclick="window.location.href='/formular-230?edit=<?php echo (int)$p['id']; ?>'">
                                             Editează
                                         </button>
                                         <?php if (!empty($p['telefon'])): ?>
@@ -364,7 +365,7 @@ include 'sidebar.php';
                                                 Email
                                             </a>
                                         <?php endif; ?>
-                                        <form method="post" action="formular-230.php" class="inline">
+                                        <form method="post" action="/formular-230" class="inline">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="persoana_id" value="<?php echo (int)$p['id']; ?>">
                                             <button type="submit" name="arhiveaza_persoana_230" value="1"
@@ -385,11 +386,11 @@ include 'sidebar.php';
                     <span>Pagina <?php echo $page; ?> din <?php echo $total_pages; ?></span>
                     <div class="space-x-2">
                         <?php if ($page > 1): ?>
-                            <a href="formular-230.php?page=<?php echo $page - 1; ?><?php echo $hide_bifat ? '&hide_bifat=1' : ''; ?>"
+                            <a href="/formular-230?page=<?php echo $page - 1; ?><?php echo $hide_bifat ? '&hide_bifat=1' : ''; ?>"
                                class="px-3 py-1 border border-slate-300 dark:border-gray-600 rounded hover:bg-slate-50 dark:hover:bg-gray-700">Înapoi</a>
                         <?php endif; ?>
                         <?php if ($page < $total_pages): ?>
-                            <a href="formular-230.php?page=<?php echo $page + 1; ?><?php echo $hide_bifat ? '&hide_bifat=1' : ''; ?>"
+                            <a href="/formular-230?page=<?php echo $page + 1; ?><?php echo $hide_bifat ? '&hide_bifat=1' : ''; ?>"
                                class="px-3 py-1 border border-slate-300 dark:border-gray-600 rounded hover:bg-slate-50 dark:hover:bg-gray-700">Înainte</a>
                         <?php endif; ?>
                     </div>
@@ -402,7 +403,7 @@ include 'sidebar.php';
 <dialog id="dialog-f230" class="p-0 rounded-lg shadow-xl max-w-3xl w-[calc(100%-2rem)] mx-4 sm:mx-auto border border-slate-200 dark:border-gray-700 dark:bg-gray-800 backdrop:bg-black/30">
     <div class="p-6">
         <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Adaugă persoană – Formular 230</h2>
-        <form method="post" action="formular-230.php" class="space-y-4">
+        <form method="post" action="/formular-230" class="space-y-4">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="adauga_persoana_230" value="1">
 

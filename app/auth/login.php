@@ -2,9 +2,10 @@
 /**
  * Pagină autentificare - CRM ANR Bihor
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/auth_helper.php';
-require_once 'includes/log_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/auth_helper.php';
+require_once APP_ROOT . '/includes/log_helper.php';
 
 $eroare = '';
 $redirect = trim($_POST['redirect'] ?? $_GET['redirect'] ?? '/dashboard');
@@ -44,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="utf-8">
-    
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autentificare - <?php echo htmlspecialchars(PLATFORM_NAME); ?></title>
     <link href="/css/tailwind.css" rel="stylesheet">
@@ -59,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-slate-200 dark:border-gray-700 p-8">
             <div class="text-center mb-6">
                 <?php if (defined('PLATFORM_LOGO_URL') && PLATFORM_LOGO_URL !== ''): ?>
-                <img src="<?php echo htmlspecialchars(PLATFORM_LOGO_URL); ?>" 
-                     alt="Logo <?php echo htmlspecialchars(PLATFORM_NAME); ?>" 
+                <img src="<?php echo htmlspecialchars(PLATFORM_LOGO_URL); ?>"
+                     alt="Logo <?php echo htmlspecialchars(PLATFORM_NAME); ?>"
                      class="h-16 w-auto mx-auto object-contain mb-4">
                 <?php endif; ?>
                 <h1 id="login-title" class="text-xl font-bold text-slate-900 dark:text-white"><?php echo htmlspecialchars(PLATFORM_NAME); ?></h1>
@@ -100,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <button type="submit" class="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Autentificare">
                         Autentificare
                     </button>
-                    <a href="/recuperare-parola?redirect=<?php echo urlencode($redirect); ?>" 
+                    <a href="/recuperare-parola?redirect=<?php echo urlencode($redirect); ?>"
                        class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500 text-center"
                        aria-label="Recuperare parolă">
                         Recuperare parolă

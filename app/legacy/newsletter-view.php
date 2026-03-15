@@ -2,8 +2,9 @@
 /**
  * Afișare newsletter trimis - CRM ANR Bihor
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/newsletter_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/newsletter_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
@@ -17,8 +18,8 @@ if (!$nl) {
     exit;
 }
 
-include 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 ?>
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">

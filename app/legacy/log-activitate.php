@@ -3,11 +3,12 @@
  * Log activitate utilizatori - CRM ANR
  * Afișează istoricul acțiunilor: modificări date, mesaje, documente, sarcini
  */
-require_once __DIR__ . '/config.php';
-require_once 'includes/log_helper.php';
-require_once 'includes/db_helper.php';
-include 'header.php';
-include 'sidebar.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/db_helper.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 
 $logs = [];
 $eroare_bd = '';

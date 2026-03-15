@@ -42,7 +42,7 @@ $redirect_uri = htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'index.php');
                 <i data-lucide="key" class="w-4 h-4 flex-shrink-0" aria-hidden="true"></i>
                 Schimbă parola
             </button>
-            <a href="logout.php" 
+            <a href="/logout" 
                class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 focus:bg-slate-100 dark:focus:bg-gray-700 focus:outline-none border-t border-slate-200 dark:border-gray-600 mt-1 pt-2"
                role="menuitem">
                 <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0" aria-hidden="true"></i>

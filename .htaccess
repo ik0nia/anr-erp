@@ -13,7 +13,8 @@ RewriteRule ^util/ - [L]
 
 # --- Files that must be served directly (APIs, utilities, cron, print/export) ---
 RewriteRule ^cron/ - [L]
-RewriteCond %{REQUEST_URI} ^/(api-|incasari-|genereaza-document|trimite-email|log-print|setup|install-auth|contacte-form-fields|contacte-import|import-membri-csv|generare-documente|membri_processing|membri_form|membru-profil-form|newsletter-view|registratura-sumar|actualizezcsv|config|header|footer|sidebar)
+RewriteRule ^app/ - [L]
+RewriteCond %{REQUEST_URI} ^/(config)\.php$
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
@@ -56,6 +57,17 @@ RewriteRule ^recuperare-parola\.php$ /recuperare-parola [R=301,L,QSA]
 RewriteRule ^reset-parola\.php$ /reset-parola [R=301,L,QSA]
 RewriteRule ^schimba-parola\.php$ /schimba-parola [R=301,L,QSA]
 RewriteRule ^membru-profil\.php$ /membru-profil [R=301,L,QSA]
+RewriteRule ^generare-documente\.php$ /generare-documente [R=301,L,QSA]
+RewriteRule ^import-membri-csv\.php$ /import-membri-csv [R=301,L,QSA]
+RewriteRule ^newsletter-view\.php$ /newsletter-view [R=301,L,QSA]
+RewriteRule ^registratura-sumar\.php$ /registratura/sumar [R=301,L,QSA]
+RewriteRule ^actualizezcsv\.php$ /actualizezcsv [R=301,L,QSA]
+RewriteRule ^contacte-import\.php$ /contacte/import [R=301,L,QSA]
+RewriteRule ^install-auth\.php$ /install/install-auth.php [R=301,L]
+RewriteRule ^setup\.php$ /install/setup.php [R=301,L]
+
+# --- Root URL: route to router.php ---
+RewriteRule ^$ router.php [QSA,L]
 
 # --- Everything else: route through router.php ---
 RewriteCond %{REQUEST_FILENAME} !-f

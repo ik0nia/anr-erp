@@ -5,8 +5,9 @@
  * actualizează membrii pentru care Nr. Dosar (dosarnr) coincide.
  */
 ob_start();
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/membri_import_helper.php';
+if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 2));
+require_once APP_ROOT . '/config.php';
+require_once APP_ROOT . '/includes/membri_import_helper.php';
 
 $eroare = '';
 $succes = '';
@@ -30,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($file['size'] > 10 * 1024 * 1024) {
                 $eroare = 'Fișierul depășește 10 MB.';
             } else {
-                $upload_dir = __DIR__ . '/uploads/import/';
+                $upload_dir = APP_ROOT . '/uploads/import/';
                 if (!file_exists($upload_dir)) {
                     mkdir($upload_dir, 0755, true);
                 }
@@ -108,8 +109,8 @@ if ($step === 'map' && $excel_data === null && !empty($_SESSION['actualizare_csv
     $excel_data = membri_import_parse_csv($_SESSION['actualizare_csv_path']);
 }
 
-require_once 'header.php';
-include 'sidebar.php';
+include APP_ROOT . '/app/views/layout/header.php';
+include APP_ROOT . '/app/views/layout/sidebar.php';
 
 $campuri_membri = membri_import_available_fields($pdo);
 ?>
@@ -147,7 +148,7 @@ $campuri_membri = membri_import_available_fields($pdo);
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
                 Fișierul trebuie să conțină o coloană cu Nr. Dosar (DosarNr), care va fi folosită pentru potrivirea cu membrii existenți. După mapare, se actualizează toate datele mapate pentru membrii găsiți.
             </p>
-            <form method="post" action="actualizezcsv.php" enctype="multipart/form-data" class="space-y-4">
+            <form method="post" action="/actualizezcsv" enctype="multipart/form-data" class="space-y-4">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="actualizare_upload" value="1">
                 <div>
@@ -173,7 +174,7 @@ $campuri_membri = membri_import_available_fields($pdo);
                 Pentru fiecare coloană din CSV alegeți câmpul corespunzător. Coloanele nel mapate sunt ignorate.
             </p>
 
-            <form method="post" action="actualizezcsv.php" class="space-y-4">
+            <form method="post" action="/actualizezcsv" class="space-y-4">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="actualizare_execute" value="1">
                 <div class="max-h-80 overflow-y-auto border border-slate-200 dark:border-gray-600 rounded p-3 space-y-2">
