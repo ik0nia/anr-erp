@@ -238,22 +238,22 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                             onclick="window.location.href='<?php echo $profil_url; ?>'"
                             role="link"
                             aria-label="Deschide profilul <?php echo htmlspecialchars($nume_complet); ?>">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <td class="px-6 py-4 whitespace-nowrap text-base">
                                 <span class="font-bold <?php echo $dosar_color; ?>"><?php echo $dosarnr; ?></span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
+                            <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-slate-900 dark:text-white">
                                 <?php echo htmlspecialchars($nume_complet); ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-gray-300">
+                            <td class="px-6 py-4 whitespace-nowrap text-base text-slate-700 dark:text-gray-300">
                                 <?php echo $m['datanastere'] ? date(DATE_FORMAT, strtotime($m['datanastere'])) : '-'; ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-gray-300">
+                            <td class="px-6 py-4 whitespace-nowrap text-base text-slate-700 dark:text-gray-300">
                                 <?php
                                 $varsta = membri_calculeaza_varsta($m['datanastere']);
                                 echo $varsta !== '-' ? ((int)$varsta . ' ani') : '-';
                                 ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-gray-300">
+                            <td class="px-6 py-4 whitespace-nowrap text-base text-slate-700 dark:text-gray-300">
                                 <?php
                                 $ci = '';
                                 if (!empty($m['ciseria'])) $ci .= $m['ciseria'];
@@ -261,16 +261,16 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                 echo htmlspecialchars($ci ?: '-');
                                 ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-gray-300">
+                            <td class="px-6 py-4 whitespace-nowrap text-base text-slate-700 dark:text-gray-300">
                                 <?php echo htmlspecialchars($m['hgrad'] ?? '-'); ?>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 dark:text-gray-300">
+                            <td class="px-6 py-4 whitespace-nowrap text-base text-slate-700 dark:text-gray-300">
                                 <?php echo htmlspecialchars($m['telefonnev'] ?? '-'); ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <?php echo render_alerts_badge($m, $m['id'], $pdo); ?>
                             </td>
-                            <td class="px-6 py-4 text-sm font-medium" onclick="event.stopPropagation()">
+                            <td class="px-6 py-4 text-base font-medium" onclick="event.stopPropagation()">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <button type="button"
                                             data-action="generare-document"
