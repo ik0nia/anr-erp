@@ -26,6 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_mesaj_precomplet
     if (!empty($_POST['redirect_avertizari'])) $params['avertizari'] = $_POST['redirect_avertizari'];
     if (!empty($_POST['redirect_actualizare_cnp_ci'])) $params['actualizare_cnp_ci'] = $_POST['redirect_actualizare_cnp_ci'];
     if (!empty($_POST['redirect_aniversari_azi'])) $params['aniversari_azi'] = $_POST['redirect_aniversari_azi'];
+    if (!empty($_POST['redirect_cotizatie_neachitata'])) $params['cotizatie_neachitata'] = $_POST['redirect_cotizatie_neachitata'];
+    if (!empty($_POST['redirect_fara_contact'])) $params['fara_contact'] = $_POST['redirect_fara_contact'];
     $redirect = '/membri' . (count($params) ? '?' . http_build_query($params) : '');
     header('Location: ' . $redirect);
     exit;
@@ -51,6 +53,26 @@ $status_filter = $_GET['status'] ?? 'activi';
 $avertizari_filter = isset($_GET['avertizari']) && $_GET['avertizari'] == '1';
 $aniversari_azi_filter = isset($_GET['aniversari_azi']) && $_GET['aniversari_azi'] == '1';
 $actualizare_cnp_ci_filter = isset($_GET['actualizare_cnp_ci']) && $_GET['actualizare_cnp_ci'] == '1';
+$cotizatie_neachitata_filter = isset($_GET['cotizatie_neachitata']) && $_GET['cotizatie_neachitata'] == '1';
+$fara_contact_filter = isset($_GET['fara_contact']) && $_GET['fara_contact'] == '1';
+
+// Filtrele speciale sunt mutual exclusive — doar unul poate fi activ
+$special_filters_active = array_filter([
+    'avertizari' => $avertizari_filter,
+    'aniversari_azi' => $aniversari_azi_filter,
+    'actualizare_cnp_ci' => $actualizare_cnp_ci_filter,
+    'cotizatie_neachitata' => $cotizatie_neachitata_filter,
+    'fara_contact' => $fara_contact_filter,
+]);
+if (count($special_filters_active) > 1) {
+    // Pastreaza doar ultimul filtru setat (cel mai recent din URL)
+    $last_key = array_key_last($special_filters_active);
+    $avertizari_filter = ($last_key === 'avertizari');
+    $aniversari_azi_filter = ($last_key === 'aniversari_azi');
+    $actualizare_cnp_ci_filter = ($last_key === 'actualizare_cnp_ci');
+    $cotizatie_neachitata_filter = ($last_key === 'cotizatie_neachitata');
+    $fara_contact_filter = ($last_key === 'fara_contact');
+}
 
 $filters = [
     'status' => $status_filter,
@@ -60,6 +82,8 @@ $filters = [
     'avertizari' => $avertizari_filter,
     'aniversari_azi' => $aniversari_azi_filter,
     'actualizare_cnp_ci' => $actualizare_cnp_ci_filter,
+    'cotizatie_neachitata' => $cotizatie_neachitata_filter,
+    'fara_contact' => $fara_contact_filter,
 ];
 
 // --- Date pentru view ---
@@ -84,6 +108,9 @@ $membri_suspendati_expirati_count = $indicatori['membri_suspendati_expirati_coun
 $membri_cu_avertizari = $data['membri_cu_avertizari'];
 $membri_actualizare_cnp_ci = $data['membri_actualizare_cnp_ci'];
 $membri_aniversari_azi_count = $data['membri_aniversari_azi_count'];
+$membri_arhiva_count = $data['membri_arhiva_count'];
+$membri_cotizatie_neachitata_count = $data['membri_cotizatie_neachitata_count'];
+$membri_fara_contact_count = $data['membri_fara_contact_count'];
 $membri_scutiti_cotizatie_ids = $data['membri_scutiti_cotizatie_ids'];
 $membri_cotizatie_achitata_an_curent = $data['membri_cotizatie_achitata_an_curent'];
 $valori_cotizatie_an_curent = $data['valori_cotizatie_an_curent'];

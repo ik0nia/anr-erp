@@ -27,6 +27,8 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
     $avertizari_filter = !empty($filters['avertizari']);
     $aniversari_azi_filter = !empty($filters['aniversari_azi']);
     $actualizare_cnp_ci_filter = !empty($filters['actualizare_cnp_ci']);
+    $cotizatie_neachitata_filter = !empty($filters['cotizatie_neachitata']);
+    $fara_contact_filter = !empty($filters['fara_contact']);
 
     // Validare per_page
     if (!in_array($per_page, [10, 25, 50])) {
@@ -79,6 +81,39 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         )";
     }
 
+    if ($fara_contact_filter) {
+        $where_parts[] = "status_dosar = 'Activ' AND (telefonnev IS NULL OR telefonnev = '') AND (email IS NULL OR email = '')";
+    }
+
+    // ID-uri membri scutiti de cotizatie (needed before WHERE for cotizatie_neachitata filter)
+    $membri_scutiti_cotizatie_ids = [];
+    try {
+        $membri_scutiti_cotizatie_ids = cotizatii_membri_scutiti_ids($pdo);
+    } catch (PDOException $e) {}
+
+    // ID-uri membri cotizatie achitata + valori cotizatie
+    $membri_cotizatie_achitata_an_curent = [];
+    $valori_cotizatie_an_curent = [];
+    try {
+        cotizatii_ensure_tables($pdo);
+        $an_curent = (int)date('Y');
+        $membri_cotizatie_achitata_an_curent = incasari_membri_cotizatie_achitata_an($pdo, $an_curent);
+        $rows_cot = $pdo->query("SELECT grad_handicap, valoare_cotizatie FROM cotizatii_anuale WHERE anul = " . $an_curent)->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows_cot as $r) { $valori_cotizatie_an_curent[$r['grad_handicap']] = (float)$r['valoare_cotizatie']; }
+    } catch (PDOException $e) {}
+
+    if ($cotizatie_neachitata_filter) {
+        $where_parts[] = "status_dosar = 'Activ'";
+        $excluded_ids = array_unique(array_merge($membri_scutiti_cotizatie_ids, $membri_cotizatie_achitata_an_curent));
+        if (!empty($excluded_ids)) {
+            $placeholders = implode(',', array_fill(0, count($excluded_ids), '?'));
+            $where_parts[] = "id NOT IN ($placeholders)";
+            foreach ($excluded_ids as $eid) {
+                $params[] = (int)$eid;
+            }
+        }
+    }
+
     if ($cautare !== '') {
         $where_parts[] = "(nume LIKE ? OR prenume LIKE ? OR cnp LIKE ? OR dosarnr LIKE ? OR telefonnev LIKE ? OR email LIKE ? OR domloc LIKE ? OR CONCAT(COALESCE(nume,''),' ',COALESCE(prenume,'')) LIKE ?)";
         $search_term = '%' . $cautare . '%';
@@ -112,34 +147,28 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
     // Calculare numar membri cu avertizari
     $membri_cu_avertizari = 0;
     try {
-        $cols = $pdo->query("SHOW COLUMNS FROM membri")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('cidataexp', $cols) && in_array('ceexp', $cols)) {
-            $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
-                status_dosar = 'Activ'
-                AND (
-                    (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
-                    OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
-                )");
-            $membri_cu_avertizari = (int) $stmt->fetch()['n'];
-        }
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
+            status_dosar = 'Activ'
+            AND (
+                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
+                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
+            )");
+        $membri_cu_avertizari = (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}
 
     // Numar membri actualizare CNP/CI
     $membri_actualizare_cnp_ci = 0;
     try {
-        $cols = $pdo->query("SHOW COLUMNS FROM membri")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('cidataelib', $cols) && in_array('cielib', $cols) && in_array('cidataexp', $cols) && in_array('cnp', $cols)) {
-            $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
-                status_dosar = 'Activ'
-                AND (
-                    cidataelib IS NULL
-                    OR cielib IS NULL OR cielib = ''
-                    OR cidataexp IS NULL
-                    OR cnp IS NULL OR cnp = '' OR LENGTH(cnp) != 13
-                    OR (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 30 DAY))
-                )");
-            $membri_actualizare_cnp_ci = (int) $stmt->fetch()['n'];
-        }
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
+            status_dosar = 'Activ'
+            AND (
+                cidataelib IS NULL
+                OR cielib IS NULL OR cielib = ''
+                OR cidataexp IS NULL
+                OR cnp IS NULL OR cnp = '' OR LENGTH(cnp) != 13
+                OR (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 30 DAY))
+            )");
+        $membri_actualizare_cnp_ci = (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}
 
     // Numar aniversari azi
@@ -147,6 +176,34 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
     try {
         $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE datanastere IS NOT NULL AND MONTH(datanastere) = MONTH(CURDATE()) AND DAY(datanastere) = DAY(CURDATE())");
         $membri_aniversari_azi_count = (int) $stmt->fetch()['n'];
+    } catch (PDOException $e) {}
+
+    // Numar arhiva membri (decedati)
+    $membri_arhiva_count = 0;
+    try {
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE status_dosar = 'Decedat'");
+        $membri_arhiva_count = (int) $stmt->fetch()['n'];
+    } catch (PDOException $e) {}
+
+    // Numar cotizatie neachitata
+    $membri_cotizatie_neachitata_count = 0;
+    try {
+        $excluded_ids = array_unique(array_merge($membri_scutiti_cotizatie_ids, $membri_cotizatie_achitata_an_curent));
+        if (!empty($excluded_ids)) {
+            $placeholders = implode(',', array_fill(0, count($excluded_ids), '?'));
+            $stmt = $pdo->prepare("SELECT COUNT(*) as n FROM membri WHERE status_dosar = 'Activ' AND id NOT IN ($placeholders)");
+            $stmt->execute(array_map('intval', $excluded_ids));
+        } else {
+            $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE status_dosar = 'Activ'");
+        }
+        $membri_cotizatie_neachitata_count = (int) $stmt->fetch()['n'];
+    } catch (PDOException $e) {}
+
+    // Numar fara contact
+    $membri_fara_contact_count = 0;
+    try {
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE status_dosar = 'Activ' AND (telefonnev IS NULL OR telefonnev = '') AND (email IS NULL OR email = '')");
+        $membri_fara_contact_count = (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}
 
     // Incarcare membri
@@ -176,23 +233,6 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         }
     }
 
-    // ID-uri membri scutiti de cotizatie
-    $membri_scutiti_cotizatie_ids = [];
-    try {
-        $membri_scutiti_cotizatie_ids = cotizatii_membri_scutiti_ids($pdo);
-    } catch (PDOException $e) {}
-
-    // ID-uri membri cotizatie achitata + valori cotizatie
-    $membri_cotizatie_achitata_an_curent = [];
-    $valori_cotizatie_an_curent = [];
-    try {
-        cotizatii_ensure_tables($pdo);
-        $an_curent = (int)date('Y');
-        $membri_cotizatie_achitata_an_curent = incasari_membri_cotizatie_achitata_an($pdo, $an_curent);
-        $rows_cot = $pdo->query("SELECT grad_handicap, valoare_cotizatie FROM cotizatii_anuale WHERE anul = " . $an_curent)->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rows_cot as $r) { $valori_cotizatie_an_curent[$r['grad_handicap']] = (float)$r['valoare_cotizatie']; }
-    } catch (PDOException $e) {}
-
     return [
         'membri' => $membri,
         'total' => $total_membri,
@@ -204,6 +244,9 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         'membri_cu_avertizari' => $membri_cu_avertizari,
         'membri_actualizare_cnp_ci' => $membri_actualizare_cnp_ci,
         'membri_aniversari_azi_count' => $membri_aniversari_azi_count,
+        'membri_arhiva_count' => $membri_arhiva_count,
+        'membri_cotizatie_neachitata_count' => $membri_cotizatie_neachitata_count,
+        'membri_fara_contact_count' => $membri_fara_contact_count,
         'membri_scutiti_cotizatie_ids' => $membri_scutiti_cotizatie_ids,
         'membri_cotizatie_achitata_an_curent' => $membri_cotizatie_achitata_an_curent,
         'valori_cotizatie_an_curent' => $valori_cotizatie_an_curent,

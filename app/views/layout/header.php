@@ -157,3 +157,7 @@
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 flex h-screen overflow-hidden">
+<!-- Mobile hamburger -->
+<button id="mobile-menu-btn" class="lg:hidden fixed top-3 left-3 z-50 p-2 bg-slate-800 dark:bg-slate-700 text-white rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500" aria-label="Deschide meniul">
+    <i data-lucide="menu" class="w-6 h-6" aria-hidden="true"></i>
+</button>

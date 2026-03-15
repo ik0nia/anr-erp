@@ -5,9 +5,11 @@
  * Variabile disponibile (setate de controller):
  *   $membri, $total_membri, $total_pages, $page, $per_page, $sort_col, $sort_dir,
  *   $status_filter, $cautare, $avertizari_filter, $aniversari_azi_filter,
- *   $actualizare_cnp_ci_filter, $eroare, $eroare_bd, $succes,
- *   $membri_activi_count, $membri_suspendati_expirati_count,
+ *   $actualizare_cnp_ci_filter, $cotizatie_neachitata_filter, $fara_contact_filter,
+ *   $eroare, $eroare_bd, $succes,
+ *   $membri_activi_count, $membri_suspendati_expirati_count, $membri_arhiva_count,
  *   $membri_cu_avertizari, $membri_actualizare_cnp_ci, $membri_aniversari_azi_count,
+ *   $membri_cotizatie_neachitata_count, $membri_fara_contact_count,
  *   $membri_scutiti_cotizatie_ids, $membri_cotizatie_achitata_an_curent,
  *   $valori_cotizatie_an_curent
  */
@@ -21,6 +23,13 @@ if (!empty($cautare)) $sort_link_params['cautare'] = $cautare;
 if ($avertizari_filter) $sort_link_params['avertizari'] = '1';
 if ($actualizare_cnp_ci_filter) $sort_link_params['actualizare_cnp_ci'] = '1';
 if ($aniversari_azi_filter) $sort_link_params['aniversari_azi'] = '1';
+if ($cotizatie_neachitata_filter) $sort_link_params['cotizatie_neachitata'] = '1';
+if ($fara_contact_filter) $sort_link_params['fara_contact'] = '1';
+
+// Helper: base URL for filter buttons (status + cautare + per_page, no special filters)
+$base_filter_url = '/membri?status=' . urlencode($status_filter) .
+    (!empty($cautare) ? '&cautare=' . urlencode($cautare) : '') .
+    '&per_page=' . $per_page;
 
 $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
 ?>
@@ -66,6 +75,8 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 <?php if ($avertizari_filter): ?><input type="hidden" name="avertizari" value="1"><?php endif; ?>
                 <?php if ($actualizare_cnp_ci_filter): ?><input type="hidden" name="actualizare_cnp_ci" value="1"><?php endif; ?>
                 <?php if ($aniversari_azi_filter): ?><input type="hidden" name="aniversari_azi" value="1"><?php endif; ?>
+                <?php if ($cotizatie_neachitata_filter): ?><input type="hidden" name="cotizatie_neachitata" value="1"><?php endif; ?>
+                <?php if ($fara_contact_filter): ?><input type="hidden" name="fara_contact" value="1"><?php endif; ?>
                 <div class="relative">
                     <i data-lucide="search" class="w-5 h-5 absolute top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500 pointer-events-none" aria-hidden="true" style="left: 14px;"></i>
                     <input type="search"
@@ -101,39 +112,62 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
         </div>
 
         <!-- Rând 2: Filtre -->
-        <div class="mb-6 flex items-center gap-2 flex-wrap">
-            <a href="/membri?status=activi&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+        <?php
+        // URL de baza pentru butoanele de status (pastreaza cautare + per_page, fara filtre speciale)
+        $status_base_url = '/membri?reset_mesaj=1' .
+            (!empty($cautare) ? '&cautare=' . urlencode($cautare) : '') .
+            '&per_page=' . $per_page;
+        // URL de baza pentru filtrele speciale (pastreaza status + cautare + per_page, fara alte filtre speciale)
+        $special_base_url = '/membri?status=' . urlencode($status_filter) . '&reset_mesaj=1' .
+            (!empty($cautare) ? '&cautare=' . urlencode($cautare) : '') .
+            '&per_page=' . $per_page;
+        ?>
+        <!-- Rând 2: Filtre status -->
+        <div class="mb-2 flex items-center gap-2 flex-wrap">
+            <a href="<?php echo $status_base_url; ?>&status=activi"
                class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'activi' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
                 Membri Activi (<?php echo $membri_activi_count; ?>)
             </a>
-            <a href="/membri?status=suspendati&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+            <a href="<?php echo $status_base_url; ?>&status=suspendati"
                class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'suspendati' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
                 Membri Suspendati/Expirati (<?php echo $membri_suspendati_expirati_count; ?>)
             </a>
-            <a href="/membri?status=arhiva&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+            <a href="<?php echo $status_base_url; ?>&status=arhiva"
                class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'arhiva' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
-                Arhiva Membri
+                Arhiva Membri (<?php echo $membri_arhiva_count; ?>)
             </a>
-            <span class="text-slate-300 dark:text-gray-600" aria-hidden="true">|</span>
-            <a href="/membri?status=activi&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?>&avertizari=<?php echo $avertizari_filter ? '0' : '1'; ?><?php echo $actualizare_cnp_ci_filter ? '&actualizare_cnp_ci=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+        </div>
+        <!-- Rând 3: Filtre speciale -->
+        <div class="mb-6 flex items-center gap-2 flex-wrap">
+            <a href="<?php echo $special_base_url . ($avertizari_filter ? '' : '&avertizari=1'); ?>"
                class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $avertizari_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
                aria-label="<?php echo $avertizari_filter ? 'Dezactiveaza filtrarea dupa actualizare date' : 'Afiseaza doar membrii cu date de actualizat'; ?>">
                 <i data-lucide="alert-triangle" class="w-4 h-4" aria-hidden="true"></i>
                 Actualizare date (<?php echo $membri_cu_avertizari; ?>)
             </a>
-            <?php if ($membri_actualizare_cnp_ci > 0): ?>
-            <a href="/membri?status=<?php echo urlencode($status_filter); ?>&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?>&actualizare_cnp_ci=<?php echo $actualizare_cnp_ci_filter ? '0' : '1'; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+            <a href="<?php echo $special_base_url . ($actualizare_cnp_ci_filter ? '' : '&actualizare_cnp_ci=1'); ?>"
                class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $actualizare_cnp_ci_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
                aria-label="<?php echo $actualizare_cnp_ci_filter ? 'Dezactiveaza filtrarea dupa actualizare CNP/CI' : 'Afiseaza doar membrii care necesita actualizare CNP/CI'; ?>">
                 <i data-lucide="file-edit" class="w-4 h-4" aria-hidden="true"></i>
                 Actualizare CNP/CI (<?php echo $membri_actualizare_cnp_ci; ?>)
             </a>
-            <?php endif; ?>
-            <a href="/membri?status=<?php echo urlencode($status_filter); ?>&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $actualizare_cnp_ci_filter ? '&actualizare_cnp_ci=1' : ''; ?>&aniversari_azi=<?php echo $aniversari_azi_filter ? '0' : '1'; ?>"
+            <a href="<?php echo $special_base_url . ($aniversari_azi_filter ? '' : '&aniversari_azi=1'); ?>"
                class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $aniversari_azi_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
                aria-label="<?php echo $aniversari_azi_filter ? 'Dezactiveaza filtrarea aniversari azi' : 'Afiseaza doar membrii care isi serbeaza ziua de nastere azi'; ?>">
                 <i data-lucide="cake" class="w-4 h-4" aria-hidden="true"></i>
                 Aniversari azi (<?php echo $membri_aniversari_azi_count; ?>)
+            </a>
+            <a href="<?php echo $special_base_url . ($cotizatie_neachitata_filter ? '' : '&cotizatie_neachitata=1'); ?>"
+               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $cotizatie_neachitata_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
+               aria-label="<?php echo $cotizatie_neachitata_filter ? 'Dezactiveaza filtrarea cotizatie neachitata' : 'Afiseaza doar membrii cu cotizatia neachitata'; ?>">
+                <i data-lucide="dollar-sign" class="w-4 h-4" aria-hidden="true"></i>
+                Cotizatie neachitata (<?php echo $membri_cotizatie_neachitata_count; ?>)
+            </a>
+            <a href="<?php echo $special_base_url . ($fara_contact_filter ? '' : '&fara_contact=1'); ?>"
+               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $fara_contact_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
+               aria-label="<?php echo $fara_contact_filter ? 'Dezactiveaza filtrarea fara contact' : 'Afiseaza doar membrii fara telefon si email'; ?>">
+                <i data-lucide="phone-off" class="w-4 h-4" aria-hidden="true"></i>
+                Fara contact (<?php echo $membri_fara_contact_count; ?>)
             </a>
         </div>
 
@@ -277,7 +311,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                             class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-blue-400 dark:border-blue-500 bg-blue-100 dark:bg-blue-800/70 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-700 font-medium"
                                             aria-label="Genereaza document pentru <?php echo htmlspecialchars($m['nume'] . ' ' . $m['prenume']); ?>">
                                         <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
-                                        <span class="hidden xl:inline">Genereaza Document</span>
+                                        <span>Genereaza Document</span>
                                     </button>
                                     <?php
                                     $cot_achitata_incasari = in_array($m['id'], $membri_cotizatie_achitata_an_curent) || in_array($m['id'], $membri_scutiti_cotizatie_ids);
@@ -287,7 +321,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                        class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-slate-400 dark:border-gray-500 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium"
                                        aria-label="Scutit de cotizatie - vezi detalii">
                                         <i data-lucide="shield-check" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
-                                        <span class="hidden xl:inline">Scutit de cotizatie</span>
+                                        <span>Scutit de cotizatie</span>
                                     </a>
                                     <?php else: ?>
                                     <button type="button"
@@ -297,7 +331,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                             data-cot-achitata="<?php echo $cot_achitata_incasari ? '1' : '0'; ?>"
                                             aria-label="Incaseaza">
                                         <i data-lucide="dollar-sign" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
-                                        <span class="hidden xl:inline">Incaseaza</span>
+                                        <span>Incaseaza</span>
                                     </button>
                                     <?php endif; ?>
                                     <?php
@@ -315,7 +349,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                        class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-emerald-400 dark:border-emerald-500 bg-emerald-100 dark:bg-emerald-800/70 text-emerald-900 dark:text-emerald-100 hover:bg-emerald-200 dark:hover:bg-emerald-700 font-medium"
                                        aria-label="Trimite email">
                                         <i data-lucide="mail" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
-                                        <span class="hidden xl:inline">Email</span>
+                                        <span>Email</span>
                                     </a>
                                     <?php endif; ?>
                                     <?php if (!empty($m['telefonnev'])):
@@ -328,7 +362,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                        class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-green-400 dark:border-green-500 bg-green-100 dark:bg-green-800/70 text-green-900 dark:text-green-100 hover:bg-green-200 dark:hover:bg-green-700 font-medium"
                                        aria-label="Mesaj WhatsApp">
                                         <i data-lucide="message-circle" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
-                                        <span class="hidden xl:inline">WhatsApp</span>
+                                        <span>WhatsApp</span>
                                     </a>
                                     <?php endif; ?>
                                 </div>
@@ -449,6 +483,8 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                     <input type="hidden" name="redirect_avertizari" value="<?php echo $avertizari_filter ? '1' : ''; ?>">
                     <input type="hidden" name="redirect_actualizare_cnp_ci" value="<?php echo $actualizare_cnp_ci_filter ? '1' : ''; ?>">
                     <input type="hidden" name="redirect_aniversari_azi" value="<?php echo $aniversari_azi_filter ? '1' : ''; ?>">
+                    <input type="hidden" name="redirect_cotizatie_neachitata" value="<?php echo $cotizatie_neachitata_filter ? '1' : ''; ?>">
+                    <input type="hidden" name="redirect_fara_contact" value="<?php echo $fara_contact_filter ? '1' : ''; ?>">
                     <div class="space-y-3">
                         <div>
                             <label for="mesaj_subiect" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Subiect (pentru email)</label>
