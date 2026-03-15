@@ -143,9 +143,10 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
             <button type="button"
                     class="btn-deschide-incasari inline-flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                     data-membru-id="<?php echo (int)$membru['id']; ?>"
+                    data-membru-nume="<?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>"
                     data-valoare-cot="<?php echo number_format($valoare_cotizatie_an, 2, '.', ''); ?>"
                     data-cot-achitata="<?php echo $cotizatie_achitata_an_curent ? '1' : '0'; ?>"
-                    aria-label="Incaseaza">
+                    aria-label="Incaseaza <?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>">
                 <i data-lucide="dollar-sign" class="mr-2 w-4 h-4" aria-hidden="true"></i>
                 Incaseaza
             </button>

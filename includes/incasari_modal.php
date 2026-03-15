@@ -6,7 +6,7 @@
 ?>
 <dialog id="modal-incasari" role="dialog" aria-modal="true" aria-labelledby="modal-incasari-titlu" class="p-0 rounded-xl shadow-2xl max-w-lg w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800">
     <div class="p-6">
-        <h2 id="modal-incasari-titlu" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Încasare</h2>
+        <h2 id="modal-incasari-titlu" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Încasare pentru <span id="incasari-nume-membru" class="text-amber-600 dark:text-amber-400"></span></h2>
         <form id="form-incasari" class="space-y-4">
             <?php if (function_exists('csrf_field')) { echo csrf_field(); } ?>
             <input type="hidden" name="membru_id" id="incasari-membru-id" value="">
@@ -86,9 +86,12 @@
     }
 
     // Functie globala pentru deschidere modal incasari
+    var numeSpan = document.getElementById('incasari-nume-membru');
+
     window.deschideIncasari = function(btn) {
         if (!btn || !dialog) return;
         mid.value = btn.getAttribute('data-membru-id') || '';
+        if (numeSpan) numeSpan.textContent = btn.getAttribute('data-membru-nume') || '';
         valCot.value = btn.getAttribute('data-valoare-cot') || '0';
         var ach = btn.getAttribute('data-cot-achitata');
         cotAchitata.value = (ach === '1' || ach === 'true') ? '1' : '0';

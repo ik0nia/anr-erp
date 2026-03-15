@@ -319,10 +319,11 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     <button type="button"
                                             class="btn-deschide-incasari inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-purple-400 dark:border-purple-500 bg-purple-100 dark:bg-purple-800/70 text-purple-900 dark:text-purple-100 hover:bg-purple-200 dark:hover:bg-purple-700 font-medium"
                                             data-membru-id="<?php echo (int)$m['id']; ?>"
+                                            data-membru-nume="<?php echo htmlspecialchars($nume_complet); ?>"
                                             data-valoare-cot="<?php echo number_format($val_cot, 2, '.', ''); ?>"
                                             data-cot-achitata="<?php echo $cot_achitata_incasari ? '1' : '0'; ?>"
                                             onclick="event.stopPropagation(); window.deschideIncasari && window.deschideIncasari(this);"
-                                            aria-label="Incaseaza">
+                                            aria-label="Incaseaza <?php echo htmlspecialchars($nume_complet); ?>">
                                         <i data-lucide="dollar-sign" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
                                         <span>Incaseaza</span>
                                     </button>
