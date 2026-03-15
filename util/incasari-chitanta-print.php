@@ -79,8 +79,10 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
 </head>
 <body>
     <div class="no-print">
-        <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?>">Descarcă PDF</a>
         <button type="button" onclick="window.print();">Tipărește</button>
+        <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?>">Descarcă PDF</a>
+        <a href="https://wa.me/?text=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON - ' . (isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . '/util/incasari-chitanta-print.php?id=' . $id); ?>" target="_blank" rel="noopener noreferrer">Distribuie WhatsApp</a>
+        <a href="mailto:?subject=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr); ?>&body=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON' . "\n" . (isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . '/util/incasari-chitanta-print.php?id=' . $id); ?>">Distribuie Email</a>
     </div>
     <div class="a4-sheet">
         <?php for ($ex = 1; $ex <= 2; $ex++): ?>

@@ -23,7 +23,7 @@ $suma = (float)str_replace(',', '.', $_POST['suma'] ?? 0);
 $observatii = trim($_POST['observatii'] ?? '') ?: null;
 
 $tipuri = [INCASARI_TIP_COTIZATIE, INCASARI_TIP_DONATIE, INCASARI_TIP_TAXA_PARTICIPARE, INCASARI_TIP_ALTE];
-$moduri = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CARD_POS, INCASARI_MOD_CARD_ONLINE, INCASARI_MOD_TRANSFER];
+$moduri = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CHITANTA_VECHE, INCASARI_MOD_CARD_POS, INCASARI_MOD_CARD_ONLINE, INCASARI_MOD_TRANSFER, INCASARI_MOD_MANDAT_POSTAL];
 
 if ($membru_id <= 0 || !in_array($tip, $tipuri) || !in_array($mod_plata, $moduri)) {
     echo json_encode(['ok' => false, 'eroare' => 'Date invalide (membru, tip sau mod plată).']);
@@ -35,11 +35,12 @@ if ($tip === INCASARI_TIP_COTIZATIE) {
     $anul = (int)date('Y');
     cotizatii_ensure_tables($pdo);
     if ($suma <= 0) {
-        $stmt = $pdo->prepare("SELECT hgrad FROM membri WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT hgrad, insotitor FROM membri WHERE id = ?");
         $stmt->execute([$membru_id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $grad = $row['hgrad'] ?? 'Fara handicap';
-        $suma = incasari_valoare_cotizatie_anuala($pdo, $anul, $grad);
+        $asistent = cotizatii_map_insotitor_to_asistent($row['insotitor'] ?? '');
+        $suma = incasari_valoare_cotizatie_anuala($pdo, $anul, $grad, $asistent);
         if ($suma <= 0) $suma = 0;
     }
 } else {
@@ -58,9 +59,13 @@ if (!$id) {
 }
 
 require_once __DIR__ . '/../includes/log_helper.php';
-log_activitate($pdo, "Încasări: încasare salvată ID {$id} – tip {$tip}, {$suma} RON, membru {$membru_id}");
+log_activitate($pdo, "Încasări: încasare salvată ID {$id} – tip {$tip}, {$suma} RON, membru {$membru_id}", null, $membru_id);
 
 $inc = incasari_get($pdo, $id);
+$doc_info = ($inc['seria_chitanta'] ?? '-') . ' nr. ' . ($inc['nr_chitanta'] ?? '-');
+if (!empty($inc['seria_chitanta'])) {
+    log_activitate($pdo, "Document emis: Chitanță {$doc_info} – {$suma} RON", null, $membru_id);
+}
 echo json_encode([
     'ok' => true,
     'id' => $id,

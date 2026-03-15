@@ -81,6 +81,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_membru']
         $result = membri_update($pdo, $membru_id, $_POST, $_FILES);
 
         if ($result['success']) {
+            // Log actualizare in registru_interactiuni_v2
+            try {
+                require_once APP_ROOT . '/includes/registru_interactiuni_v2_helper.php';
+
+                // Obtinem sau cream subiectul "Actualizare Date"
+                $subiect_id = null;
+                $stmt_sub = $pdo->prepare("SELECT id FROM registru_interactiuni_v2_subiecte WHERE nume = 'Actualizare Date' LIMIT 1");
+                $stmt_sub->execute();
+                $row_sub = $stmt_sub->fetch(PDO::FETCH_ASSOC);
+                if ($row_sub) {
+                    $subiect_id = (int)$row_sub['id'];
+                } else {
+                    // Cream subiectul daca nu exista
+                    $stmt_max_ord = $pdo->query("SELECT COALESCE(MAX(ordine), 0) + 1 AS next_ord FROM registru_interactiuni_v2_subiecte");
+                    $next_ord = (int)$stmt_max_ord->fetch(PDO::FETCH_ASSOC)['next_ord'];
+                    $stmt_ins_sub = $pdo->prepare("INSERT INTO registru_interactiuni_v2_subiecte (nume, ordine, activ) VALUES ('Actualizare Date', ?, 1)");
+                    $stmt_ins_sub->execute([$next_ord]);
+                    $subiect_id = (int)$pdo->lastInsertId();
+                }
+
+                // Construim notitele din modificarile detectate
+                $modificari = $GLOBALS['_membri_save_modificari'] ?? [];
+                $nume_complet = $GLOBALS['_membri_save_nume_complet'] ?? '';
+                $notite = !empty($modificari) ? implode("; ", $modificari) : 'Actualizare date profil';
+
+                $utilizator = $_SESSION['utilizator'] ?? 'Sistem';
+                $utilizator_id = $_SESSION['utilizator_id'] ?? null;
+
+                // Obtinem telefonul membrului pentru referinta
+                $stmt_tel = $pdo->prepare("SELECT telefonnev FROM membri WHERE id = ?");
+                $stmt_tel->execute([$membru_id]);
+                $telefon_membru = $stmt_tel->fetchColumn() ?: null;
+
+                $stmt_ri = $pdo->prepare("INSERT INTO registru_interactiuni_v2
+                    (tip, persoana, telefon, subiect_id, notite, utilizator, utilizator_id, data_ora)
+                    VALUES ('vizita', ?, ?, ?, ?, ?, ?, NOW())");
+                $stmt_ri->execute([
+                    $nume_complet,
+                    $telefon_membru,
+                    $subiect_id,
+                    $notite,
+                    $utilizator,
+                    $utilizator_id
+                ]);
+            } catch (PDOException $e) {
+                // Nu blocam fluxul daca logarea in registru esueaza
+                error_log('Eroare logare registru_interactiuni_v2 la actualizare membru: ' . $e->getMessage());
+            }
+
             header('Location: /membru-profil?id=' . $membru_id . '&succes=1');
             exit;
         } else {
@@ -129,6 +178,9 @@ $moduri_plata_afisare = incasari_moduri_plata_afisare();
 
 // Jurnal activitate
 $jurnal = membri_jurnal_activitate($pdo, $membru_id);
+
+// Documente generate
+$documente_generate = membri_documente_generate($pdo, $membru_id, $membru);
 
 // Atasamente
 $atasamente_ch = membri_atasamente_lista($pdo, $membru_id, 'certificat_handicap');

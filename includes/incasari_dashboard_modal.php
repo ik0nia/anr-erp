@@ -16,10 +16,12 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
                 <div>
                     <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Mod plată <span class="text-red-600">*</span></span>
                     <div class="flex flex-wrap gap-2" role="group" aria-label="Mod plată">
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="numerar">Numerar</button>
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="card_pos">Card POS</button>
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="card_online">Card online</button>
+                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="numerar">Chitanta ERP</button>
+                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="chitanta_veche">Chitanta veche</button>
+                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="card_pos">POS</button>
                         <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="transfer_bancar">Transfer bancar</button>
+                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="card_online">Plata online</button>
+                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="mandat_postal">Mandat postal</button>
                     </div>
                     <input type="hidden" name="mod_plata" id="inc-dash-mod" value="">
                 </div>

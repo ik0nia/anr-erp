@@ -299,11 +299,11 @@ function setari_email_test(PDO $pdo, string $destinatar, ?int $user_id): array
     if ($destinatar === '' || !filter_var($destinatar, FILTER_VALIDATE_EMAIL)) {
         return ['success' => false, 'error' => 'Introduceți o adresă de email validă sau asigurați-vă că utilizatorul logat are email setat.'];
     }
-    $ok = sendAutomatedEmail($pdo, $destinatar, 'Test Email CRM – Setări email', 'Acesta este un email de test trimis din modulul Setări → Email. Setările SMTP/expeditor sunt funcționale.');
-    if ($ok) {
+    $result = sendAutomatedEmailDetailed($pdo, $destinatar, 'Test Email CRM – Setări email', 'Acesta este un email de test trimis din modulul Setări → Email. Setările SMTP/expeditor sunt funcționale.');
+    if ($result['success']) {
         return ['success' => true, 'error' => null, 'destinatar' => $destinatar];
     }
-    return ['success' => false, 'error' => 'Trimiterea emailului de test a eșuat. Verificați setările SMTP și adresa expeditor.'];
+    return ['success' => false, 'error' => $result['error'] ?: 'Trimiterea emailului de test a eșuat. Verificați setările SMTP și adresa expeditor.'];
 }
 
 // ---------------------------------------------------------------------------

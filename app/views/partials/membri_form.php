@@ -37,21 +37,24 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
     };
     
     // Pentru adăugare membru nou: precompletăm Nr. Dosar cu (MAX(dosarnr) + 1)
+    // Valoarea vine din controller via $GLOBALS['next_dosarnr'] sau se calculează cu membri_next_dosar_nr()
     $next_dosar_nr = '';
     if (!$is_edit) {
-        try {
-            if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) {
-                $stmt_max = $GLOBALS['pdo']->query("SELECT MAX(CAST(dosarnr AS UNSIGNED)) AS max_dosar FROM membri");
-                $row_max = $stmt_max->fetch(PDO::FETCH_ASSOC);
-                $max_dosar = (int)($row_max['max_dosar'] ?? 0);
-                $next_dosar_nr = (string)max(1, $max_dosar + 1);
-            } else {
-                // Fallback simplu dacă conexiunea nu este disponibilă
-                $next_dosar_nr = '1';
+        if (isset($GLOBALS['next_dosarnr']) && $GLOBALS['next_dosarnr'] !== '') {
+            $next_dosar_nr = $GLOBALS['next_dosarnr'];
+        } elseif (function_exists('membri_next_dosar_nr') && isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) {
+            $next_dosar_nr = membri_next_dosar_nr($GLOBALS['pdo']);
+        } else {
+            try {
+                if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) {
+                    $stmt_max = $GLOBALS['pdo']->query("SELECT MAX(CAST(dosarnr AS UNSIGNED)) AS max_dosar FROM membri");
+                    $row_max = $stmt_max->fetch(PDO::FETCH_ASSOC);
+                    $max_dosar = (int)($row_max['max_dosar'] ?? 0);
+                    $next_dosar_nr = (string)max(1, $max_dosar + 1);
+                }
+            } catch (Throwable $e) {
+                $next_dosar_nr = '';
             }
-        } catch (Throwable $e) {
-            // În caz de eroare nu blocăm formularul, doar nu precompletăm
-            $next_dosar_nr = '';
         }
     }
     ?>

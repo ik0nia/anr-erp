@@ -262,7 +262,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                             <td class="px-6 py-4 whitespace-nowrap text-base">
                                 <span class="font-bold <?php echo $dosar_color; ?>"><?php echo $dosarnr; ?></span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-slate-900 dark:text-white">
+                            <td class="px-6 py-4 whitespace-nowrap text-base text-left font-bold text-slate-900 dark:text-white">
                                 <?php echo htmlspecialchars($nume_complet); ?>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-base text-slate-700 dark:text-gray-300">
@@ -303,7 +303,11 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     </button>
                                     <?php
                                     $cot_achitata_incasari = in_array($m['id'], $membri_cotizatie_achitata_an_curent) || in_array($m['id'], $membri_scutiti_cotizatie_ids);
-                                    $val_cot = $valori_cotizatie_an_curent[$m['hgrad'] ?? 'Fara handicap'] ?? 0;
+                                    $m_hgrad = $m['hgrad'] ?? 'Fara handicap';
+                                    $m_insotitor = $m['insotitor'] ?? '';
+                                    $m_asistent = function_exists('cotizatii_map_insotitor_to_asistent') ? cotizatii_map_insotitor_to_asistent($m_insotitor) : 'Fara asistent personal';
+                                    $val_cot_key = $m_hgrad . '|' . $m_asistent;
+                                    $val_cot = $valori_cotizatie_an_curent[$val_cot_key] ?? ($valori_cotizatie_an_curent[$m_hgrad] ?? 0);
                                     if (in_array($m['id'], $membri_scutiti_cotizatie_ids)): ?>
                                     <a href="/setari?tab=cotizatii"
                                        class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-slate-400 dark:border-gray-500 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium"

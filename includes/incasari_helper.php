@@ -15,6 +15,8 @@ if (!defined('INCASARI_MOD_NUMERAR')) {
     define('INCASARI_MOD_CARD_POS', 'card_pos');
     define('INCASARI_MOD_CARD_ONLINE', 'card_online');
     define('INCASARI_MOD_TRANSFER', 'transfer_bancar');
+    define('INCASARI_MOD_CHITANTA_VECHE', 'chitanta_veche');
+    define('INCASARI_MOD_MANDAT_POSTAL', 'mandat_postal');
 }
 
 function incasari_ensure_tables($pdo) {
@@ -80,7 +82,9 @@ function incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data
     $reprezentand = trim((string)$reprezentand) ?: null;
     $seria = null;
     $nr_chitanta = null;
-    if (in_array($mod_plata, [INCASARI_MOD_NUMERAR])) {
+    // Generate receipt series/number for cash and old receipt payment methods
+    $metode_cu_chitanta = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CHITANTA_VECHE];
+    if (in_array($mod_plata, $metode_cu_chitanta)) {
         $tip_serie = incasari_tip_serie_pentru_tip($tip);
         $next = incasari_urmatorul_nr_serie($pdo, $tip_serie);
         $seria = $next['serie'];
@@ -226,10 +230,12 @@ function incasari_tipuri_afisare() {
 
 function incasari_moduri_plata_afisare() {
     return [
-        INCASARI_MOD_NUMERAR => 'Numerar',
-        INCASARI_MOD_CARD_POS => 'Card POS',
-        INCASARI_MOD_CARD_ONLINE => 'Card online',
+        INCASARI_MOD_NUMERAR => 'Chitanta ERP',
+        INCASARI_MOD_CHITANTA_VECHE => 'Chitanta veche',
+        INCASARI_MOD_CARD_POS => 'POS',
         INCASARI_MOD_TRANSFER => 'Transfer bancar',
+        INCASARI_MOD_CARD_ONLINE => 'Plata online',
+        INCASARI_MOD_MANDAT_POSTAL => 'Mandat postal',
     ];
 }
 

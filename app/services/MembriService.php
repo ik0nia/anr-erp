@@ -98,8 +98,15 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         cotizatii_ensure_tables($pdo);
         $an_curent = (int)date('Y');
         $membri_cotizatie_achitata_an_curent = incasari_membri_cotizatie_achitata_an($pdo, $an_curent);
-        $rows_cot = $pdo->query("SELECT grad_handicap, valoare_cotizatie FROM cotizatii_anuale WHERE anul = " . $an_curent)->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rows_cot as $r) { $valori_cotizatie_an_curent[$r['grad_handicap']] = (float)$r['valoare_cotizatie']; }
+        $rows_cot = $pdo->query("SELECT grad_handicap, asistent_personal, valoare_cotizatie FROM cotizatii_anuale WHERE anul = " . $an_curent)->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows_cot as $r) {
+            $key = $r['grad_handicap'] . '|' . ($r['asistent_personal'] ?? '');
+            $valori_cotizatie_an_curent[$key] = (float)$r['valoare_cotizatie'];
+            // Also keep grad-only key as fallback
+            if (!isset($valori_cotizatie_an_curent[$r['grad_handicap']])) {
+                $valori_cotizatie_an_curent[$r['grad_handicap']] = (float)$r['valoare_cotizatie'];
+            }
+        }
     } catch (PDOException $e) {}
 
     if ($cotizatie_neachitata_filter) {
@@ -502,7 +509,9 @@ function membri_cotizatie_info(PDO $pdo, int $membru_id, ?array $membru = null):
     try {
         $cotizatie_achitata_an_curent = !empty($scutire_cotizatie) || incasari_cotizatie_achitata_an($pdo, $membru_id, (int)date('Y'));
         $hgrad = $membru['hgrad'] ?? 'Fara handicap';
-        $valoare_cotizatie_an = incasari_valoare_cotizatie_anuala($pdo, (int)date('Y'), $hgrad);
+        $insotitor = $membru['insotitor'] ?? '';
+        $asistent_personal = cotizatii_map_insotitor_to_asistent($insotitor);
+        $valoare_cotizatie_an = incasari_valoare_cotizatie_anuala($pdo, (int)date('Y'), $hgrad, $asistent_personal);
     } catch (Exception $e) {}
 
     return [
@@ -597,7 +606,7 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
             'nume_apartinator','prenume_apartinator','email','datanastere','locnastere','judnastere',
             'ciseria','cinumar','cielib','cidataelib','cidataexp','gdpr','codpost','tipmediuur',
             'domloc','judet_domiciliu','domstr','domnr','dombl','domsc','domet','domap','sex',
-            'hgrad','hmotiv','diagnostic','hdur','cnp','cenr','cedata','ceexp','primaria','notamembru'];
+            'hgrad','hmotiv','diagnostic','hdur','insotitor','cnp','cenr','cedata','ceexp','primaria','notamembru'];
         foreach ($all_fields as $f) {
             if (!array_key_exists($f, $post_data)) {
                 $post_data[$f] = $membru_existent_data[$f] ?? '';
@@ -649,6 +658,8 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
     $hmotiv = trim($post_data['hmotiv'] ?? '') ?: null;
     $diagnostic = trim($post_data['diagnostic'] ?? '') ?: null;
     $hdur = in_array($post_data['hdur'] ?? '', ['Permanent', 'Revizuibil']) ? $post_data['hdur'] : null;
+    $insotitor_allowed = ['INDEMNIZATIE INSOTITOR', 'ASISTENT PERSONAL', 'FARA', 'NESPECIFICAT', '0'];
+    $insotitor = in_array($post_data['insotitor'] ?? '', $insotitor_allowed) ? $post_data['insotitor'] : null;
     $cenr = trim($post_data['cenr'] ?? '') ?: null;
     $cedata = !empty($post_data['cedata']) ? date('Y-m-d', strtotime($post_data['cedata'])) : null;
     $ceexp = !empty($post_data['ceexp']) ? date('Y-m-d', strtotime($post_data['ceexp'])) : null;
@@ -675,7 +686,7 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 nume_apartinator = ?, prenume_apartinator = ?, email = ?, datanastere = ?, locnastere = ?, judnastere = ?, ciseria = ?, cinumar = ?,
                 cielib = ?, cidataelib = ?, cidataexp = ?, gdpr = ?, codpost = ?, tipmediuur = ?, domloc = ?, judet_domiciliu = ?, domstr = ?,
                 domnr = ?, dombl = ?, domsc = ?, domet = ?, domap = ?, sex = ?, hgrad = ?, hmotiv = ?, diagnostic = ?,
-                hdur = ?, cnp = ?, cenr = ?, cedata = ?, ceexp = ?, primaria = ?, notamembru = ?
+                hdur = ?, insotitor = ?, cnp = ?, cenr = ?, cedata = ?, ceexp = ?, primaria = ?, notamembru = ?
                 WHERE id = ?';
 
             $params = [
@@ -683,7 +694,7 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 $nume_apartinator, $prenume_apartinator, $email, $datanastere, $locnastere, $judnastere, $ciseria, $cinumar,
                 $cielib, $cidataelib, $cidataexp, $gdpr, $codpost, $tipmediuur, $domloc, $judet_domiciliu, $domstr,
                 $domnr, $dombl, $domsc, $domet, $domap, $sex, $hgrad, $hmotiv, $diagnostic,
-                $hdur, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru, $membru_id
+                $hdur, $insotitor, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru, $membru_id
             ];
 
             $stmt = $pdo->prepare($sql);
@@ -752,6 +763,10 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
             } else {
                 log_activitate($pdo, "membri: Actualizat membru ({$nume_complet})", null, $membru_id);
             }
+
+            // Returnam modificarile si numele complet pentru logging extern (registru_interactiuni_v2)
+            $GLOBALS['_membri_save_modificari'] = $modificari;
+            $GLOBALS['_membri_save_nume_complet'] = $nume_complet;
         } else {
             // Verificare CNP unic
             $stmt = $pdo->prepare('SELECT id FROM membri WHERE cnp = ?');
@@ -765,15 +780,15 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 nume_apartinator, prenume_apartinator, email, datanastere, locnastere, judnastere, ciseria, cinumar,
                 cielib, cidataelib, cidataexp, gdpr, codpost, tipmediuur, domloc, judet_domiciliu, domstr,
                 domnr, dombl, domsc, domet, domap, sex, hgrad, hmotiv, diagnostic,
-                hdur, cnp, cenr, cedata, ceexp, primaria, notamembru
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                hdur, insotitor, cnp, cenr, cedata, ceexp, primaria, notamembru
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
             $params = [
                 $dosarnr, $dosardata, $status_dosar, $nume, $prenume, $telefonnev, $telefonapartinator,
                 $nume_apartinator, $prenume_apartinator, $email, $datanastere, $locnastere, $judnastere, $ciseria, $cinumar,
                 $cielib, $cidataelib, $cidataexp, $gdpr, $codpost, $tipmediuur, $domloc, $judet_domiciliu, $domstr,
                 $domnr, $dombl, $domsc, $domet, $domap, $sex, $hgrad, $hmotiv, $diagnostic,
-                $hdur, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru
+                $hdur, $insotitor, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru
             ];
 
             $stmt = $pdo->prepare($sql);
@@ -895,6 +910,90 @@ function membri_jurnal_activitate(PDO $pdo, int $membru_id, int $limit = 100): a
     } catch (PDOException $e) {
         return [];
     }
+}
+
+/**
+ * Returneaza lista de documente generate pentru un membru.
+ * Cauta in log_activitate dupa "Document generat" si in directorul documentegenerate/.
+ *
+ * @return array [['nume'=>string, 'data'=>string, 'url'=>string|null, 'utilizator'=>string], ...]
+ */
+function membri_documente_generate(PDO $pdo, int $membru_id, array $membru): array {
+    if ($membru_id <= 0) return [];
+    $documente = [];
+
+    // 1. Search log_activitate for "Document generat" entries for this member
+    try {
+        $stmt = $pdo->prepare("
+            SELECT actiune, utilizator, data_ora
+            FROM log_activitate
+            WHERE membru_id = ?
+              AND actiune LIKE '%Document generat%'
+            ORDER BY data_ora DESC
+            LIMIT 100
+        ");
+        $stmt->execute([$membru_id]);
+        $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($logs as $log) {
+            $doc_name = $log['actiune'];
+            // Try to extract filename from action text
+            if (preg_match('/Document generat\s*[-:]\s*(.+?)(?:\s*\/\s*|$)/i', $log['actiune'], $m)) {
+                $doc_name = trim($m[1]);
+            }
+
+            // Check if the file exists in documentegenerate/
+            $file_url = null;
+            $doc_dir = defined('APP_ROOT') ? APP_ROOT . '/documentegenerate' : '';
+            if ($doc_dir && $doc_name) {
+                // Try matching by the extracted name
+                $possible_files = glob($doc_dir . '/*' . preg_replace('/[^a-zA-Z0-9_.-]/', '*', $doc_name) . '*.pdf');
+                if (!empty($possible_files)) {
+                    $file_url = 'documentegenerate/' . rawurlencode(basename($possible_files[0]));
+                }
+            }
+
+            $documente[] = [
+                'nume' => $doc_name,
+                'data' => $log['data_ora'],
+                'utilizator' => $log['utilizator'] ?? '',
+                'url' => $file_url,
+            ];
+        }
+    } catch (PDOException $e) {
+        // Silently fail
+    }
+
+    // 2. Also scan documentegenerate/ directory for files matching this member
+    $doc_dir = defined('APP_ROOT') ? APP_ROOT . '/documentegenerate' : '';
+    if ($doc_dir && is_dir($doc_dir)) {
+        $nume = preg_replace('/\s+/', '', ($membru['nume'] ?? ''));
+        $prenume = preg_replace('/\s+/', '', ($membru['prenume'] ?? ''));
+        if ($nume || $prenume) {
+            $pattern = $doc_dir . '/*' . $nume . $prenume . '*.pdf';
+            foreach (glob($pattern) as $file_path) {
+                $basename = basename($file_path);
+                // Check if we already have this from the log
+                $already_found = false;
+                foreach ($documente as $d) {
+                    if (strpos($d['nume'], $basename) !== false || strpos($basename, $d['nume']) !== false) {
+                        $already_found = true;
+                        break;
+                    }
+                }
+                if (!$already_found) {
+                    $documente[] = [
+                        'nume' => $basename,
+                        'data' => date('Y-m-d H:i:s', filemtime($file_path)),
+                        'utilizator' => '',
+                        'url' => 'documentegenerate/' . rawurlencode($basename),
+                    ];
+                }
+            }
+        }
+    }
+
+    return $documente;
 }
 
 /**

@@ -19,10 +19,7 @@ require_once APP_ROOT . '/includes/incasari_helper.php';
  * @return array ['taskuri_active'=>[], 'taskuri_istoric_count'=>int]
  */
 function dashboard_load_tasks(PDO $pdo, ?int $user_id = null): array {
-    $cols = $pdo->query("SHOW COLUMNS FROM taskuri")->fetchAll(PDO::FETCH_COLUMN);
-    $has_user_id = in_array('utilizator_id', $cols);
-
-    if ($has_user_id && $user_id) {
+    if ($user_id) {
         $stmt = $pdo->prepare('SELECT id, nume, data_ora, detalii, nivel_urgenta FROM taskuri WHERE finalizat = 0 AND (utilizator_id IS NULL OR utilizator_id = ?) ORDER BY data_ora ASC');
         $stmt->execute([$user_id]);
         $taskuri_active = $stmt->fetchAll();
@@ -50,16 +47,13 @@ function dashboard_load_tasks(PDO $pdo, ?int $user_id = null): array {
 function dashboard_load_stats(PDO $pdo): array {
     $membri_cu_avertizari = 0;
     try {
-        $cols = $pdo->query("SHOW COLUMNS FROM membri")->fetchAll(PDO::FETCH_COLUMN);
-        if (in_array('cidataexp', $cols) && in_array('ceexp', $cols)) {
-            $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
-                (status_dosar IS NULL OR status_dosar = 'Activ' OR status_dosar NOT IN ('Suspendat', 'Expirat', 'Retras', 'Decedat'))
-                AND (
-                    (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
-                    OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
-                )");
-            $membri_cu_avertizari = (int) $stmt->fetch()['n'];
-        }
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
+            (status_dosar IS NULL OR status_dosar = 'Activ' OR status_dosar NOT IN ('Suspendat', 'Expirat', 'Retras', 'Decedat'))
+            AND (
+                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
+                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
+            )");
+        $membri_cu_avertizari = (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}
 
     return ['membri_cu_avertizari' => $membri_cu_avertizari];
@@ -121,6 +115,11 @@ function dashboard_add_interactiune_v2(PDO $pdo, array $data, string $user, ?int
         $persoana = 'Fara nume';
     }
 
+    // Validare: subiect sau subiect_alt obligatoriu
+    if ($subiect_id <= 0 && empty($subiect_alt)) {
+        return ['success' => false, 'error' => 'Selectati un subiect din lista sau completati campul "Alt subiect".'];
+    }
+
     $subiect_id_val = $subiect_id > 0 ? $subiect_id : null;
     $subiect_alt_val = !empty($subiect_alt) ? $subiect_alt : null;
 
@@ -157,16 +156,8 @@ function dashboard_add_interactiune_v2(PDO $pdo, array $data, string $user, ?int
 
         $detalii_task = $informatii_suplimentare ?: '';
 
-        $cols = $pdo->query("SHOW COLUMNS FROM taskuri")->fetchAll(PDO::FETCH_COLUMN);
-        $has_user_id = in_array('utilizator_id', $cols);
-
-        if ($has_user_id) {
-            $stmt_t = $pdo->prepare('INSERT INTO taskuri (nume, data_ora, detalii, nivel_urgenta, utilizator_id) VALUES (?, NOW(), ?, ?, ?)');
-            $stmt_t->execute([$nume_task, $detalii_task ?: null, 'normal', $user_id]);
-        } else {
-            $stmt_t = $pdo->prepare('INSERT INTO taskuri (nume, data_ora, detalii, nivel_urgenta) VALUES (?, NOW(), ?, ?)');
-            $stmt_t->execute([$nume_task, $detalii_task ?: null, 'normal']);
-        }
+        $stmt_t = $pdo->prepare('INSERT INTO taskuri (nume, data_ora, detalii, nivel_urgenta, utilizator_id) VALUES (?, NOW(), ?, ?, ?)');
+        $stmt_t->execute([$nume_task, $detalii_task ?: null, 'normal', $user_id]);
         $task_id_val = $pdo->lastInsertId();
         // IMPORTANT: Taskurile sunt independente de interactiuni
         $pdo->prepare('UPDATE registru_interactiuni_v2 SET task_id = ? WHERE id = ?')->execute([$task_id_val, $interact_id]);

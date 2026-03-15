@@ -93,11 +93,24 @@ function rapoarte_interactiuni(PDO $pdo): array {
             if ($r['tip'] === 'apel') $total_apeluri = (int)$r['n'];
             if ($r['tip'] === 'vizita') $total_vizite = (int)$r['n'];
         }
+        // Statistici pe categorii (subiecte)
+        $categorii = [];
+        $stmt_cat = $pdo->query("
+            SELECT COALESCE(s.nume, r.subiect_alt, 'Necategorizat') as categorie, COUNT(*) as numar
+            FROM registru_interactiuni_v2 r
+            LEFT JOIN registru_interactiuni_v2_subiecte s ON r.subiect_id = s.id
+            GROUP BY categorie
+            ORDER BY numar DESC
+        ");
+        while ($row_cat = $stmt_cat->fetch(PDO::FETCH_ASSOC)) {
+            $categorii[$row_cat['categorie']] = (int)$row_cat['numar'];
+        }
+
         $raport_interactiuni = [
             'total_apeluri' => $total_apeluri,
             'total_vizite' => $total_vizite,
             'total_general' => $total_apeluri + $total_vizite,
-            'categorii' => []
+            'categorii' => $categorii
         ];
     } catch (PDOException $e) {
         error_log('Eroare raport interactiuni: ' . $e->getMessage());

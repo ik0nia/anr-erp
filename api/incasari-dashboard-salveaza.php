@@ -25,7 +25,7 @@ $mod_plata = $_POST['mod_plata'] ?? '';
 $data_incasare = trim($_POST['data_incasare'] ?? date('Y-m-d'));
 $reprezentand = trim($_POST['reprezentand'] ?? '') ?: null;
 
-$moduri = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CARD_POS, INCASARI_MOD_CARD_ONLINE, INCASARI_MOD_TRANSFER];
+$moduri = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CHITANTA_VECHE, INCASARI_MOD_CARD_POS, INCASARI_MOD_CARD_ONLINE, INCASARI_MOD_TRANSFER, INCASARI_MOD_MANDAT_POSTAL];
 if (!in_array($mod_plata, $moduri)) {
     echo json_encode(['ok' => false, 'eroare' => 'Selectați modul de plată.']);
     exit;
@@ -98,11 +98,12 @@ if ($tip_form === 'donatie') {
     $anul = (int)date('Y');
     if ($tip_incasare === 'cotizatie') {
         if ($suma <= 0) {
-            $stmt = $pdo->prepare("SELECT hgrad FROM membri WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT hgrad, insotitor FROM membri WHERE id = ?");
             $stmt->execute([$membru_id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             $grad = $row['hgrad'] ?? 'Fara handicap';
-            $suma = incasari_valoare_cotizatie_anuala($pdo, $anul, $grad);
+            $asistent = cotizatii_map_insotitor_to_asistent($row['insotitor'] ?? '');
+            $suma = incasari_valoare_cotizatie_anuala($pdo, $anul, $grad, $asistent);
         }
         $reprezentand = $reprezentand ?: ('Cotizație membru anul ' . $anul);
         $id = incasari_adauga($pdo, $membru_id, INCASARI_TIP_COTIZATIE, $anul, $suma, $mod_plata, $data_incasare, $utilizator, null, null, $reprezentand);

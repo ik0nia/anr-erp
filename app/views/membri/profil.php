@@ -6,7 +6,7 @@
  *   $membru, $eroare, $succes, $membru_id, $varsta,
  *   $scutire_cotizatie, $cotizatie_achitata_an_curent, $valoare_cotizatie_an,
  *   $alerts, $istoric_modificari, $lista_incasari,
- *   $tipuri_afisare, $moduri_plata_afisare, $jurnal
+ *   $tipuri_afisare, $moduri_plata_afisare, $jurnal, $documente_generate
  */
 
 // Helper: display value or dash
@@ -530,43 +530,23 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                 </div>
             </section>
 
-            <!-- Card 4: Handicap -->
+            <!-- Card 4a: Date despre handicap -->
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="heart" class="w-5 h-5" aria-hidden="true"></i>
-                        Handicap
+                        Date despre handicap
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="handicap">
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-handicap">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
                     </button>
                 </div>
-                <div class="card-view p-4" data-card="handicap">
+                <div class="card-view p-4" data-card="date-handicap">
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
-                        <div>
-                            <dt class="text-sm text-slate-500 dark:text-gray-400">Grad handicap</dt>
-                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('hgrad'); ?></dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm text-slate-500 dark:text-gray-400">Valabilitate certificat</dt>
-                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('hdur'); ?></dd>
-                        </div>
                         <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Motiv handicap</dt>
                             <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('hmotiv'); ?></dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm text-slate-500 dark:text-gray-400">Nr. certificat</dt>
-                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cenr'); ?></dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm text-slate-500 dark:text-gray-400">Data certificat</dt>
-                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cedata', 'date'); ?></dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm text-slate-500 dark:text-gray-400">Expirare certificat</dt>
-                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('ceexp', 'date'); ?></dd>
                         </div>
                         <div class="col-span-2">
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Diagnostic</dt>
@@ -574,7 +554,96 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         </div>
                     </dl>
                 </div>
-                <div class="card-edit hidden p-4" data-card="handicap">
+                <div class="card-edit hidden p-4" data-card="date-handicap">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
+                        <input type="hidden" name="card" value="handicap">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="eh_hmotiv" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Motiv handicap</label>
+                                <input type="text" id="eh_hmotiv" name="hmotiv" value="<?php echo $val('hmotiv'); ?>" class="<?php echo $input_class; ?>">
+                            </div>
+                            <div>
+                                <label for="eh_diagnostic" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Diagnostic</label>
+                                <textarea id="eh_diagnostic" name="diagnostic" rows="3" class="<?php echo $input_class; ?>"><?php echo $val('diagnostic'); ?></textarea>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card 4b: Certificat handicap -->
+            <?php
+            // Determine valabilitate display
+            $ceexp_val = $membru['ceexp'] ?? '';
+            $hdur_val = $membru['hdur'] ?? '';
+            $is_permanent = ($hdur_val === 'Permanent') || ($ceexp_val === '9999-12-31') || (strtotime($ceexp_val) > strtotime('2099-01-01'));
+            if ($is_permanent) {
+                $valabilitate_display = 'Permanent';
+            } elseif ($hdur_val === 'Revizuibil' && !empty($ceexp_val)) {
+                $ts_exp = strtotime($ceexp_val);
+                $valabilitate_display = 'Revizuibil — ' . ($ts_exp ? date(DATE_FORMAT, $ts_exp) : htmlspecialchars($ceexp_val));
+            } elseif (!empty($ceexp_val)) {
+                $ts_exp = strtotime($ceexp_val);
+                $valabilitate_display = $ts_exp ? date(DATE_FORMAT, $ts_exp) : htmlspecialchars($ceexp_val);
+            } else {
+                $valabilitate_display = '<span class="text-slate-400 dark:text-gray-500">—</span>';
+            }
+
+            // Asistent personal display
+            $insotitor_labels = [
+                'INDEMNIZATIE INSOTITOR' => 'Indemnizatie insotitor',
+                'ASISTENT PERSONAL' => 'Asistent personal',
+                'FARA' => 'Fara',
+                'NESPECIFICAT' => 'Nespecificat',
+                '0' => 'Fara',
+            ];
+            $insotitor_raw = $membru['insotitor'] ?? '';
+            $insotitor_display = $insotitor_labels[$insotitor_raw] ?? ($insotitor_raw ?: '<span class="text-slate-400 dark:text-gray-500">—</span>');
+            ?>
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="file-badge" class="w-5 h-5" aria-hidden="true"></i>
+                        Certificat handicap
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="certificat-handicap">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="certificat-handicap">
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Nr. certificat</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cenr'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Data eliberare</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cedata', 'date'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Grad handicap</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('hgrad'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Asistent personal</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $insotitor_display; ?></dd>
+                        </div>
+                        <div class="col-span-2">
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Valabilitate</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $valabilitate_display; ?></dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="card-edit hidden p-4" data-card="certificat-handicap">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="handicap">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -582,8 +651,18 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <div class="space-y-4">
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label for="eh_hgrad" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Grad handicap</label>
-                                    <select id="eh_hgrad" name="hgrad" class="<?php echo $input_class; ?>">
+                                    <label for="ech_cenr" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nr. certificat</label>
+                                    <input type="text" id="ech_cenr" name="cenr" value="<?php echo $val('cenr'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ech_cedata" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data eliberare</label>
+                                    <input type="date" id="ech_cedata" name="cedata" value="<?php echo $val('cedata'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="ech_hgrad" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Grad handicap</label>
+                                    <select id="ech_hgrad" name="hgrad" class="<?php echo $input_class; ?>">
                                         <option value="">Selecteaza</option>
                                         <option value="Grav cu insotitor" <?php echo $selected('hgrad', 'Grav cu insotitor'); ?>>Grav cu insotitor</option>
                                         <option value="Grav" <?php echo $selected('hgrad', 'Grav'); ?>>Grav</option>
@@ -596,35 +675,29 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                                     </select>
                                 </div>
                                 <div>
-                                    <label for="eh_hdur" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Valabilitate certificat</label>
-                                    <select id="eh_hdur" name="hdur" class="<?php echo $input_class; ?>">
+                                    <label for="ech_insotitor" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Asistent personal</label>
+                                    <select id="ech_insotitor" name="insotitor" class="<?php echo $input_class; ?>">
+                                        <option value="">Selecteaza</option>
+                                        <option value="INDEMNIZATIE INSOTITOR" <?php echo $selected('insotitor', 'INDEMNIZATIE INSOTITOR'); ?>>Indemnizatie insotitor</option>
+                                        <option value="ASISTENT PERSONAL" <?php echo $selected('insotitor', 'ASISTENT PERSONAL'); ?>>Asistent personal</option>
+                                        <option value="FARA" <?php echo $selected('insotitor', 'FARA'); ?>>Fara</option>
+                                        <option value="NESPECIFICAT" <?php echo $selected('insotitor', 'NESPECIFICAT'); ?>>Nespecificat</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="ech_hdur" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Valabilitate</label>
+                                    <select id="ech_hdur" name="hdur" class="<?php echo $input_class; ?>">
                                         <option value="">Selecteaza</option>
                                         <option value="Permanent" <?php echo $selected('hdur', 'Permanent'); ?>>Permanent</option>
                                         <option value="Revizuibil" <?php echo $selected('hdur', 'Revizuibil'); ?>>Revizuibil</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div>
-                                <label for="eh_hmotiv" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Motiv handicap</label>
-                                <input type="text" id="eh_hmotiv" name="hmotiv" value="<?php echo $val('hmotiv'); ?>" class="<?php echo $input_class; ?>">
-                            </div>
-                            <div class="grid grid-cols-3 gap-4">
                                 <div>
-                                    <label for="eh_cenr" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nr. certificat</label>
-                                    <input type="text" id="eh_cenr" name="cenr" value="<?php echo $val('cenr'); ?>" class="<?php echo $input_class; ?>">
+                                    <label for="ech_ceexp" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data expirare (daca revizuibil)</label>
+                                    <input type="date" id="ech_ceexp" name="ceexp" value="<?php echo $val('ceexp'); ?>" class="<?php echo $input_class; ?>">
                                 </div>
-                                <div>
-                                    <label for="eh_cedata" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data certificat</label>
-                                    <input type="date" id="eh_cedata" name="cedata" value="<?php echo $val('cedata'); ?>" class="<?php echo $input_class; ?>">
-                                </div>
-                                <div>
-                                    <label for="eh_ceexp" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Expirare certificat</label>
-                                    <input type="date" id="eh_ceexp" name="ceexp" value="<?php echo $val('ceexp'); ?>" class="<?php echo $input_class; ?>">
-                                </div>
-                            </div>
-                            <div>
-                                <label for="eh_diagnostic" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Diagnostic</label>
-                                <textarea id="eh_diagnostic" name="diagnostic" rows="3" class="<?php echo $input_class; ?>"><?php echo $val('diagnostic'); ?></textarea>
                             </div>
                         </div>
                         <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
@@ -1022,47 +1095,59 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
         <!-- End cards grid -->
 
         <!-- Documente generate -->
-        <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+        <section class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-documente-generate">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2" id="titlu-documente-generate">
                 <i data-lucide="file-text" class="w-5 h-5" aria-hidden="true"></i>
                 Documente generate
             </h2>
-            <?php
-            $documente_generate = [];
-            $doc_dir = APP_ROOT . DIRECTORY_SEPARATOR . 'documentegenerate';
-            if (is_dir($doc_dir)) {
-                $pattern = $doc_dir . DIRECTORY_SEPARATOR . '*-' . preg_replace('/\s+/', '', ($membru['nume'] ?? '')) . ($membru['prenume'] ?? '') . '-*.pdf';
-                foreach (glob($pattern) as $file_path) {
-                    $basename = basename($file_path);
-                    $documente_generate[] = [
-                        'nume' => $basename,
-                        'path' => $file_path,
-                    ];
-                }
-            }
-            if (empty($documente_generate)): ?>
-                <p class="text-sm text-slate-600 dark:text-gray-400">Nu exista documente generate salvate pentru acest membru.</p>
+            <?php if (empty($documente_generate)): ?>
+                <p class="text-sm text-slate-600 dark:text-gray-400">Nu exista documente generate pentru acest membru.</p>
             <?php else: ?>
-                <ul class="space-y-2 text-sm text-slate-800 dark:text-gray-200">
-                    <?php foreach ($documente_generate as $doc):
-                        $nume_afisat = $doc['nume'];
-                        $url = 'documentegenerate/' . rawurlencode($doc['nume']);
-                    ?>
-                    <li class="flex items-center justify-between gap-2">
-                        <span class="truncate" title="<?php echo htmlspecialchars($nume_afisat); ?>">
-                            <?php echo htmlspecialchars($nume_afisat); ?>
-                        </span>
-                        <a href="<?php echo $url; ?>" target="_blank"
-                           class="inline-flex items-center px-2 py-1 text-xs rounded border border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30"
-                           aria-label="Descarca documentul <?php echo htmlspecialchars($nume_afisat); ?>">
-                            <i data-lucide="download" class="w-3 h-3 mr-1" aria-hidden="true"></i>
-                            Descarca
-                        </a>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-labelledby="titlu-documente-generate">
+                    <thead class="bg-slate-50 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider">Document</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider whitespace-nowrap">Data generare</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider whitespace-nowrap">Utilizator</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider">Actiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-slate-200 dark:divide-gray-700">
+                        <?php foreach ($documente_generate as $doc):
+                            $doc_ts = !empty($doc['data']) ? strtotime($doc['data']) : false;
+                        ?>
+                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
+                            <td class="px-4 py-3 text-sm text-slate-900 dark:text-white">
+                                <span class="truncate block max-w-xs" title="<?php echo htmlspecialchars($doc['nume']); ?>">
+                                    <?php echo htmlspecialchars($doc['nume']); ?>
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
+                                <?php echo $doc_ts ? date('d.m.Y H:i', $doc_ts) : '—'; ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
+                                <?php echo htmlspecialchars($doc['utilizator'] ?? ''); ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <?php if (!empty($doc['url'])): ?>
+                                <a href="<?php echo $doc['url']; ?>" target="_blank"
+                                   class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                                   aria-label="Descarca documentul <?php echo htmlspecialchars($doc['nume']); ?>">
+                                    <i data-lucide="download" class="w-3 h-3" aria-hidden="true"></i>
+                                    Descarca
+                                </a>
+                                <?php else: ?>
+                                <span class="text-xs text-slate-400 dark:text-gray-500">Fisier indisponibil</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
             <?php endif; ?>
-        </div>
+        </section>
 
         <!-- Istoric incasari -->
         <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-istoric-incasari">
@@ -1133,7 +1218,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
         <section class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-jurnal-activitate">
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2" id="titlu-jurnal-activitate">
                 <i data-lucide="scroll-text" class="w-5 h-5" aria-hidden="true"></i>
-                Jurnal Activitate
+                Istoric activitate
             </h2>
             <?php if (empty($jurnal)): ?>
             <p class="text-slate-600 dark:text-gray-400 py-4">Nu exista inregistrari in jurnalul de activitate pentru acest membru.</p>
@@ -1157,7 +1242,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             if ($sursa === 'interactiune') {
                                 $icon = strpos($log['actiune'] ?? '', 'APEL') === 0 ? 'phone' : 'building';
                                 $badge_class = 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200';
-                                $badge_text = strpos($log['actiune'] ?? '', 'APEL') === 0 ? 'Apel' : 'Vizită';
+                                $badge_text = 'Interactiune';
                             } elseif ($sursa === 'document') {
                                 $icon = 'file-text';
                                 $badge_class = 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200';

@@ -936,5 +936,31 @@ function get_migrations(): array {
             ],
         ],
 
+        // =====================================================================
+        // VERSION 6: Add insotitor column to membri table
+        // =====================================================================
+        6 => [
+            'description' => 'Add insotitor column to membri table for Asistent Personal tracking',
+            'sql' => [
+                "ALTER TABLE membri ADD COLUMN insotitor VARCHAR(100) DEFAULT NULL AFTER hdur",
+            ],
+        ],
+
+        7 => [
+            'description' => 'Seed cotizatii options tables with grad handicap and asistent personal values',
+            'sql' => [
+                "INSERT IGNORE INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES ('Grav cu insotitor', 1)",
+                "INSERT IGNORE INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES ('Grav', 2)",
+                "INSERT IGNORE INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES ('Accentuat', 3)",
+                "INSERT IGNORE INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES ('Mediu', 4)",
+                "INSERT IGNORE INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES ('Usor', 5)",
+                "INSERT IGNORE INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES ('Alt handicap', 6)",
+                "INSERT IGNORE INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES ('Asociat', 7)",
+                "INSERT IGNORE INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES ('Fara handicap', 8)",
+                "INSERT IGNORE INTO cotizatii_opts_asistent_personal (nume, ordine) VALUES ('Cu asistent personal', 1)",
+                "INSERT IGNORE INTO cotizatii_opts_asistent_personal (nume, ordine) VALUES ('Fara asistent personal', 2)",
+            ],
+        ],
+
     ];
 }

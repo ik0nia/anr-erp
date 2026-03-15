@@ -5,11 +5,29 @@
  */
 
 /**
- * Asigură existența tabelei settings_email și returnează setările (un singur rând, id=1).
+ * Asigură existența tabelei settings_email și inserează rândul implicit (id=1).
  */
 function mailer_ensure_table(PDO $pdo): void {
-    // No-op: schema is managed by install/schema/migration.php
-    return;
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS settings_email (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            smtp_host VARCHAR(255) DEFAULT NULL,
+            smtp_port INT DEFAULT 587,
+            smtp_user VARCHAR(255) DEFAULT NULL,
+            smtp_pass VARCHAR(255) DEFAULT NULL,
+            smtp_encryption VARCHAR(10) DEFAULT 'tls',
+            from_name VARCHAR(255) DEFAULT NULL,
+            from_email VARCHAR(255) DEFAULT NULL,
+            email_signature TEXT DEFAULT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $pdo->exec("INSERT IGNORE INTO settings_email (id) VALUES (1)");
+    } catch (PDOException $e) {
+        error_log('mailer_ensure_table: ' . $e->getMessage());
+    }
 }
 
 /**
@@ -99,8 +117,11 @@ function sendAutomatedEmail(PDO $pdo, string $to, string $subject, string $body)
             $enc = strtolower($settings['smtp_encryption'] ?? '');
             if ($enc === 'ssl') {
                 $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
-            } else {
+            } elseif ($enc === 'tls') {
                 $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            } else {
+                $mail->SMTPSecure = '';
+                $mail->SMTPAutoTLS = false;
             }
             $mail->setFrom($fromEmail, $fromName ?: '');
             $mail->addAddress($to);
@@ -127,4 +148,200 @@ function sendAutomatedEmail(PDO $pdo, string $to, string $subject, string $body)
     }
     $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
     return (bool)@mail($to, $encodedSubject, $fullBody, $headers);
+}
+
+/**
+ * Trimite email automat și returnează detalii (succes + mesaj eroare).
+ * Folosit de funcția de test email din Setări.
+ *
+ * @return array ['success' => bool, 'error' => string|null]
+ */
+function sendAutomatedEmailDetailed(PDO $pdo, string $to, string $subject, string $body): array {
+    $to = trim($to);
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'error' => 'Adresa de email destinatar nu este validă: ' . $to];
+    }
+    $settings = mailer_get_settings($pdo);
+    $signature = trim($settings['email_signature'] ?? '');
+    $fullBodyPlain = $body;
+    if ($signature !== '') {
+        $fullBodyPlain .= "\n\n" . $signature;
+    }
+    $isHtml = (strpos($signature, '<') !== false);
+    $fullBody = $fullBodyPlain;
+    if ($isHtml) {
+        $bodyEscaped = htmlspecialchars($body, ENT_QUOTES, 'UTF-8');
+        $fullBody = '<p style="white-space:pre-wrap;">' . nl2br($bodyEscaped) . '</p>';
+        if ($signature !== '') {
+            $fullBody .= $signature;
+        }
+    }
+    $fromName = trim($settings['from_name'] ?? '');
+    $fromEmail = trim($settings['from_email'] ?? '');
+    if ($fromEmail === '' || !filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'error' => 'Adresa expeditor (from_email) nu este configurată sau nu este validă.'];
+    }
+
+    $useSmtp = trim($settings['smtp_host'] ?? '') !== '';
+    $phpmailerAvailable = false;
+    if ($useSmtp) {
+        if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+            $phpmailerAvailable = true;
+        } elseif (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+            require_once __DIR__ . '/../vendor/autoload.php';
+            $phpmailerAvailable = class_exists('PHPMailer\PHPMailer\PHPMailer');
+        }
+    }
+
+    if ($useSmtp && !$phpmailerAvailable) {
+        return ['success' => false, 'error' => 'PHPMailer nu este instalat. Verificați directorul vendor/phpmailer.'];
+    }
+
+    if ($useSmtp && $phpmailerAvailable) {
+        try {
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+            $mail->CharSet = \PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
+            $mail->isSMTP();
+            $mail->Host = $settings['smtp_host'];
+            $mail->Port = $settings['smtp_port'];
+            $mail->SMTPAuth = ($settings['smtp_user'] !== '');
+            if ($mail->SMTPAuth) {
+                $mail->Username = $settings['smtp_user'];
+                $mail->Password = $settings['smtp_pass'];
+            }
+            $enc = strtolower($settings['smtp_encryption'] ?? '');
+            if ($enc === 'ssl') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            } elseif ($enc === 'tls') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            } else {
+                $mail->SMTPSecure = '';
+                $mail->SMTPAutoTLS = false;
+            }
+            $mail->setFrom($fromEmail, $fromName ?: '');
+            $mail->addAddress($to);
+            $mail->Subject = $subject;
+            $mail->Body = $fullBody;
+            $mail->isHTML($isHtml);
+            if ($isHtml) {
+                $mail->AltBody = $fullBodyPlain;
+            }
+            $mail->send();
+            return ['success' => true, 'error' => null];
+        } catch (\PHPMailer\PHPMailer\Exception $e) {
+            return ['success' => false, 'error' => 'Eroare PHPMailer SMTP: ' . $e->getMessage()];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => 'Eroare trimitere email: ' . $e->getMessage()];
+        }
+    }
+
+    // Fallback: mail()
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "From: " . ($fromName ? '"' . str_replace('"', "'", $fromName) . '" <' . $fromEmail . '>' : $fromEmail) . "\r\n";
+    if ($isHtml) {
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    } else {
+        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    }
+    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $ok = (bool)@mail($to, $encodedSubject, $fullBody, $headers);
+    if ($ok) {
+        return ['success' => true, 'error' => null];
+    }
+    return ['success' => false, 'error' => 'Trimiterea prin funcția mail() a eșuat. SMTP nu este configurat, iar funcția mail() nativă nu funcționează pe acest server.'];
+}
+
+/**
+ * Trimite un email via PHPMailer cu atașament opțional.
+ * Folosit de newsletter_helper pentru a trimite newslettere via SMTP în loc de mail().
+ *
+ * @param PDO $pdo
+ * @param string $to Adresa destinatar
+ * @param string $subject Subiect
+ * @param string $htmlBody Corpul HTML (fără semnătură suplimentară)
+ * @param string|null $attachmentPath Cale atașament (opțional)
+ * @param string|null $attachmentName Nume fișier atașament (opțional)
+ * @return bool
+ */
+function sendEmailWithAttachment(PDO $pdo, string $to, string $subject, string $htmlBody, ?string $attachmentPath = null, ?string $attachmentName = null): bool {
+    $to = trim($to);
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+    $settings = mailer_get_settings($pdo);
+    $fromName = trim($settings['from_name'] ?? '');
+    $fromEmail = trim($settings['from_email'] ?? '');
+    if ($fromEmail === '' || !filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+        $fromEmail = 'noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    }
+
+    $useSmtp = trim($settings['smtp_host'] ?? '') !== '';
+    $phpmailerAvailable = false;
+    if ($useSmtp) {
+        if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+            $phpmailerAvailable = true;
+        } elseif (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+            require_once __DIR__ . '/../vendor/autoload.php';
+            $phpmailerAvailable = class_exists('PHPMailer\PHPMailer\PHPMailer');
+        }
+    }
+
+    if ($useSmtp && $phpmailerAvailable) {
+        try {
+            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+            $mail->CharSet = \PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
+            $mail->isSMTP();
+            $mail->Host = $settings['smtp_host'];
+            $mail->Port = $settings['smtp_port'];
+            $mail->SMTPAuth = ($settings['smtp_user'] !== '');
+            if ($mail->SMTPAuth) {
+                $mail->Username = $settings['smtp_user'];
+                $mail->Password = $settings['smtp_pass'];
+            }
+            $enc = strtolower($settings['smtp_encryption'] ?? '');
+            if ($enc === 'ssl') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+            } elseif ($enc === 'tls') {
+                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            } else {
+                $mail->SMTPSecure = '';
+                $mail->SMTPAutoTLS = false;
+            }
+            $mail->setFrom($fromEmail, $fromName ?: '');
+            $mail->addAddress($to);
+            $mail->Subject = $subject;
+            $mail->Body = $htmlBody;
+            $mail->isHTML(true);
+            if ($attachmentPath !== null && $attachmentName !== null && is_readable($attachmentPath)) {
+                $mail->addAttachment($attachmentPath, $attachmentName);
+            }
+            $mail->send();
+            return true;
+        } catch (\Exception $e) {
+            error_log('sendEmailWithAttachment PHPMailer: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Fallback: mail() with attachment
+    $boundary = md5(uniqid());
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "From: " . ($fromName ? '"' . str_replace('"', "'", $fromName) . '" <' . $fromEmail . '>' : $fromEmail) . "\r\n";
+    if ($attachmentPath !== null && $attachmentName !== null && is_readable($attachmentPath)) {
+        $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n";
+        $body = "--{$boundary}\r\n";
+        $body .= "Content-Type: text/html; charset=UTF-8\r\n\r\n";
+        $body .= $htmlBody;
+        $body .= "\r\n--{$boundary}\r\n";
+        $body .= "Content-Type: application/octet-stream; name=\"" . basename($attachmentName) . "\"\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n";
+        $body .= "Content-Disposition: attachment; filename=\"" . basename($attachmentName) . "\"\r\n\r\n";
+        $body .= chunk_split(base64_encode(file_get_contents($attachmentPath)));
+        $body .= "\r\n--{$boundary}--";
+    } else {
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $body = $htmlBody;
+    }
+    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    return (bool)@mail($to, $encodedSubject, $body, $headers);
 }

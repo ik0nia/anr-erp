@@ -4,6 +4,7 @@
  */
 
 require_once __DIR__ . '/contacte_helper.php';
+require_once __DIR__ . '/mailer_functions.php';
 
 define('NEWSLETTER_ATAŞAMENT_MAX_MB', 5);
 
@@ -83,33 +84,10 @@ function newsletter_get_emails_by_categorie(PDO $pdo, string $categoria) {
 function newsletter_trimite_emails(PDO $pdo, string $from_email, string $nume_expeditor, string $subiect, string $continut_html, array $destinatari, ?string $atasament_path = null, ?string $atasament_nume = null) {
     $trimise = 0;
     $eroare = [];
-    $from_header = !empty($nume_expeditor)
-        ? '=?UTF-8?B?' . base64_encode($nume_expeditor) . "?= <{$from_email}>"
-        : $from_email;
-
-    $boundary = md5(uniqid());
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "From: {$from_header}\r\n";
-    $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
-    if ($atasament_path !== null && $atasament_nume !== null && is_readable($atasament_path)) {
-        $headers .= "Content-Type: multipart/mixed; boundary=\"{$boundary}\"\r\n";
-        $body = "--{$boundary}\r\n";
-        $body .= "Content-Type: text/html; charset=UTF-8\r\n\r\n";
-        $body .= $continut_html;
-        $body .= "\r\n--{$boundary}\r\n";
-        $body .= "Content-Type: application/octet-stream; name=\"" . basename($atasament_nume) . "\"\r\n";
-        $body .= "Content-Transfer-Encoding: base64\r\n";
-        $body .= "Content-Disposition: attachment; filename=\"" . basename($atasament_nume) . "\"\r\n\r\n";
-        $body .= chunk_split(base64_encode(file_get_contents($atasament_path)));
-        $body .= "\r\n--{$boundary}--";
-    } else {
-        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-        $body = $continut_html;
-    }
 
     foreach ($destinatari as $d) {
         $to = $d['email'];
-        $ok = @mail($to, '=?UTF-8?B?' . base64_encode($subiect) . '?=', $body, $headers);
+        $ok = sendEmailWithAttachment($pdo, $to, $subiect, $continut_html, $atasament_path, $atasament_nume);
         if ($ok) {
             $trimise++;
         } else {

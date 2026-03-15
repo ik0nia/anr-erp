@@ -151,12 +151,22 @@ function cotizatii_sterge_scutire($pdo, $id) {
  */
 function cotizatii_graduri_handicap($pdo) {
     cotizatii_ensure_tables($pdo);
-    $stmt = $pdo->query("SELECT nume FROM cotizatii_opts_grad_handicap ORDER BY ordine, nume");
-    if (!$stmt) return [];
     $out = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $n = $row['nume'];
-        $out[$n] = $n;
+    try {
+        $stmt = $pdo->query("SELECT nume FROM cotizatii_opts_grad_handicap ORDER BY ordine, nume");
+        if ($stmt) {
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $n = $row['nume'];
+                $out[$n] = $n;
+            }
+        }
+    } catch (PDOException $e) {}
+    // Fallback: if opts table is empty or missing, use hardcoded values matching membri.hgrad ENUM
+    if (empty($out)) {
+        $defaults = ['Grav cu insotitor', 'Grav', 'Accentuat', 'Mediu', 'Usor', 'Alt handicap', 'Asociat', 'Fara handicap'];
+        foreach ($defaults as $d) {
+            $out[$d] = $d;
+        }
     }
     return $out;
 }
@@ -167,12 +177,35 @@ function cotizatii_graduri_handicap($pdo) {
  */
 function cotizatii_asistent_personal_lista($pdo) {
     cotizatii_ensure_tables($pdo);
-    $stmt = $pdo->query("SELECT nume FROM cotizatii_opts_asistent_personal ORDER BY ordine, id");
-    if (!$stmt) return [];
     $out = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $n = $row['nume'];
-        $out[$n] = $n;
+    try {
+        $stmt = $pdo->query("SELECT nume FROM cotizatii_opts_asistent_personal ORDER BY ordine, id");
+        if ($stmt) {
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $n = $row['nume'];
+                $out[$n] = $n;
+            }
+        }
+    } catch (PDOException $e) {}
+    // Fallback: if opts table is empty or missing, use hardcoded values
+    if (empty($out)) {
+        $out = [
+            'Cu asistent personal' => 'Cu asistent personal',
+            'Fara asistent personal' => 'Fara asistent personal',
+        ];
     }
     return $out;
+}
+
+/**
+ * Mapare din valoarea coloanei insotitor din membri la valoarea asistent_personal din cotizatii_anuale.
+ * insotitor din membri: 'INDEMNIZATIE INSOTITOR', 'ASISTENT PERSONAL', 'FARA', 'NESPECIFICAT', '0', null
+ * asistent_personal din cotizatii_anuale: 'Cu asistent personal', 'Fara asistent personal'
+ */
+function cotizatii_map_insotitor_to_asistent($insotitor) {
+    $insotitor = strtoupper(trim((string)$insotitor));
+    if (in_array($insotitor, ['INDEMNIZATIE INSOTITOR', 'ASISTENT PERSONAL'])) {
+        return 'Cu asistent personal';
+    }
+    return 'Fara asistent personal';
 }

@@ -63,16 +63,17 @@
         <!-- Tab Încasări: administrare modul (serii chitanțe, design, FGO.ro API) -->
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 mb-6" aria-labelledby="incasari-serii-heading">
             <h2 id="incasari-serii-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Serii chitanțe</h2>
-            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Definiți seria și intervalul de numerotare pentru chitanțe donații și pentru chitanțe încasări (donații, taxe participare, alte încasări).</p>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Definiți seria și intervalul de numerotare pentru chitanțe. Seria Donații (ex. CEDON) se folosește pentru donații, iar seria Cotizații (ex. CECOT) pentru cotizații, taxe participare și alte încasări.</p>
             <form method="post" action="/setari?tab=incasari">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_serii_incasari" value="1">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                     <div class="p-4 border border-slate-200 dark:border-gray-600 rounded-lg">
-                        <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3">Chitanțe donații</h3>
+                        <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3">Chitanțe Donații (tip: Donație)</h3>
+                        <p class="text-xs text-slate-500 dark:text-gray-400 mb-2">Ex. serie: CEDON</p>
                         <div class="space-y-2">
                             <label class="block text-sm text-slate-700 dark:text-gray-300">Serie</label>
-                            <input type="text" name="serie_donatii" value="<?php echo htmlspecialchars($incasari_serie_donatii['serie'] ?? 'D'); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" maxlength="20">
+                            <input type="text" name="serie_donatii" value="<?php echo htmlspecialchars($incasari_serie_donatii['serie'] ?? 'CEDON'); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" maxlength="20">
                             <label class="block text-sm text-slate-700 dark:text-gray-300">Nr. start / Nr. curent</label>
                             <div class="flex gap-2">
                                 <input type="number" name="nr_start_donatii" value="<?php echo (int)($incasari_serie_donatii['nr_start'] ?? 1); ?>" min="1" class="w-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
@@ -81,10 +82,11 @@
                         </div>
                     </div>
                     <div class="p-4 border border-slate-200 dark:border-gray-600 rounded-lg">
-                        <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3">Chitanțe încasări (donații, taxe participare, alte)</h3>
+                        <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3">Chitanțe Cotizații (tip: Cotizație, taxe, alte)</h3>
+                        <p class="text-xs text-slate-500 dark:text-gray-400 mb-2">Ex. serie: CECOT</p>
                         <div class="space-y-2">
                             <label class="block text-sm text-slate-700 dark:text-gray-300">Serie</label>
-                            <input type="text" name="serie_incasari" value="<?php echo htmlspecialchars($incasari_serie_incasari['serie'] ?? 'INC'); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" maxlength="20">
+                            <input type="text" name="serie_incasari" value="<?php echo htmlspecialchars($incasari_serie_incasari['serie'] ?? 'CECOT'); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" maxlength="20">
                             <label class="block text-sm text-slate-700 dark:text-gray-300">Nr. start / Nr. curent</label>
                             <div class="flex gap-2">
                                 <input type="number" name="nr_start_incasari" value="<?php echo (int)($incasari_serie_incasari['nr_start'] ?? 1); ?>" min="1" class="w-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">

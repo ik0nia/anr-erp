@@ -224,20 +224,20 @@ function genereaza_alerts_membru_pentru_profil($membru, $pdo = null) {
         ];
     }
     
-    // Cotizație neachitată (când există câmpul cotizatie_achitata în membri și este 0)
+    // Cotizație neachitată: verifică din tabelul incasari + scutiri
     if ($pdo && $membru_id) {
         try {
-            $cols = $pdo->query("SHOW COLUMNS FROM membri LIKE 'cotizatie_achitata'")->fetchAll();
-            if (!empty($cols)) {
-                $cot_achitata = $membru['cotizatie_achitata'] ?? 1;
-                if (empty($cot_achitata) || $cot_achitata == 0) {
-                    $alerts[] = [
-                        'tip' => 'warning',
-                        'mesaj' => 'Cotizație neachitată',
-                        'alert_key' => 'cotizatie',
-                        'dismissed' => false
-                    ];
-                }
+            require_once __DIR__ . '/cotizatii_helper.php';
+            require_once __DIR__ . '/incasari_helper.php';
+            $an_curent = (int)date('Y');
+            $scutit = cotizatii_membru_este_scutit($pdo, $membru_id);
+            if (empty($scutit) && !incasari_cotizatie_achitata_an($pdo, $membru_id, $an_curent)) {
+                $alerts[] = [
+                    'tip' => 'warning',
+                    'mesaj' => 'Cotizatie ' . $an_curent . ' neachitata',
+                    'alert_key' => 'cotizatie',
+                    'dismissed' => false
+                ];
             }
         } catch (PDOException $e) {}
     }

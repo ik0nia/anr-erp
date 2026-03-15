@@ -275,12 +275,13 @@
                         </div>
                         <div class="mb-3">
                             <div class="flex items-end gap-2">
-                                <div class="flex-1">
-                                    <label for="interact-persoana-v2" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume <span class="text-red-600" aria-hidden="true">*</span></label>
+                                <div class="flex-1 relative">
+                                    <label for="interact-persoana-v2" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Persoana <span class="text-xs text-slate-500 dark:text-gray-400">(optional)</span></label>
                                     <input type="text" id="interact-persoana-v2" name="persoana_v2"
                                            class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
-                                           placeholder="Nume persoana (sau 'Fara nume' daca nu se completeaza)"
-                                           aria-required="true">
+                                           placeholder="Cauta membru sau scrie un nume..."
+                                           autocomplete="off">
+                                    <div id="persoana-autocomplete-list" class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden" role="listbox" aria-label="Rezultate cautare membri"></div>
                                 </div>
                                 <div class="flex-1">
                                     <label for="interact-telefon-v2" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nr. telefon <span class="text-xs text-slate-500 dark:text-gray-400">(optional)</span></label>
@@ -290,19 +291,10 @@
                                            aria-describedby="interact-telefon-v2-desc">
                                     <span id="interact-telefon-v2-desc" class="sr-only">Camp optional; nu este obligatoriu.</span>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1 invisible">Task</label>
-                                    <button type="button" id="btn-task-activ-v2" onclick="toggleTaskActivV2()"
-                                            class="px-3 py-2 border-2 border-slate-600 dark:border-gray-500 bg-slate-600 dark:bg-gray-500 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center hover:bg-slate-700 dark:hover:bg-gray-600"
-                                            aria-pressed="false" aria-label="Creaza task in Taskuri">
-                                        <input type="checkbox" name="task_activ_v2" value="1" id="task-activ-v2" class="sr-only" aria-hidden="true">
-                                        <i data-lucide="square" id="icon-task-v2" class="w-5 h-5 text-white" aria-hidden="true"></i>
-                                    </button>
-                                </div>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="interact-subiect-v2" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Subiectul discutat</label>
+                            <label for="interact-subiect-v2" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Subiectul discutat <span class="text-red-600" aria-hidden="true">*</span></label>
                             <select id="interact-subiect-v2" name="subiect_id_v2" aria-label="Selecteaza subiectul interactiunii"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
                                 <option value="">-- Selectati --</option>
@@ -429,6 +421,7 @@ function toggleTaskActivV2() {
     var checkbox = document.getElementById('task-activ-v2');
     var btn = document.getElementById('btn-task-activ-v2');
     var icon = document.getElementById('icon-task-v2');
+    var textSpan = document.getElementById('text-task-v2');
     var isChecked = checkbox.checked;
 
     checkbox.checked = !isChecked;
@@ -436,20 +429,22 @@ function toggleTaskActivV2() {
 
     if (newChecked) {
         btn.setAttribute('aria-pressed', 'true');
-        btn.className = 'px-3 py-2 border-2 border-green-600 dark:border-green-500 bg-green-600 dark:bg-green-500 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center hover:bg-green-700 dark:hover:bg-green-600';
+        btn.className = 'w-full px-4 py-2 border-2 border-green-500 dark:border-green-400 bg-green-50 dark:bg-green-900/30 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center gap-2';
         if (typeof lucide !== 'undefined') {
             icon.setAttribute('data-lucide', 'check-square');
             lucide.createIcons();
         }
-        icon.className = 'w-5 h-5 text-white';
+        icon.className = 'w-5 h-5 text-green-600 dark:text-green-400';
+        if (textSpan) textSpan.className = 'text-green-700 dark:text-green-300 font-semibold';
     } else {
         btn.setAttribute('aria-pressed', 'false');
-        btn.className = 'px-3 py-2 border-2 border-slate-600 dark:border-gray-500 bg-slate-600 dark:bg-gray-500 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center hover:bg-slate-700 dark:hover:bg-gray-600';
+        btn.className = 'w-full px-4 py-2 border-2 border-slate-300 dark:border-gray-600 rounded-lg font-medium transition focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 flex items-center justify-center gap-2 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20';
         if (typeof lucide !== 'undefined') {
-            icon.setAttribute('data-lucide', 'square');
+            icon.setAttribute('data-lucide', 'check-square');
             lucide.createIcons();
         }
-        icon.className = 'w-5 h-5 text-white';
+        icon.className = 'w-5 h-5 text-slate-400 dark:text-gray-500';
+        if (textSpan) textSpan.className = 'text-slate-700 dark:text-gray-300';
     }
 }
 
@@ -475,6 +470,89 @@ function toggleTaskActivV2() {
     // Actualizeaza la fiecare 30 secunde
     setInterval(actualizeazaContoareV2, 30000);
 })();
+// AJAX autocomplete pentru campul Persoana
+(function() {
+    var inputPersoana = document.getElementById('interact-persoana-v2');
+    var listaAutocomplete = document.getElementById('persoana-autocomplete-list');
+    var timerAutocomplete = null;
+
+    if (!inputPersoana || !listaAutocomplete) return;
+
+    inputPersoana.addEventListener('input', function() {
+        var val = this.value.trim();
+        clearTimeout(timerAutocomplete);
+        if (val.length < 2) {
+            listaAutocomplete.innerHTML = '';
+            listaAutocomplete.classList.add('hidden');
+            return;
+        }
+        timerAutocomplete = setTimeout(function() {
+            fetch('/api/cauta-membri?q=' + encodeURIComponent(val))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    listaAutocomplete.innerHTML = '';
+                    if (!data.membri || data.membri.length === 0) {
+                        listaAutocomplete.classList.add('hidden');
+                        return;
+                    }
+                    data.membri.forEach(function(m) {
+                        var numeFull = (m.nume || '') + ' ' + (m.prenume || '');
+                        numeFull = numeFull.trim();
+                        var div = document.createElement('div');
+                        div.className = 'px-3 py-2 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-gray-700 last:border-0';
+                        div.setAttribute('role', 'option');
+                        div.textContent = numeFull;
+                        if (m.domloc) {
+                            var span = document.createElement('span');
+                            span.className = 'text-xs text-slate-500 dark:text-gray-400 ml-2';
+                            span.textContent = '(' + m.domloc + ')';
+                            div.appendChild(span);
+                        }
+                        div.addEventListener('click', function() {
+                            inputPersoana.value = numeFull;
+                            listaAutocomplete.innerHTML = '';
+                            listaAutocomplete.classList.add('hidden');
+                        });
+                        listaAutocomplete.appendChild(div);
+                    });
+                    listaAutocomplete.classList.remove('hidden');
+                })
+                .catch(function() {
+                    listaAutocomplete.classList.add('hidden');
+                });
+        }, 300);
+    });
+
+    // Inchide lista la click in afara
+    document.addEventListener('click', function(e) {
+        if (!inputPersoana.contains(e.target) && !listaAutocomplete.contains(e.target)) {
+            listaAutocomplete.classList.add('hidden');
+        }
+    });
+
+    // Inchide lista la Escape
+    inputPersoana.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            listaAutocomplete.classList.add('hidden');
+        }
+    });
+})();
+
+// Validare formular: subiect sau alt subiect obligatoriu
+(function() {
+    var form = document.getElementById('form-interactiuni-v2');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        var subiectId = form.querySelector('[name="subiect_id_v2"]').value;
+        var subiectAlt = form.querySelector('[name="subiect_alt_v2"]').value.trim();
+        if (!subiectId && !subiectAlt) {
+            e.preventDefault();
+            alert('Selectati un subiect din lista sau completati campul "Alt subiect".');
+            form.querySelector('[name="subiect_id_v2"]').focus();
+        }
+    });
+})();
+
 // Campul "Alt subiect" este afisat permanent; nu mai e nevoie de toggle.
 function deschideEditare(id, nume, data, ora, detalii, urgenta) {
     document.getElementById('edit-task-id').value = id;

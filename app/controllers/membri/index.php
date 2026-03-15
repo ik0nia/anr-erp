@@ -115,6 +115,10 @@ $membri_scutiti_cotizatie_ids = $data['membri_scutiti_cotizatie_ids'];
 $membri_cotizatie_achitata_an_curent = $data['membri_cotizatie_achitata_an_curent'];
 $valori_cotizatie_an_curent = $data['valori_cotizatie_an_curent'];
 
+// Urmatorul numar de dosar disponibil (pentru formularul de adaugare membru)
+$next_dosarnr = membri_next_dosar_nr($pdo);
+$GLOBALS['next_dosarnr'] = $next_dosarnr;
+
 // --- Render ---
 include APP_ROOT . '/header.php';
 include APP_ROOT . '/sidebar.php';

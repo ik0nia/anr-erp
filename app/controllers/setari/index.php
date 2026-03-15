@@ -227,7 +227,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_email_test'])
     csrf_require_valid();
     $result = setari_email_test($pdo, trim($_POST['email_test_destinatar'] ?? ''), $_SESSION['user_id'] ?? null);
     if ($result['success']) {
-        header('Location: /setari?tab=email&succes_email=1');
+        $dest = urlencode($result['destinatar'] ?? '');
+        header('Location: /setari?tab=email&succes_email_test=1&dest=' . $dest);
         exit;
     }
     $eroare = $result['error'];
@@ -319,7 +320,8 @@ if (isset($_GET['succes_logo'])) $succes = 'Logo-ul a fost actualizat cu succes.
 if (isset($_GET['succes_registratura'])) $succes = 'Setările Registraturii au fost salvate.';
 if (isset($_GET['succes_newsletter'])) $succes = 'Setările Newsletter au fost salvate.';
 if (isset($_GET['succes_documente'])) $succes = 'Setările pentru generare documente au fost salvate.';
-if (isset($_GET['succes_email'])) $succes = 'Setările email au fost salvate sau emailul de test a fost trimis.';
+if (isset($_GET['succes_email'])) $succes = 'Setările email au fost salvate.';
+if (isset($_GET['succes_email_test'])) $succes = 'Emailul de test a fost trimis cu succes la ' . htmlspecialchars(urldecode($_GET['dest'] ?? 'adresa configurată')) . '.';
 
 // ---------------------------------------------------------------------------
 // Load tab-specific data for the view

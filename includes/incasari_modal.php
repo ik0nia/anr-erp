@@ -28,10 +28,12 @@
             <div>
                 <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Mod plată</span>
                 <div class="flex flex-wrap gap-2" role="group" aria-label="Mod plată">
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="numerar">Numerar</button>
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="card_pos">Card-POS</button>
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="card_online">Card-Online</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="numerar">Chitanta ERP</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="chitanta_veche">Chitanta veche</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="card_pos">POS</button>
                     <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="transfer_bancar">Transfer bancar</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="card_online">Plata online</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="mandat_postal">Mandat postal</button>
                 </div>
                 <input type="hidden" name="mod_plata" id="incasari-mod" value="">
             </div>
@@ -111,11 +113,11 @@
             tipInput.value = t;
             document.querySelectorAll('.incasari-tip-btn').forEach(function(b){ b.classList.remove('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500'); });
             this.classList.add('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500');
-            if (t === 'donatie') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Donație (RON)'; inputSuma.value = ''; }
-            else if (t === 'taxa_participare') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Taxă participare (RON)'; inputSuma.value = ''; }
-            else if (t === 'alte') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Încasare (RON)'; inputSuma.value = ''; }
-            else { wrapSuma.classList.add('hidden'); inputSuma.value = valCot.value || '0'; }
-            if (modInput.value) { if (modInput.value === 'numerar') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); } else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); } }
+            if (t === 'donatie') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Donație (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; }
+            else if (t === 'taxa_participare') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Taxă participare (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; }
+            else if (t === 'alte') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Încasare (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; }
+            else { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Cotizație (RON)'; inputSuma.value = valCot.value || '0'; inputSuma.readOnly = true; }
+            if (modInput.value) { if (modInput.value === 'numerar' || modInput.value === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); } else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); } }
         });
     });
 
@@ -125,7 +127,7 @@
             modInput.value = m;
             document.querySelectorAll('.incasari-mod-btn').forEach(function(b){ b.classList.remove('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500'); });
             this.classList.add('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500');
-            if (m === 'numerar') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); }
+            if (m === 'numerar' || m === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); }
             else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); }
         });
     });
