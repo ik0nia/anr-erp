@@ -57,7 +57,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
 
         <!-- Rând 1: Căutare (stânga) + Adaugă Membru (dreapta) -->
         <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
-            <form method="get" action="/membri" class="flex items-center gap-2 shrink-0">
+            <form method="get" action="/membri" id="form-cautare-membri" class="flex items-center gap-2 shrink-0">
                 <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort_col); ?>">
                 <input type="hidden" name="dir" value="<?php echo htmlspecialchars(strtolower($sort_dir)); ?>">
                 <input type="hidden" name="per_page" value="<?php echo $per_page; ?>">
@@ -67,23 +67,21 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 <?php if ($actualizare_cnp_ci_filter): ?><input type="hidden" name="actualizare_cnp_ci" value="1"><?php endif; ?>
                 <?php if ($aniversari_azi_filter): ?><input type="hidden" name="aniversari_azi" value="1"><?php endif; ?>
                 <div class="relative">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500 pointer-events-none" aria-hidden="true"></i>
                     <input type="search"
                            name="cautare"
+                           id="cautare-membri-live"
                            value="<?php echo htmlspecialchars($cautare); ?>"
-                           placeholder="Cauta membri..."
-                           class="w-64 pl-10 pr-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
-                           aria-label="Cauta membri">
-                    <button type="submit"
-                            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400"
-                            aria-label="Cauta">
-                        <i data-lucide="search" class="w-5 h-5" aria-hidden="true"></i>
-                    </button>
+                           placeholder="Cauta dupa nume, telefon, email, nr. dosar..."
+                           class="w-96 pl-12 pr-4 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base text-slate-900 dark:text-white dark:bg-gray-700"
+                           aria-label="Cauta membri"
+                           autocomplete="off">
                 </div>
                 <button type="submit"
                         name="reset"
                         value="1"
                         onclick="this.form.querySelector('input[name=cautare]').value='';"
-                        class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 shrink-0"
+                        class="px-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 shrink-0"
                         aria-label="Reseteaza cautarea">
                     <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
                 </button>
@@ -556,6 +554,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
+    }
+
+    // Live search — submit automat cu debounce la 400ms
+    var cautareLive = document.getElementById('cautare-membri-live');
+    if (cautareLive) {
+        var debounceTimer = null;
+        cautareLive.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            var val = this.value.trim();
+            debounceTimer = setTimeout(function() {
+                document.getElementById('form-cautare-membri').submit();
+            }, 400);
+        });
     }
 
     // Drag and drop pentru redimensionarea coloanelor

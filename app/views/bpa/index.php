@@ -214,7 +214,10 @@
                         <div class="mb-2">
                             <label for="cauta-membru-bpa" class="block text-sm text-slate-600 dark:text-gray-400 dark:text-white mb-1">Caută membru (adaugă rând):</label>
                             <div class="relative flex gap-2 w-full" id="wrap-cauta-bpa">
-                                <input type="text" id="cauta-membru-bpa" placeholder="Nume sau prenume (min. 2 caractere)..." class="flex-1 min-w-0 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-2 py-1 text-sm placeholder-slate-500 dark:placeholder-gray-400" aria-label="Caută membru pentru a adăuga în listă" autocomplete="off">
+                                <div class="relative flex-1 min-w-0">
+                                    <i data-lucide="search" class="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 pointer-events-none" aria-hidden="true"></i>
+                                    <input type="text" id="cauta-membru-bpa" placeholder="Nume, prenume, telefon..." class="w-full rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 pl-9 pr-2 py-1.5 text-sm placeholder-slate-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-amber-500" aria-label="Caută membru pentru a adăuga în listă" autocomplete="off">
+                                </div>
                                 <button type="button" id="btn-cauta-bpa" class="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded border-0 focus:ring-2 focus:ring-amber-500" aria-label="Execută căutarea">Caută</button>
                                 <div id="rezultate-cauta-bpa" class="absolute left-0 right-0 top-full z-[100] mt-1 w-full" role="region" aria-live="polite" aria-label="Rezultate căutare"></div>
                             </div>

@@ -84,11 +84,16 @@
                 <h2 class="text-lg font-semibold mb-4 text-slate-900 dark:text-white">Participanți</h2>
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Căutare membri</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="cauta-membru" placeholder="Nume, prenume, CNP..." class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:text-white">
-                        <button type="button" id="btn-cauta" class="px-4 py-2 bg-amber-600 text-white rounded-lg">Caută</button>
+                    <div class="relative">
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 pointer-events-none" aria-hidden="true"></i>
+                                <input type="text" id="cauta-membru" placeholder="Nume, prenume, CNP, telefon..." class="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-slate-900 focus:ring-2 focus:ring-amber-500" autocomplete="off">
+                            </div>
+                            <button type="button" id="btn-cauta" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg">Caută</button>
+                        </div>
+                        <div id="rezultate-cautare" class="absolute left-0 right-0 top-full z-20 mt-1 border border-slate-200 dark:border-gray-600 rounded-lg p-2 max-h-48 overflow-y-auto hidden bg-white dark:bg-gray-800 text-slate-900 dark:text-white shadow-lg"></div>
                     </div>
-                    <div id="rezultate-cautare" class="mt-2 border border-slate-200 dark:border-gray-600 rounded-lg p-2 max-h-48 overflow-y-auto hidden bg-white dark:bg-gray-700/50 text-slate-900 dark:text-white"></div>
                 </div>
                 <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Coloane de afișat în tabel:</p>
                 <div class="flex flex-wrap gap-4 mb-4">
@@ -227,6 +232,18 @@ document.getElementById('btn-cauta').onclick = executaCautareLista;
 document.getElementById('cauta-membru').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); executaCautareLista(); }
 });
+// Live search cu debounce
+(function() {
+    var debounce = null;
+    document.getElementById('cauta-membru').addEventListener('input', function() {
+        clearTimeout(debounce);
+        var self = this;
+        debounce = setTimeout(function() {
+            if (self.value.trim().length >= 2) executaCautareLista();
+            else document.getElementById('rezultate-cautare').classList.add('hidden');
+        }, 300);
+    });
+})();
 document.getElementById('btn-adauga-manual').onclick = function() {
     adaugaParticipant();
 };

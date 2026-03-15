@@ -47,11 +47,16 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border p-6">
                 <h2 class="text-lg font-semibold mb-4 text-slate-900 dark:text-white">Participanți</h2>
                 <div class="mb-4">
-                    <div class="flex gap-2">
-                        <input type="text" id="cauta-membru" placeholder="Caută membri..." class="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:text-white">
-                        <button type="button" id="btn-cauta" class="px-4 py-2 bg-amber-600 text-white rounded-lg">Caută</button>
+                    <div class="relative">
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500 pointer-events-none" aria-hidden="true"></i>
+                                <input type="text" id="cauta-membru" placeholder="Nume, prenume, CNP, telefon..." class="w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-slate-900 focus:ring-2 focus:ring-amber-500" autocomplete="off">
+                            </div>
+                            <button type="button" id="btn-cauta" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg">Caută</button>
+                        </div>
+                        <div id="rezultate-cautare" class="absolute left-0 right-0 top-full z-20 mt-1 border border-slate-200 dark:border-gray-600 rounded-lg p-2 max-h-48 overflow-y-auto hidden bg-white dark:bg-gray-800 text-slate-900 dark:text-white shadow-lg"></div>
                     </div>
-                    <div id="rezultate-cautare" class="mt-2 border border-slate-200 dark:border-gray-600 rounded-lg p-2 max-h-48 overflow-y-auto hidden bg-white dark:bg-gray-700/50 text-slate-900 dark:text-white"></div>
                 </div>
                 <div class="flex flex-wrap gap-4 mb-4">
                     <?php foreach (LISTE_COLOANE as $k => $l): ?>
@@ -114,6 +119,7 @@ function actualizeazaNumeManual(ordine,nume){const m=membriSelectati.find(x=>!x.
 function executaCautareEdit(){var q=document.getElementById('cauta-membru').value.trim();if(q.length<2)return;fetch('/api/cauta-membri?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{var div=document.getElementById('rezultate-cautare');div.classList.remove('hidden');var membri=d.membri||[];div.innerHTML=membri.map(m=>'<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-gray-600"><span>'+(m.nume||'')+' '+(m.prenume||'')+'</span><button type="button" class="btn-add px-2 py-1 bg-amber-600 text-white rounded text-xs" data-id="'+m.id+'" data-nume="'+(m.nume||'')+'" data-prenume="'+(m.prenume||'')+'">Adaugă</button></div>').join('')||'<p class="text-slate-500 dark:text-gray-400">Niciun rezultat.</p>';div.querySelectorAll('.btn-add').forEach(btn=>{btn.onclick=()=>adaugaParticipant({id:parseInt(btn.dataset.id),nume:btn.dataset.nume||'',prenume:btn.dataset.prenume||''});});});}
 document.getElementById('btn-cauta').onclick=executaCautareEdit;
 document.getElementById('cauta-membru').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();executaCautareEdit();}});
+(function(){var deb=null;document.getElementById('cauta-membru').addEventListener('input',function(){clearTimeout(deb);var self=this;deb=setTimeout(function(){if(self.value.trim().length>=2)executaCautareEdit();else document.getElementById('rezultate-cautare').classList.add('hidden');},300);});})();
 document.getElementById('btn-adauga-manual').onclick=function(){adaugaParticipant();};
 document.getElementById('form-lista').onsubmit=function(){document.getElementById('membri_ids_json').value=JSON.stringify(membriSelectati.filter(m=>m.id).map(m=>m.id));document.getElementById('participanti_manuali_json').value=JSON.stringify(membriSelectati.filter(m=>!m.id&&m.numeManual).map(m=>({nume:m.numeManual,ordine:m.ordine})));return true;};
 renderLista();
