@@ -137,38 +137,26 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 Arhiva Membri (<?php echo $membri_arhiva_count; ?>)
             </a>
         </div>
-        <!-- Rând 3: Filtre speciale -->
+        <!-- Rând 3: Filtre speciale (mutual exclusive, cu radio vizual) -->
+        <?php
+        $special_filters = [
+            ['param' => 'avertizari', 'active' => $avertizari_filter, 'icon' => 'alert-triangle', 'label' => 'Actualizare date', 'count' => $membri_cu_avertizari],
+            ['param' => 'actualizare_cnp_ci', 'active' => $actualizare_cnp_ci_filter, 'icon' => 'file-edit', 'label' => 'Actualizare CNP/CI', 'count' => $membri_actualizare_cnp_ci],
+            ['param' => 'aniversari_azi', 'active' => $aniversari_azi_filter, 'icon' => 'cake', 'label' => 'Aniversari azi', 'count' => $membri_aniversari_azi_count],
+            ['param' => 'cotizatie_neachitata', 'active' => $cotizatie_neachitata_filter, 'icon' => 'dollar-sign', 'label' => 'Cotizatie neachitata', 'count' => $membri_cotizatie_neachitata_count],
+            ['param' => 'fara_contact', 'active' => $fara_contact_filter, 'icon' => 'phone-off', 'label' => 'Fara contact', 'count' => $membri_fara_contact_count],
+        ];
+        ?>
         <div class="mb-6 flex items-center gap-2 flex-wrap">
-            <a href="<?php echo $special_base_url . ($avertizari_filter ? '' : '&avertizari=1'); ?>"
-               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $avertizari_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
-               aria-label="<?php echo $avertizari_filter ? 'Dezactiveaza filtrarea dupa actualizare date' : 'Afiseaza doar membrii cu date de actualizat'; ?>">
-                <i data-lucide="alert-triangle" class="w-4 h-4" aria-hidden="true"></i>
-                Actualizare date (<?php echo $membri_cu_avertizari; ?>)
+            <span class="text-sm text-slate-500 dark:text-gray-400 mr-1">Filtre:</span>
+            <?php foreach ($special_filters as $sf): ?>
+            <a href="<?php echo $special_base_url . ($sf['active'] ? '' : '&' . $sf['param'] . '=1'); ?>"
+               class="px-3 py-1.5 rounded-lg font-medium transition-colors inline-flex items-center gap-2 text-sm <?php echo $sf['active'] ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
+                <span class="inline-block w-4 h-4 rounded-full border-2 flex-shrink-0 <?php echo $sf['active'] ? 'border-white bg-white' : 'border-slate-400 dark:border-gray-500'; ?>" style="<?php echo $sf['active'] ? 'box-shadow: inset 0 0 0 3px #d97706;' : ''; ?>"></span>
+                <i data-lucide="<?php echo $sf['icon']; ?>" class="w-4 h-4" aria-hidden="true"></i>
+                <?php echo $sf['label']; ?> (<?php echo $sf['count']; ?>)
             </a>
-            <a href="<?php echo $special_base_url . ($actualizare_cnp_ci_filter ? '' : '&actualizare_cnp_ci=1'); ?>"
-               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $actualizare_cnp_ci_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
-               aria-label="<?php echo $actualizare_cnp_ci_filter ? 'Dezactiveaza filtrarea dupa actualizare CNP/CI' : 'Afiseaza doar membrii care necesita actualizare CNP/CI'; ?>">
-                <i data-lucide="file-edit" class="w-4 h-4" aria-hidden="true"></i>
-                Actualizare CNP/CI (<?php echo $membri_actualizare_cnp_ci; ?>)
-            </a>
-            <a href="<?php echo $special_base_url . ($aniversari_azi_filter ? '' : '&aniversari_azi=1'); ?>"
-               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $aniversari_azi_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
-               aria-label="<?php echo $aniversari_azi_filter ? 'Dezactiveaza filtrarea aniversari azi' : 'Afiseaza doar membrii care isi serbeaza ziua de nastere azi'; ?>">
-                <i data-lucide="cake" class="w-4 h-4" aria-hidden="true"></i>
-                Aniversari azi (<?php echo $membri_aniversari_azi_count; ?>)
-            </a>
-            <a href="<?php echo $special_base_url . ($cotizatie_neachitata_filter ? '' : '&cotizatie_neachitata=1'); ?>"
-               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $cotizatie_neachitata_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
-               aria-label="<?php echo $cotizatie_neachitata_filter ? 'Dezactiveaza filtrarea cotizatie neachitata' : 'Afiseaza doar membrii cu cotizatia neachitata'; ?>">
-                <i data-lucide="dollar-sign" class="w-4 h-4" aria-hidden="true"></i>
-                Cotizatie neachitata (<?php echo $membri_cotizatie_neachitata_count; ?>)
-            </a>
-            <a href="<?php echo $special_base_url . ($fara_contact_filter ? '' : '&fara_contact=1'); ?>"
-               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $fara_contact_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
-               aria-label="<?php echo $fara_contact_filter ? 'Dezactiveaza filtrarea fara contact' : 'Afiseaza doar membrii fara telefon si email'; ?>">
-                <i data-lucide="phone-off" class="w-4 h-4" aria-hidden="true"></i>
-                Fara contact (<?php echo $membri_fara_contact_count; ?>)
-            </a>
+            <?php endforeach; ?>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden border border-slate-200 dark:border-gray-700">
