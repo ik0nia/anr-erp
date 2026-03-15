@@ -148,7 +148,7 @@ foreach ($liste_predefinite as $key => $info) {
     <div class="fixed inset-0 bg-black/50 transition-opacity" id="modal-overlay"></div>
     <div class="fixed inset-0 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-gray-700">
-            <form method="post" action="/newsletter" enctype="multipart/form-data" id="form-newsletter">
+            <form method="post" action="/newsletter" enctype="multipart/form-data" id="form-newsletter" onsubmit="if(typeof syncContent==='function')syncContent()">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_newsletter" value="1">
                 <input type="hidden" name="actiune" value="draft" id="input-actiune">
@@ -289,12 +289,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     btnNew.addEventListener('click', function() {
-        // Reset form if not editing
-        <?php if (!$edit_nl): ?>
         form.reset();
         editor.innerHTML = '';
         document.getElementById('input-newsletter-id').value = '0';
-        <?php endif; ?>
         openModal();
     });
 

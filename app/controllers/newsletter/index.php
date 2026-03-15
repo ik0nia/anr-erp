@@ -25,7 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_newsletter']
     $actiune = $_POST['actiune'] ?? 'draft'; // 'draft' sau 'trimite'
     $id_edit = (int)($_POST['newsletter_id'] ?? 0);
     $subiect = trim($_POST['subiect'] ?? '');
-    $continut = strip_tags($_POST['continut'] ?? '', '<p><br><b><i><strong><em><u><ul><ol><li><h1><h2><h3><h4><a><img><table><tr><td><th><thead><tbody><div><span>');
+    // Sanitizeaza HTML: strip tags + elimina atribute periculoase (onclick, onerror, javascript:)
+    $continut_raw = strip_tags($_POST['continut'] ?? '', '<p><br><b><i><strong><em><u><ul><ol><li><h1><h2><h3><h4><h5><h6><a><img><table><tr><td><th><thead><tbody><div><span><hr><blockquote>');
+    $continut = preg_replace('/\s*on\w+\s*=\s*["\'][^"\']*["\']/i', '', $continut_raw);
+    $continut = preg_replace('/href\s*=\s*["\']javascript:[^"\']*["\']/i', 'href="#"', $continut);
     $lista_destinatari = trim($_POST['lista_destinatari'] ?? '');
     $data_programata = trim($_POST['data_programata'] ?? '');
 
@@ -162,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_newsletter']))
 
 // --- GET: Succes message from redirect ---
 if (isset($_GET['succes'])) {
-    $succes = $_GET['succes'];
+    $succes = 'Operatiunea a fost efectuata cu succes.';
 }
 
 // --- GET: Load data for editing a specific newsletter ---

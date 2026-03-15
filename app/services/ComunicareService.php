@@ -40,7 +40,7 @@ function comunicare_filtreaza_membri(PDO $pdo, array $filters): array {
 
     // Sex
     $sex = $filters['sex'] ?? '';
-    if ($sex !== '' && in_array($sex, ['M', 'F'])) {
+    if ($sex !== '' && in_array($sex, ['Masculin', 'Feminin'])) {
         $where_parts[] = "sex = ?";
         $params[] = $sex;
     }
@@ -127,7 +127,7 @@ function comunicare_count_membri(PDO $pdo, array $filters): int {
     }
 
     $sex = $filters['sex'] ?? '';
-    if ($sex !== '' && in_array($sex, ['M', 'F'])) {
+    if ($sex !== '' && in_array($sex, ['Masculin', 'Feminin'])) {
         $where_parts[] = "sex = ?";
         $params[] = $sex;
     }
@@ -228,9 +228,11 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
         $font_size_adresa = min(10, max(6, $inaltime_mm / 6));
         $margin = 3; // mm
 
+        $pdf->SetMargins($margin, $margin, $margin);
+        $orientation = ($latime_mm > $inaltime_mm) ? 'L' : 'P';
+
         foreach ($membri as $membru) {
-            $pdf->AddPage('P', [$latime_mm, $inaltime_mm]);
-            $pdf->SetMargins($margin, $margin, $margin);
+            $pdf->AddPage($orientation, [$latime_mm, $inaltime_mm]);
 
             // Nume Prenume
             $pdf->SetFont('Arial', 'B', $font_size_nume);

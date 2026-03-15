@@ -46,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_ticket']
     $ticket = tickete_get($pdo, $id);
 }
 
-// POST: Trimite raspuns
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_raspuns'])) {
+// POST: Trimite raspuns (elseif previne double-processing cu actualizeaza_ticket)
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_raspuns'])) {
     csrf_require_valid();
     $raspuns = trim($_POST['raspuns_final'] ?? '');
     if ($raspuns === '') {

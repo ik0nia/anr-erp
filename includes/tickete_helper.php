@@ -9,6 +9,9 @@ require_once __DIR__ . '/log_helper.php';
  * Asigura existenta tabelelor tickete si tickete_departamente.
  */
 function tickete_ensure_tables(PDO $pdo): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
     $pdo->exec("CREATE TABLE IF NOT EXISTS tickete (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nr_inregistrare VARCHAR(50),
