@@ -726,26 +726,8 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
     $eroare = '';
     $membru_id = null;
 
-    // Validare campuri obligatorii
-    $nume = trim($post_data['nume'] ?? '');
-    $prenume = trim($post_data['prenume'] ?? '');
-    $cnp = preg_replace('/\D/', '', $post_data['cnp'] ?? '');
-
-    if (empty($nume) || empty($prenume)) {
-        return ['success' => false, 'error' => 'Numele si prenumele sunt obligatorii.', 'membru_id' => null];
-    }
-
-    // La actualizare: daca CNP-ul din formular e gol, pastram CNP-ul existent
-    if ($is_update) {
-        try {
-            $stmt_cnp = $pdo->prepare('SELECT cnp FROM membri WHERE id = ?');
-            $stmt_cnp->execute([(int)$post_data['membru_id']]);
-            $cnp_existent = $stmt_cnp->fetchColumn();
-            if (empty($cnp) && $cnp_existent !== null && $cnp_existent !== '') {
-                $cnp = preg_replace('/\D/', '', $cnp_existent);
-            }
-        } catch (PDOException $e) {}
-    }
+    // Validare campuri obligatorii - se face DUPA merge pentru card-based saves
+    // (mutata mai jos, dupa linia de merge cu datele existente)
 
     // CNP obligatoriu doar la adaugare
     if (!$is_update && empty($cnp)) {
@@ -811,6 +793,30 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
         $prenume = trim($post_data['prenume'] ?? '');
         $cnp = preg_replace('/\D/', '', $post_data['cnp'] ?? '');
         $info_cnp = extrage_info_cnp($cnp);
+    } else {
+        // Non-card save: validare directa
+        $nume = trim($post_data['nume'] ?? '');
+        $prenume = trim($post_data['prenume'] ?? '');
+        $cnp = preg_replace('/\D/', '', $post_data['cnp'] ?? '');
+
+        // La actualizare: daca CNP-ul din formular e gol, pastram CNP-ul existent
+        if ($is_update) {
+            try {
+                $stmt_cnp = $pdo->prepare('SELECT cnp FROM membri WHERE id = ?');
+                $stmt_cnp->execute([(int)$post_data['membru_id']]);
+                $cnp_existent = $stmt_cnp->fetchColumn();
+                if (empty($cnp) && $cnp_existent !== null && $cnp_existent !== '') {
+                    $cnp = preg_replace('/\D/', '', $cnp_existent);
+                }
+            } catch (PDOException $e) {}
+        }
+
+        $info_cnp = extrage_info_cnp($cnp);
+    }
+
+    // Validare campuri obligatorii (dupa merge pentru card-based saves)
+    if (empty($nume) || empty($prenume)) {
+        return ['success' => false, 'error' => 'Numele si prenumele sunt obligatorii.', 'membru_id' => null];
     }
 
     // Pregateste datele
