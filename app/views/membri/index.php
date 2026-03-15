@@ -73,7 +73,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                            id="cautare-membri-live"
                            value="<?php echo htmlspecialchars($cautare); ?>"
                            placeholder="Cauta dupa nume, telefon, email, nr. dosar..."
-                           class="w-[32rem] pl-14 pr-4 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base text-slate-900 dark:text-white dark:bg-gray-700"
+                           class="w-[32rem] pl-[3.25rem] pr-4 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base text-slate-900 dark:text-white dark:bg-gray-700"
                            aria-label="Cauta membri"
                            autocomplete="off">
                 </div>
