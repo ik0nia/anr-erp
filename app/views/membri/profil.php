@@ -1,13 +1,45 @@
 <?php
 /**
- * View: Membri — Profil membru
+ * View: Membri — Profil membru (card-based, view-only by default, edit per card)
  *
  * Variabile disponibile (setate de controller):
  *   $membru, $eroare, $succes, $membru_id, $varsta,
  *   $scutire_cotizatie, $cotizatie_achitata_an_curent, $valoare_cotizatie_an,
  *   $alerts, $istoric_modificari, $lista_incasari,
- *   $tipuri_afisare, $moduri_plata_afisare
+ *   $tipuri_afisare, $moduri_plata_afisare, $jurnal
  */
+
+// Helper: display value or dash
+$dv = function($field, $format = null) use ($membru) {
+    $v = $membru[$field] ?? '';
+    if ($v === '' || $v === null) return '<span class="text-slate-400 dark:text-gray-500">—</span>';
+    if ($format === 'date' && $v) {
+        $ts = strtotime($v);
+        return $ts ? htmlspecialchars(date(DATE_FORMAT, $ts)) : htmlspecialchars($v);
+    }
+    return htmlspecialchars($v);
+};
+
+// Helper: value for form field
+$val = function($field, $default = '') use ($membru) {
+    $value = $membru[$field] ?? $default;
+    if ($value === null || $value === '') return htmlspecialchars($default);
+    if (is_bool($value)) return $value ? '1' : '0';
+    return htmlspecialchars($value);
+};
+
+$selected = function($field, $value) use ($membru) {
+    return (isset($membru[$field]) && $membru[$field] == $value) ? 'selected' : '';
+};
+
+$checked = function($field, $value) use ($membru) {
+    return (isset($membru[$field]) && $membru[$field] == $value) ? 'checked' : '';
+};
+
+$input_class = 'w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-slate-900 dark:text-white dark:bg-gray-700';
+$btn_edit_class = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors';
+$btn_save_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors';
+$btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors';
 ?>
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
@@ -36,6 +68,8 @@
         <button type="button" onclick="document.getElementById('banner-eroare-salvare').remove()" class="flex-shrink-0 px-3 py-1 bg-red-700 hover:bg-red-800 rounded focus:outline-none focus:ring-2 focus:ring-white" aria-label="Inchide mesajul">x</button>
     </div>
     <?php endif; ?>
+
+    <!-- Header -->
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2">
         <div>
             <h1 class="text-xl font-semibold text-slate-900 dark:text-white">
@@ -54,16 +88,21 @@
             </p>
             <div class="flex flex-wrap items-center gap-4 mt-2">
                 <div class="flex items-center gap-2">
-                    <label for="status_dosar_header" class="text-sm text-slate-600 dark:text-gray-400">Status:</label>
-                    <select id="status_dosar_header"
-                            onchange="document.getElementById('status_dosar').value = this.value; document.getElementById('form-membru-profil').requestSubmit();"
-                            class="px-2 py-1 text-sm border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500">
-                        <option value="Activ" <?php echo ($membru['status_dosar'] ?? 'Activ') === 'Activ' ? 'selected' : ''; ?>>Activ</option>
-                        <option value="Expirat" <?php echo ($membru['status_dosar'] ?? '') === 'Expirat' ? 'selected' : ''; ?>>Expirat</option>
-                        <option value="Suspendat" <?php echo ($membru['status_dosar'] ?? '') === 'Suspendat' ? 'selected' : ''; ?>>Suspendat</option>
-                        <option value="Retras" <?php echo ($membru['status_dosar'] ?? '') === 'Retras' ? 'selected' : ''; ?>>Retras</option>
-                        <option value="Decedat" <?php echo ($membru['status_dosar'] ?? '') === 'Decedat' ? 'selected' : ''; ?>>Decedat</option>
-                    </select>
+                    <span class="text-sm text-slate-600 dark:text-gray-400">Status:</span>
+                    <?php
+                    $status_colors = [
+                        'Activ' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+                        'Expirat' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
+                        'Suspendat' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+                        'Retras' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+                        'Decedat' => 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300',
+                    ];
+                    $status_val = $membru['status_dosar'] ?? 'Activ';
+                    $status_cls = $status_colors[$status_val] ?? 'bg-slate-100 text-slate-700';
+                    ?>
+                    <span class="px-2.5 py-1 text-sm font-medium rounded-full <?php echo $status_cls; ?>">
+                        <?php echo htmlspecialchars($status_val); ?>
+                    </span>
                 </div>
             </div>
         </div>
@@ -111,14 +150,6 @@
                 Incaseaza
             </button>
             <?php endif; ?>
-            <button type="button"
-                    id="btn-editeaza-datele"
-                    class="inline-flex items-center px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
-                    aria-pressed="false"
-                    aria-label="Comuta in modul de editare a datelor membrului">
-                <i data-lucide="edit-3" class="mr-2 w-4 h-4" aria-hidden="true"></i>
-                Editeaza datele
-            </button>
             <a href="/membri"
                class="inline-flex items-center px-3 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
                 <i data-lucide="arrow-left" class="mr-2 w-4 h-4" aria-hidden="true"></i>
@@ -194,11 +225,726 @@
         </div>
         <?php endif; ?>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-            <?php require_once APP_ROOT . '/app/views/membri/form.php'; ?>
-            <?php render_formular_profil_membru($membru, $eroare, $istoric_modificari); ?>
+        <!-- Cards grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Card 1: Date Personale -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
+                        Date Personale
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-personale">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <!-- View mode -->
+                <div class="card-view p-4" data-card="date-personale">
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Nume</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('nume'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Prenume</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('prenume'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">CNP</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white font-mono"><?php echo $dv('cnp'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Sex</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('sex'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Data nasterii</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('datanastere', 'date'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Varsta</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $varsta !== null ? $varsta . ' ani' : '<span class="text-slate-400 dark:text-gray-500">—</span>'; ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Loc. nasterii</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('locnastere'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Jud. nasterii</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('judnastere'); ?></dd>
+                        </div>
+                    </dl>
+                </div>
+                <!-- Edit mode -->
+                <div class="card-edit hidden p-4" data-card="date-personale">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
+                        <input type="hidden" name="card" value="date-personale">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="ep_nume" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume <span class="text-red-600">*</span></label>
+                                    <input type="text" id="ep_nume" name="nume" value="<?php echo $val('nume'); ?>" required class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ep_prenume" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Prenume <span class="text-red-600">*</span></label>
+                                    <input type="text" id="ep_prenume" name="prenume" value="<?php echo $val('prenume'); ?>" required class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="ep_cnp" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">CNP</label>
+                                    <input type="text" id="ep_cnp" name="cnp" value="<?php echo $val('cnp'); ?>" maxlength="13" pattern="[0-9]{13}" inputmode="numeric" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ep_sex" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Sex</label>
+                                    <select id="ep_sex" name="sex" class="<?php echo $input_class; ?>">
+                                        <option value="">Selecteaza</option>
+                                        <option value="Masculin" <?php echo $selected('sex', 'Masculin'); ?>>Masculin</option>
+                                        <option value="Feminin" <?php echo $selected('sex', 'Feminin'); ?>>Feminin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label for="ep_datanastere" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data nasterii</label>
+                                    <input type="date" id="ep_datanastere" name="datanastere" value="<?php echo $val('datanastere'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ep_locnastere" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Loc. nasterii</label>
+                                    <input type="text" id="ep_locnastere" name="locnastere" value="<?php echo $val('locnastere'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ep_judnastere" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Jud. nasterii</label>
+                                    <input type="text" id="ep_judnastere" name="judnastere" value="<?php echo $val('judnastere'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card 2: Date Contact -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="phone" class="w-5 h-5" aria-hidden="true"></i>
+                        Date Contact
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-contact">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="date-contact">
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Telefon</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('telefonnev'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Email</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('email'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Telefon apartinator</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('telefonapartinator'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Nume apartinator</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo trim(($membru['nume_apartinator'] ?? '') . ' ' . ($membru['prenume_apartinator'] ?? '')) ?: '<span class="text-slate-400 dark:text-gray-500">—</span>'; ?></dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="card-edit hidden p-4" data-card="date-contact">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
+                        <input type="hidden" name="card" value="date-contact">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="ec_telefonnev" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Telefon</label>
+                                    <input type="tel" id="ec_telefonnev" name="telefonnev" value="<?php echo $val('telefonnev'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ec_email" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Email</label>
+                                    <input type="email" id="ec_email" name="email" value="<?php echo $val('email'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label for="ec_telefonapartinator" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Telefon apartinator</label>
+                                    <input type="tel" id="ec_telefonapartinator" name="telefonapartinator" value="<?php echo $val('telefonapartinator'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ec_nume_apartinator" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume apartinator</label>
+                                    <input type="text" id="ec_nume_apartinator" name="nume_apartinator" value="<?php echo $val('nume_apartinator'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ec_prenume_apartinator" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Prenume apartinator</label>
+                                    <input type="text" id="ec_prenume_apartinator" name="prenume_apartinator" value="<?php echo $val('prenume_apartinator'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card 3: Domiciliu -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
+                        Domiciliu
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="domiciliu">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="domiciliu">
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Localitatea</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('domloc'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Judet</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('judet_domiciliu'); ?></dd>
+                        </div>
+                        <div class="col-span-2">
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Adresa</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white">
+                                <?php
+                                $adresa_parts = [];
+                                if (!empty($membru['domstr'])) $adresa_parts[] = 'Str. ' . htmlspecialchars($membru['domstr']);
+                                if (!empty($membru['domnr'])) $adresa_parts[] = 'Nr. ' . htmlspecialchars($membru['domnr']);
+                                if (!empty($membru['dombl'])) $adresa_parts[] = 'Bl. ' . htmlspecialchars($membru['dombl']);
+                                if (!empty($membru['domsc'])) $adresa_parts[] = 'Sc. ' . htmlspecialchars($membru['domsc']);
+                                if (!empty($membru['domet'])) $adresa_parts[] = 'Et. ' . htmlspecialchars($membru['domet']);
+                                if (!empty($membru['domap'])) $adresa_parts[] = 'Ap. ' . htmlspecialchars($membru['domap']);
+                                echo $adresa_parts ? implode(', ', $adresa_parts) : '<span class="text-slate-400 dark:text-gray-500">—</span>';
+                                ?>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Cod postal</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('codpost'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Mediu</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('tipmediuur'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Primaria</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('primaria'); ?></dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="card-edit hidden p-4" data-card="domiciliu">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
+                        <input type="hidden" name="card" value="domiciliu">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label for="ed_domloc" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Localitatea</label>
+                                    <input type="text" id="ed_domloc" name="domloc" value="<?php echo $val('domloc'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ed_judet_domiciliu" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Judet</label>
+                                    <input type="text" id="ed_judet_domiciliu" name="judet_domiciliu" value="<?php echo $val('judet_domiciliu'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ed_codpost" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Cod postal</label>
+                                    <input type="text" id="ed_codpost" name="codpost" value="<?php echo $val('codpost'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-5 gap-2">
+                                <div class="col-span-2">
+                                    <label for="ed_domstr" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Str.</label>
+                                    <input type="text" id="ed_domstr" name="domstr" value="<?php echo $val('domstr'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ed_domnr" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nr.</label>
+                                    <input type="text" id="ed_domnr" name="domnr" value="<?php echo $val('domnr'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ed_dombl" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Bl.</label>
+                                    <input type="text" id="ed_dombl" name="dombl" value="<?php echo $val('dombl'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ed_domsc" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Sc.</label>
+                                    <input type="text" id="ed_domsc" name="domsc" value="<?php echo $val('domsc'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-5 gap-2">
+                                <div>
+                                    <label for="ed_domet" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Et.</label>
+                                    <input type="text" id="ed_domet" name="domet" value="<?php echo $val('domet'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="ed_domap" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Ap.</label>
+                                    <input type="text" id="ed_domap" name="domap" value="<?php echo $val('domap'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="ed_tipmediuur" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Tip mediu</label>
+                                    <select id="ed_tipmediuur" name="tipmediuur" class="<?php echo $input_class; ?>">
+                                        <option value="">Selecteaza</option>
+                                        <option value="Urban" <?php echo $selected('tipmediuur', 'Urban'); ?>>Urban</option>
+                                        <option value="Rural" <?php echo $selected('tipmediuur', 'Rural'); ?>>Rural</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="ed_primaria" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Primaria de domiciliu</label>
+                                    <input type="text" id="ed_primaria" name="primaria" value="<?php echo $val('primaria'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card 4: Handicap -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="heart" class="w-5 h-5" aria-hidden="true"></i>
+                        Handicap
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="handicap">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="handicap">
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Grad handicap</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('hgrad'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Valabilitate certificat</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('hdur'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Motiv handicap</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('hmotiv'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Nr. certificat</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cenr'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Data certificat</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cedata', 'date'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Expirare certificat</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('ceexp', 'date'); ?></dd>
+                        </div>
+                        <div class="col-span-2">
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Diagnostic</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('diagnostic'); ?></dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="card-edit hidden p-4" data-card="handicap">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
+                        <input type="hidden" name="card" value="handicap">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="eh_hgrad" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Grad handicap</label>
+                                    <select id="eh_hgrad" name="hgrad" class="<?php echo $input_class; ?>">
+                                        <option value="">Selecteaza</option>
+                                        <option value="Grav cu insotitor" <?php echo $selected('hgrad', 'Grav cu insotitor'); ?>>Grav cu insotitor</option>
+                                        <option value="Grav" <?php echo $selected('hgrad', 'Grav'); ?>>Grav</option>
+                                        <option value="Accentuat" <?php echo $selected('hgrad', 'Accentuat'); ?>>Accentuat</option>
+                                        <option value="Mediu" <?php echo $selected('hgrad', 'Mediu'); ?>>Mediu</option>
+                                        <option value="Usor" <?php echo $selected('hgrad', 'Usor'); ?>>Usor</option>
+                                        <option value="Alt handicap" <?php echo $selected('hgrad', 'Alt handicap'); ?>>Alt handicap</option>
+                                        <option value="Asociat" <?php echo $selected('hgrad', 'Asociat'); ?>>Asociat</option>
+                                        <option value="Fara handicap" <?php echo $selected('hgrad', 'Fara handicap'); ?>>Fara handicap</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="eh_hdur" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Valabilitate certificat</label>
+                                    <select id="eh_hdur" name="hdur" class="<?php echo $input_class; ?>">
+                                        <option value="">Selecteaza</option>
+                                        <option value="Permanent" <?php echo $selected('hdur', 'Permanent'); ?>>Permanent</option>
+                                        <option value="Revizuibil" <?php echo $selected('hdur', 'Revizuibil'); ?>>Revizuibil</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="eh_hmotiv" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Motiv handicap</label>
+                                <input type="text" id="eh_hmotiv" name="hmotiv" value="<?php echo $val('hmotiv'); ?>" class="<?php echo $input_class; ?>">
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label for="eh_cenr" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nr. certificat</label>
+                                    <input type="text" id="eh_cenr" name="cenr" value="<?php echo $val('cenr'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="eh_cedata" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data certificat</label>
+                                    <input type="date" id="eh_cedata" name="cedata" value="<?php echo $val('cedata'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="eh_ceexp" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Expirare certificat</label>
+                                    <input type="date" id="eh_ceexp" name="ceexp" value="<?php echo $val('ceexp'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="eh_diagnostic" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Diagnostic</label>
+                                <textarea id="eh_diagnostic" name="diagnostic" rows="3" class="<?php echo $input_class; ?>"><?php echo $val('diagnostic'); ?></textarea>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card 5: Act de Identitate -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="id-card" class="w-5 h-5" aria-hidden="true"></i>
+                        Act de Identitate
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="act-identitate">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="act-identitate">
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Seria C.I.</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('ciseria'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Numar C.I.</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cinumar'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Eliberat de</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cielib'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Data eliberarii</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cidataelib', 'date'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Data expirarii</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('cidataexp', 'date'); ?></dd>
+                        </div>
+                        <?php if (!empty($membru['doc_ci'])): ?>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Atasament</dt>
+                            <dd>
+                                <a href="uploads/ci/<?php echo htmlspecialchars($membru['doc_ci']); ?>" target="_blank"
+                                   class="inline-flex items-center gap-1 text-sm text-amber-700 dark:text-amber-300 hover:underline">
+                                    <i data-lucide="download" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                    Descarca
+                                </a>
+                            </dd>
+                        </div>
+                        <?php endif; ?>
+                    </dl>
+                </div>
+                <div class="card-edit hidden p-4" data-card="act-identitate">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>" enctype="multipart/form-data">
+                        <input type="hidden" name="card" value="act-identitate">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="eai_ciseria" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Seria C.I.</label>
+                                    <input type="text" id="eai_ciseria" name="ciseria" value="<?php echo $val('ciseria'); ?>" maxlength="2" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="eai_cinumar" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Numar C.I.</label>
+                                    <input type="text" id="eai_cinumar" name="cinumar" value="<?php echo $val('cinumar'); ?>" maxlength="7" inputmode="numeric" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label for="eai_cielib" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Eliberat de</label>
+                                    <input type="text" id="eai_cielib" name="cielib" value="<?php echo $val('cielib'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="eai_cidataelib" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data eliberarii</label>
+                                    <input type="date" id="eai_cidataelib" name="cidataelib" value="<?php echo $val('cidataelib'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="eai_cidataexp" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data expirarii</label>
+                                    <input type="date" id="eai_cidataexp" name="cidataexp" value="<?php echo $val('cidataexp'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div>
+                                <?php if (!empty($membru['doc_ci'])): ?>
+                                <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">Fisier actual: <?php echo htmlspecialchars($membru['doc_ci']); ?></p>
+                                <?php endif; ?>
+                                <label for="eai_doc_ci" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Incarca fisier nou</label>
+                                <input type="file" id="eai_doc_ci" name="doc_ci" accept="image/*,.pdf" class="<?php echo $input_class; ?>">
+                                <p class="text-xs text-slate-600 dark:text-gray-400 mt-1">Maxim 5 MB (JPG, PNG, GIF, PDF)</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card 6: Dosar -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="folder" class="w-5 h-5" aria-hidden="true"></i>
+                        Dosar
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="dosar">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="dosar">
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Nr. dosar</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('dosarnr'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Data dosar</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('dosardata', 'date'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Status dosar</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white"><?php echo $dv('status_dosar'); ?></dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm text-slate-500 dark:text-gray-400">Acord GDPR</dt>
+                            <dd class="font-medium text-slate-900 dark:text-white">
+                                <?php echo !empty($membru['gdpr']) ? '<span class="text-emerald-600 dark:text-emerald-400">Da</span>' : '<span class="text-red-600 dark:text-red-400">Nu</span>'; ?>
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+                <div class="card-edit hidden p-4" data-card="dosar">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
+                        <input type="hidden" name="card" value="dosar">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="edd_dosarnr" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nr. dosar</label>
+                                    <input type="text" id="edd_dosarnr" name="dosarnr" value="<?php echo $val('dosarnr'); ?>" maxlength="6" class="<?php echo $input_class; ?>">
+                                </div>
+                                <div>
+                                    <label for="edd_dosardata" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data dosar</label>
+                                    <input type="date" id="edd_dosardata" name="dosardata" value="<?php echo $val('dosardata'); ?>" class="<?php echo $input_class; ?>">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="edd_status_dosar" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Status dosar</label>
+                                    <select id="edd_status_dosar" name="status_dosar" class="<?php echo $input_class; ?>">
+                                        <option value="Activ" <?php echo $selected('status_dosar', 'Activ'); ?>>Activ</option>
+                                        <option value="Expirat" <?php echo $selected('status_dosar', 'Expirat'); ?>>Expirat</option>
+                                        <option value="Suspendat" <?php echo $selected('status_dosar', 'Suspendat'); ?>>Suspendat</option>
+                                        <option value="Retras" <?php echo $selected('status_dosar', 'Retras'); ?>>Retras</option>
+                                        <option value="Decedat" <?php echo $selected('status_dosar', 'Decedat'); ?>>Decedat</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end pb-2">
+                                    <label class="flex items-center">
+                                        <input type="checkbox" name="gdpr" value="1" <?php echo $checked('gdpr', '1'); ?>
+                                               class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
+                                        <span class="ml-2 text-sm text-slate-800 dark:text-gray-200">Acord GDPR</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card 7: Observatii -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-5 h-5" aria-hidden="true"></i>
+                        Observatii
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="observatii">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="observatii">
+                    <div class="text-slate-900 dark:text-white">
+                        <?php echo !empty($membru['notamembru']) ? nl2br(htmlspecialchars($membru['notamembru'])) : '<span class="text-slate-400 dark:text-gray-500">Nicio observatie</span>'; ?>
+                    </div>
+                </div>
+                <div class="card-edit hidden p-4" data-card="observatii">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
+                        <input type="hidden" name="card" value="observatii">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div>
+                            <textarea name="notamembru" rows="5" class="<?php echo $input_class; ?>"><?php echo $val('notamembru'); ?></textarea>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Card 8: Atasament Certificat Handicap -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="paperclip" class="w-5 h-5" aria-hidden="true"></i>
+                        Atasament Certificat Handicap
+                    </h3>
+                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="atasament-ch">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Editeaza
+                    </button>
+                </div>
+                <div class="card-view p-4" data-card="atasament-ch">
+                    <?php if (!empty($membru['doc_ch'])): ?>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($membru['doc_ch']); ?></span>
+                        <a href="uploads/ch/<?php echo htmlspecialchars($membru['doc_ch']); ?>" target="_blank"
+                           class="inline-flex items-center gap-1 px-2 py-1 text-sm rounded border border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30">
+                            <i data-lucide="download" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                            Descarca
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <p class="text-slate-400 dark:text-gray-500">Niciun fisier incarcat</p>
+                    <?php endif; ?>
+                </div>
+                <div class="card-edit hidden p-4" data-card="atasament-ch">
+                    <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>" enctype="multipart/form-data">
+                        <input type="hidden" name="card" value="atasament-ch">
+                        <input type="hidden" name="actualizeaza_membru" value="1">
+                        <?php echo csrf_field(); ?>
+                        <div>
+                            <?php if (!empty($membru['doc_ch'])): ?>
+                            <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">Fisier actual: <?php echo htmlspecialchars($membru['doc_ch']); ?></p>
+                            <?php endif; ?>
+                            <label for="ech_doc_ch" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Incarca fisier nou</label>
+                            <input type="file" id="ech_doc_ch" name="doc_ch" accept="image/*,.pdf" class="<?php echo $input_class; ?>">
+                            <p class="text-xs text-slate-600 dark:text-gray-400 mt-1">Maxim 5 MB (JPG, PNG, GIF, PDF)</p>
+                        </div>
+                        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+                            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
+                            </button>
+                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </div>
+        <!-- End cards grid -->
+
+        <!-- Documente generate -->
+        <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <i data-lucide="file-text" class="w-5 h-5" aria-hidden="true"></i>
+                Documente generate
+            </h2>
+            <?php
+            $documente_generate = [];
+            $doc_dir = APP_ROOT . DIRECTORY_SEPARATOR . 'documentegenerate';
+            if (is_dir($doc_dir)) {
+                $pattern = $doc_dir . DIRECTORY_SEPARATOR . '*-' . preg_replace('/\s+/', '', ($membru['nume'] ?? '')) . ($membru['prenume'] ?? '') . '-*.pdf';
+                foreach (glob($pattern) as $file_path) {
+                    $basename = basename($file_path);
+                    $documente_generate[] = [
+                        'nume' => $basename,
+                        'path' => $file_path,
+                    ];
+                }
+            }
+            if (empty($documente_generate)): ?>
+                <p class="text-sm text-slate-600 dark:text-gray-400">Nu exista documente generate salvate pentru acest membru.</p>
+            <?php else: ?>
+                <ul class="space-y-2 text-sm text-slate-800 dark:text-gray-200">
+                    <?php foreach ($documente_generate as $doc):
+                        $nume_afisat = $doc['nume'];
+                        $url = 'documentegenerate/' . rawurlencode($doc['nume']);
+                    ?>
+                    <li class="flex items-center justify-between gap-2">
+                        <span class="truncate" title="<?php echo htmlspecialchars($nume_afisat); ?>">
+                            <?php echo htmlspecialchars($nume_afisat); ?>
+                        </span>
+                        <a href="<?php echo $url; ?>" target="_blank"
+                           class="inline-flex items-center px-2 py-1 text-xs rounded border border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                           aria-label="Descarca documentul <?php echo htmlspecialchars($nume_afisat); ?>">
+                            <i data-lucide="download" class="w-3 h-3 mr-1" aria-hidden="true"></i>
+                            Descarca
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
         </div>
 
+        <!-- Istoric incasari -->
         <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-istoric-incasari">
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2" id="titlu-istoric-incasari">
                 <i data-lucide="history" class="w-5 h-5" aria-hidden="true"></i>
@@ -262,6 +1008,75 @@
             </div>
             <?php endif; ?>
         </div>
+
+        <!-- Jurnal Activitate -->
+        <section class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-jurnal-activitate">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2" id="titlu-jurnal-activitate">
+                <i data-lucide="scroll-text" class="w-5 h-5" aria-hidden="true"></i>
+                Jurnal Activitate
+            </h2>
+            <?php if (empty($jurnal)): ?>
+            <p class="text-slate-600 dark:text-gray-400 py-4">Nu exista inregistrari in jurnalul de activitate pentru acest membru.</p>
+            <?php else: ?>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-labelledby="titlu-jurnal-activitate">
+                    <thead class="bg-slate-50 dark:bg-gray-700">
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider whitespace-nowrap">Data</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider">Actiune</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider whitespace-nowrap">Utilizator</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-slate-200 dark:divide-gray-700">
+                        <?php foreach ($jurnal as $log):
+                            $sursa = $log['sursa'] ?? 'log';
+                            $dt = $log['data_ora'] ?? $log['created_at'] ?? '';
+                            $ts = $dt ? strtotime($dt) : false;
+
+                            // Iconița și badge-ul după sursă
+                            if ($sursa === 'interactiune') {
+                                $icon = strpos($log['actiune'] ?? '', 'APEL') === 0 ? 'phone' : 'building';
+                                $badge_class = 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200';
+                                $badge_text = strpos($log['actiune'] ?? '', 'APEL') === 0 ? 'Apel' : 'Vizită';
+                            } elseif ($sursa === 'document') {
+                                $icon = 'file-text';
+                                $badge_class = 'bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200';
+                                $badge_text = 'Document';
+                            } else {
+                                $icon = 'activity';
+                                $badge_class = 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300';
+                                $badge_text = 'Activitate';
+                            }
+                        ?>
+                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
+                            <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
+                                <?php echo $ts ? date('d.m.Y H:i', $ts) : '—'; ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium <?php echo $badge_class; ?> mb-1">
+                                    <i data-lucide="<?php echo $icon; ?>" class="w-3 h-3" aria-hidden="true"></i>
+                                    <?php echo $badge_text; ?>
+                                </span>
+                                <span class="text-slate-900 dark:text-white block">
+                                    <?php echo nl2br(htmlspecialchars($log['actiune'] ?? '')); ?>
+                                </span>
+                                <?php if (!empty($log['detalii_extra'])): ?>
+                                <span class="text-xs text-slate-500 dark:text-gray-400 block mt-1">
+                                    <?php echo nl2br(htmlspecialchars($log['detalii_extra'])); ?>
+                                </span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
+                                <?php echo htmlspecialchars($log['utilizator'] ?? ''); ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif; ?>
+        </section>
+
     </div>
     <?php endif; ?>
 </main>
@@ -274,6 +1089,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
+
     var eroareEl = document.getElementById('mesaj-eroare-salvare');
     if (eroareEl) {
         eroareEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -281,53 +1097,42 @@ document.addEventListener('DOMContentLoaded', function() {
         if (text) { alert('Salvare esuata:\n\n' + text); }
     }
 
-    var formProfil = document.getElementById('form-membru-profil');
-    var btnEdit = document.getElementById('btn-editeaza-datele');
-    var btnSave = document.getElementById('btn-salveaza-datele');
+    // Card edit/cancel toggle
+    document.querySelectorAll('.btn-edit-card').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var cardName = this.dataset.card;
+            var section = this.closest('section');
+            section.querySelector('.card-view[data-card="' + cardName + '"]').classList.add('hidden');
+            section.querySelector('.card-edit[data-card="' + cardName + '"]').classList.remove('hidden');
+            this.classList.add('hidden');
+            // Focus first input
+            var firstInput = section.querySelector('.card-edit input:not([type="hidden"]), .card-edit select, .card-edit textarea');
+            if (firstInput) firstInput.focus();
+            // Re-init lucide icons for the edit form
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+    });
 
-    if (formProfil && btnEdit && btnSave) {
-        var inEditMode = false;
+    document.querySelectorAll('.btn-cancel-card').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var section = this.closest('section');
+            section.querySelector('.card-view').classList.remove('hidden');
+            section.querySelector('.card-edit').classList.add('hidden');
+            section.querySelector('.btn-edit-card').classList.remove('hidden');
+        });
+    });
 
-        function setEditMode(edit) {
-            inEditMode = edit;
-
-            var fields = formProfil.querySelectorAll('input, select, textarea');
-            fields.forEach(function(el) {
-                if (el.type === 'hidden') return;
-                if (edit) {
-                    el.removeAttribute('disabled');
-                    el.classList.remove('opacity-50', 'cursor-not-allowed');
-                } else {
-                    el.setAttribute('disabled', 'disabled');
-                    el.classList.add('opacity-50', 'cursor-not-allowed');
+    // File size validation
+    document.querySelectorAll('input[type="file"]').forEach(function(field) {
+        field.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                if (this.files[0].size > 5 * 1024 * 1024) {
+                    alert('Fisierul depaseste 5 MB.');
+                    this.value = '';
                 }
-            });
-
-            btnSave.classList.toggle('hidden', !edit);
-            btnEdit.setAttribute('aria-pressed', edit ? 'true' : 'false');
-            var labelSpan = btnEdit.querySelector('span');
-            if (!labelSpan) {
-                btnEdit.textContent = edit ? 'Salveaza datele' : 'Editeaza datele';
-            } else {
-                labelSpan.textContent = edit ? 'Salveaza datele' : 'Editeaza datele';
-            }
-        }
-
-        setEditMode(false);
-
-        btnEdit.addEventListener('click', function() {
-            if (!inEditMode) {
-                setEditMode(true);
-                var firstInput = formProfil.querySelector('input:not([type="hidden"]), select, textarea');
-                if (firstInput) {
-                    firstInput.focus();
-                }
-            } else {
-                btnSave.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                btnSave.focus();
             }
         });
-    }
+    });
 });
 </script>
 </body>

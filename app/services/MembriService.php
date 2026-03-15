@@ -537,6 +537,36 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
     // Extrage informatii din CNP
     $info_cnp = extrage_info_cnp($cnp);
 
+    // For partial (per-card) updates: detect which card was submitted
+    $card_submitted = $post_data['card'] ?? null;
+
+    // For partial updates, load existing member data to merge
+    $membru_existent_data = null;
+    if ($is_update && $card_submitted) {
+        $stmt_ex = $pdo->prepare('SELECT * FROM membri WHERE id = ?');
+        $stmt_ex->execute([(int)$post_data['membru_id']]);
+        $membru_existent_data = $stmt_ex->fetch(PDO::FETCH_ASSOC);
+        if (!$membru_existent_data) {
+            return ['success' => false, 'error' => 'Membru nu exista in baza de date.', 'membru_id' => null];
+        }
+        // Merge: use POST data for submitted fields, keep existing data for the rest
+        $all_fields = ['dosarnr','dosardata','status_dosar','nume','prenume','telefonnev','telefonapartinator',
+            'nume_apartinator','prenume_apartinator','email','datanastere','locnastere','judnastere',
+            'ciseria','cinumar','cielib','cidataelib','cidataexp','gdpr','codpost','tipmediuur',
+            'domloc','judet_domiciliu','domstr','domnr','dombl','domsc','domet','domap','sex',
+            'hgrad','hmotiv','diagnostic','hdur','cnp','cenr','cedata','ceexp','primaria','notamembru'];
+        foreach ($all_fields as $f) {
+            if (!array_key_exists($f, $post_data)) {
+                $post_data[$f] = $membru_existent_data[$f] ?? '';
+            }
+        }
+        // Re-read merged values for validation
+        $nume = trim($post_data['nume'] ?? '');
+        $prenume = trim($post_data['prenume'] ?? '');
+        $cnp = preg_replace('/\D/', '', $post_data['cnp'] ?? '');
+        $info_cnp = extrage_info_cnp($cnp);
+    }
+
     // Pregateste datele
     $dosarnr = trim($post_data['dosarnr'] ?? '') ?: null;
     $dosardata = !empty($post_data['dosardata']) ? date('Y-m-d', strtotime($post_data['dosardata'])) : null;
@@ -741,6 +771,86 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
     } catch (Exception $e) {
         error_log('Eroare MembriService (Exception): ' . $e->getMessage());
         return ['success' => false, 'error' => 'A aparut o eroare neasteptata: ' . $e->getMessage(), 'membru_id' => $membru_id];
+    }
+}
+
+/**
+ * Obtine jurnalul de activitate complet pentru un membru.
+ * Cauta dupa membru_id si dupa numele membrului in text.
+ *
+ * @return array Lista de intrari din jurnal
+ */
+function membri_jurnal_activitate(PDO $pdo, int $membru_id, int $limit = 100): array {
+    if ($membru_id <= 0) return [];
+
+    try {
+        $membru = membri_get($pdo, $membru_id);
+        if (!$membru) return [];
+
+        $nume = trim(($membru['nume'] ?? '') . ' ' . ($membru['prenume'] ?? ''));
+        $jurnal = [];
+
+        // 1. Log activitate (editări, salvări, documente generate, etc.)
+        $stmt = $pdo->prepare("
+            SELECT 'log' AS sursa, actiune, utilizator, data_ora, NULL AS detalii_extra
+            FROM log_activitate
+            WHERE membru_id = ?
+               OR actiune LIKE ?
+               OR actiune LIKE ?
+            ORDER BY data_ora DESC
+            LIMIT " . (int)$limit);
+        $stmt->execute([$membru_id, '%membru ID ' . $membru_id . '%', '%' . $pdo->quote($nume) . '%']);
+
+        // Safer: use name directly
+        $stmt2 = $pdo->prepare("
+            SELECT 'log' AS sursa, actiune, utilizator, data_ora, NULL AS detalii_extra
+            FROM log_activitate
+            WHERE membru_id = ?
+               OR actiune LIKE ?
+            ORDER BY data_ora DESC
+            LIMIT " . (int)$limit);
+        $stmt2->execute([$membru_id, '%' . $nume . '%']);
+        $jurnal = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+        // 2. Interacțiuni din registru (apeluri, vizite) — căutare după nume persoană
+        if ($nume !== '') {
+            $stmt_int = $pdo->prepare("
+                SELECT 'interactiune' AS sursa,
+                       CONCAT(UPPER(tip), ': ', persoana, ' — ', COALESCE(s.nume, subiect_alt, '')) AS actiune,
+                       r.utilizator,
+                       r.data_ora,
+                       CONCAT('Tip: ', tip, ' | Subiect: ', COALESCE(s.nume, r.subiect_alt, '-'), ' | Note: ', COALESCE(r.notite, '-')) AS detalii_extra
+                FROM registru_interactiuni_v2 r
+                LEFT JOIN registru_interactiuni_v2_subiecte s ON r.subiect_id = s.id
+                WHERE r.persoana LIKE ?
+                ORDER BY r.data_ora DESC
+                LIMIT " . (int)$limit);
+            $stmt_int->execute(['%' . $nume . '%']);
+            $interactiuni = $stmt_int->fetchAll(PDO::FETCH_ASSOC);
+            $jurnal = array_merge($jurnal, $interactiuni);
+        }
+
+        // 3. Documente generate — extrage din log cu link
+        foreach ($jurnal as &$entry) {
+            if ($entry['sursa'] === 'log' && stripos($entry['actiune'], 'Document generat') !== false) {
+                $entry['sursa'] = 'document';
+                // Extrage numele fișierului din actiune dacă e posibil
+                if (preg_match('/Document generat\s*-\s*(.+?)(?:\s*\/|$)/', $entry['actiune'], $m)) {
+                    $entry['detalii_extra'] = trim($m[1]);
+                }
+            }
+        }
+        unset($entry);
+
+        // Sortează cronologic descendent
+        usort($jurnal, function($a, $b) {
+            return strtotime($b['data_ora'] ?? '0') - strtotime($a['data_ora'] ?? '0');
+        });
+
+        // Limită finală
+        return array_slice($jurnal, 0, $limit);
+    } catch (PDOException $e) {
+        return [];
     }
 }
 
