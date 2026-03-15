@@ -91,6 +91,7 @@
         var btn = e.target.closest('.btn-deschide-incasari');
         if (btn && dialog) {
             e.preventDefault();
+            e.stopPropagation();
             mid.value = btn.getAttribute('data-membru-id') || '';
             valCot.value = btn.getAttribute('data-valoare-cot') || '0';
             var ach = btn.getAttribute('data-cot-achitata');
@@ -147,12 +148,15 @@
         var fd = new FormData(form);
         fd.set('suma', s);
         fetch('/api/incasari-salveaza', { method: 'POST', body: fd, credentials: 'same-origin' })
-            .then(function(r){ return r.json(); })
+            .then(function(r){
+                if (!r.ok) { throw new Error('HTTP ' + r.status); }
+                return r.json();
+            })
             .then(function(data){
                 if (data.ok && cb) cb(data);
                 else alert(data.eroare || 'Eroare la salvare.');
             })
-            .catch(function(){ alert('Eroare de rețea.'); });
+            .catch(function(err){ alert('Eroare: ' + (err.message || 'Eroare de rețea. Reîncărcați pagina.')); });
     }
 
     btnChitanta.addEventListener('click', function(){
