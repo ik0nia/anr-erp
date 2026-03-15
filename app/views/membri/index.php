@@ -55,8 +55,8 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
         </div>
         <?php endif; ?>
 
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <!-- Stanga: camp cautare + butoane -->
+        <!-- Rând 1: Căutare (stânga) + Adaugă Membru (dreapta) -->
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
             <form method="get" action="/membri" class="flex items-center gap-2 shrink-0">
                 <input type="hidden" name="sort" value="<?php echo htmlspecialchars($sort_col); ?>">
                 <input type="hidden" name="dir" value="<?php echo htmlspecialchars(strtolower($sort_dir)); ?>">
@@ -89,43 +89,6 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 </button>
             </form>
 
-            <!-- Centru: butoane tipuri membri -->
-            <div class="flex items-center gap-2 shrink-0 flex-wrap">
-                <a href="/membri?status=activi&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
-                   class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'activi' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
-                    Membri Activi (<?php echo $membri_activi_count; ?>)
-                </a>
-                <a href="/membri?status=suspendati&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
-                   class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'suspendati' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
-                    Membri Suspendati/Expirati (<?php echo $membri_suspendati_expirati_count; ?>)
-                </a>
-                <a href="/membri?status=arhiva&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
-                   class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'arhiva' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
-                    Arhiva Membri
-                </a>
-                <a href="/membri?status=activi&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?>&avertizari=<?php echo $avertizari_filter ? '0' : '1'; ?><?php echo $actualizare_cnp_ci_filter ? '&actualizare_cnp_ci=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
-                   class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $avertizari_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
-                   aria-label="<?php echo $avertizari_filter ? 'Dezactiveaza filtrarea dupa actualizare date' : 'Afiseaza doar membrii cu date de actualizat'; ?>">
-                    <i data-lucide="alert-triangle" class="w-4 h-4" aria-hidden="true"></i>
-                    Actualizare date (<?php echo $membri_cu_avertizari; ?>)
-                </a>
-                <?php if ($membri_actualizare_cnp_ci > 0): ?>
-                <a href="/membri?status=<?php echo urlencode($status_filter); ?>&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?>&actualizare_cnp_ci=<?php echo $actualizare_cnp_ci_filter ? '0' : '1'; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
-                   class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $actualizare_cnp_ci_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
-                   aria-label="<?php echo $actualizare_cnp_ci_filter ? 'Dezactiveaza filtrarea dupa actualizare CNP/CI' : 'Afiseaza doar membrii care necesita actualizare CNP/CI'; ?>">
-                    <i data-lucide="file-edit" class="w-4 h-4" aria-hidden="true"></i>
-                    Actualizare CNP/CI (<?php echo $membri_actualizare_cnp_ci; ?>)
-                </a>
-                <?php endif; ?>
-                <a href="/membri?status=<?php echo urlencode($status_filter); ?>&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $actualizare_cnp_ci_filter ? '&actualizare_cnp_ci=1' : ''; ?>&aniversari_azi=<?php echo $aniversari_azi_filter ? '0' : '1'; ?>"
-                   class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $aniversari_azi_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
-                   aria-label="<?php echo $aniversari_azi_filter ? 'Dezactiveaza filtrarea aniversari azi' : 'Afiseaza doar membrii care isi serbeaza ziua de nastere azi'; ?>">
-                    <i data-lucide="cake" class="w-4 h-4" aria-hidden="true"></i>
-                    Aniversari azi (<?php echo $membri_aniversari_azi_count; ?>)
-                </a>
-            </div>
-
-            <!-- Dreapta: buton adauga membru -->
             <button type="button"
                     onclick="document.getElementById('formular-membru').showModal()"
                     class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
@@ -136,6 +99,43 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 <i data-lucide="user-plus" class="mr-2 w-5 h-5" aria-hidden="true"></i>
                 Adauga Membru Nou
             </button>
+        </div>
+
+        <!-- Rând 2: Filtre -->
+        <div class="mb-6 flex items-center gap-2 flex-wrap">
+            <a href="/membri?status=activi&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'activi' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
+                Membri Activi (<?php echo $membri_activi_count; ?>)
+            </a>
+            <a href="/membri?status=suspendati&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'suspendati' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
+                Membri Suspendati/Expirati (<?php echo $membri_suspendati_expirati_count; ?>)
+            </a>
+            <a href="/membri?status=arhiva&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'arhiva' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
+                Arhiva Membri
+            </a>
+            <span class="text-slate-300 dark:text-gray-600" aria-hidden="true">|</span>
+            <a href="/membri?status=activi&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?>&avertizari=<?php echo $avertizari_filter ? '0' : '1'; ?><?php echo $actualizare_cnp_ci_filter ? '&actualizare_cnp_ci=1' : ''; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $avertizari_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
+               aria-label="<?php echo $avertizari_filter ? 'Dezactiveaza filtrarea dupa actualizare date' : 'Afiseaza doar membrii cu date de actualizat'; ?>">
+                <i data-lucide="alert-triangle" class="w-4 h-4" aria-hidden="true"></i>
+                Actualizare date (<?php echo $membri_cu_avertizari; ?>)
+            </a>
+            <?php if ($membri_actualizare_cnp_ci > 0): ?>
+            <a href="/membri?status=<?php echo urlencode($status_filter); ?>&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?>&actualizare_cnp_ci=<?php echo $actualizare_cnp_ci_filter ? '0' : '1'; ?><?php echo $aniversari_azi_filter ? '&aniversari_azi=1' : ''; ?>"
+               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $actualizare_cnp_ci_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
+               aria-label="<?php echo $actualizare_cnp_ci_filter ? 'Dezactiveaza filtrarea dupa actualizare CNP/CI' : 'Afiseaza doar membrii care necesita actualizare CNP/CI'; ?>">
+                <i data-lucide="file-edit" class="w-4 h-4" aria-hidden="true"></i>
+                Actualizare CNP/CI (<?php echo $membri_actualizare_cnp_ci; ?>)
+            </a>
+            <?php endif; ?>
+            <a href="/membri?status=<?php echo urlencode($status_filter); ?>&amp;reset_mesaj=1<?php echo !empty($cautare) ? '&cautare=' . urlencode($cautare) : ''; ?>&per_page=<?php echo $per_page; ?><?php echo $avertizari_filter ? '&avertizari=1' : ''; ?><?php echo $actualizare_cnp_ci_filter ? '&actualizare_cnp_ci=1' : ''; ?>&aniversari_azi=<?php echo $aniversari_azi_filter ? '0' : '1'; ?>"
+               class="px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2 <?php echo $aniversari_azi_filter ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>"
+               aria-label="<?php echo $aniversari_azi_filter ? 'Dezactiveaza filtrarea aniversari azi' : 'Afiseaza doar membrii care isi serbeaza ziua de nastere azi'; ?>">
+                <i data-lucide="cake" class="w-4 h-4" aria-hidden="true"></i>
+                Aniversari azi (<?php echo $membri_aniversari_azi_count; ?>)
+            </a>
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden border border-slate-200 dark:border-gray-700">
