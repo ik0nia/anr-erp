@@ -67,13 +67,14 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 <?php if ($actualizare_cnp_ci_filter): ?><input type="hidden" name="actualizare_cnp_ci" value="1"><?php endif; ?>
                 <?php if ($aniversari_azi_filter): ?><input type="hidden" name="aniversari_azi" value="1"><?php endif; ?>
                 <div class="relative">
-                    <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500 pointer-events-none" aria-hidden="true"></i>
+                    <i data-lucide="search" class="w-5 h-5 absolute top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500 pointer-events-none" aria-hidden="true" style="left: 14px;"></i>
                     <input type="search"
                            name="cautare"
                            id="cautare-membri-live"
                            value="<?php echo htmlspecialchars($cautare); ?>"
                            placeholder="Cauta dupa nume, telefon, email, nr. dosar..."
-                           class="w-[32rem] pl-[3.25rem] pr-4 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base text-slate-900 dark:text-white dark:bg-gray-700"
+                           style="padding-left: 44px; width: 600px;"
+                           class="pr-4 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-base text-slate-900 dark:text-white dark:bg-gray-700"
                            aria-label="Cauta membri"
                            autocomplete="off">
                 </div>
