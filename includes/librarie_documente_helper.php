@@ -11,29 +11,8 @@ define('LIBRARIE_DOC_EXTENSII', ['pdf', 'doc', 'docx', 'xls', 'xlsx']);
  * Asigură tabelul librarie_documente
  */
 function librarie_documente_ensure_tables(PDO $pdo): void {
-    static $done = false;
-    if ($done) return;
-    $done = true;
-    $pdo->exec("CREATE TABLE IF NOT EXISTS librarie_documente (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        institutie VARCHAR(255) NOT NULL,
-        nume_document VARCHAR(500) NOT NULL,
-        nume_fisier VARCHAR(255) NOT NULL,
-        cale_fisier VARCHAR(500) NOT NULL,
-        ordine INT NOT NULL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_institutie (institutie),
-        INDEX idx_nume (nume_document),
-        INDEX idx_ordine (ordine)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    try {
-        $pdo->exec("ALTER TABLE librarie_documente ADD COLUMN ordine INT NOT NULL DEFAULT 0 AFTER cale_fisier");
-    } catch (PDOException $e) {
-        if (strpos($e->getMessage(), 'Duplicate column') === false) {
-            throw $e;
-        }
-    }
+    // No-op: schema is managed by install/schema/migration.php
+    return;
 }
 
 /**

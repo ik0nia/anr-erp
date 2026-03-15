@@ -10,35 +10,18 @@ require_once APP_ROOT . '/includes/log_helper.php';
 require_once APP_ROOT . '/includes/activitati_helper.php';
 
 /**
- * Cache per-request: coloanele tabelului activitati.
+ * Coloanele tabelului activitati. All columns exist in production.
  */
 function activitati_columns(PDO $pdo): array {
-    static $cols = null;
-    if ($cols !== null) return $cols;
-    try {
-        $cols = $pdo->query("SHOW COLUMNS FROM activitati")->fetchAll(PDO::FETCH_COLUMN);
-    } catch (PDOException $e) {
-        $cols = [];
-    }
-    return $cols;
+    // All columns exist - schema is managed by install/schema/migration.php
+    return ['id', 'data_ora', 'ora_finalizare', 'nume', 'locatie', 'responsabili', 'info_suplimentare', 'status', 'recurenta', 'lista_prezenta_id', 'created_at', 'updated_at'];
 }
 
 /**
- * Verifica si aplica migrari schema necesare.
+ * No-op: schema is managed by install/schema/migration.php
  */
 function activitati_ensure_schema(PDO $pdo): void {
-    $cols = activitati_columns($pdo);
-    try {
-        if (!in_array('recurenta', $cols)) {
-            $pdo->exec("ALTER TABLE activitati ADD COLUMN recurenta VARCHAR(20) DEFAULT NULL");
-        }
-        if (!in_array('lista_prezenta_id', $cols)) {
-            $pdo->exec("ALTER TABLE activitati ADD COLUMN lista_prezenta_id INT DEFAULT NULL");
-        }
-        if (!in_array('ora_finalizare', $cols)) {
-            $pdo->exec("ALTER TABLE activitati ADD COLUMN ora_finalizare TIME DEFAULT NULL AFTER data_ora");
-        }
-    } catch (PDOException $e) { /* migrare optionala */ }
+    return;
 }
 
 /**

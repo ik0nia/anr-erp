@@ -18,3 +18,13 @@ function calculeaza_varsta($data_nastere) {
     $birth = new DateTime($data_nastere);
     return (new DateTime())->diff($birth)->y;
 }
+
+/**
+ * Calculeaza varsta pentru afisare in liste de aniversari.
+ * Returneaza '-' in loc de null cand data lipseste.
+ */
+function calculeaza_varsta_aniversari($data_nastere) {
+    if (empty($data_nastere)) return '-';
+    $birth = new DateTime($data_nastere);
+    return (new DateTime())->diff($birth)->y;
+}

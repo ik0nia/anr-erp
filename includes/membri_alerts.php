@@ -246,52 +246,6 @@ function genereaza_alerts_membru_pentru_profil($membru, $pdo = null) {
 }
 
 /**
- * Generează mesajele de avertizare cu tipuri distincte
- */
-function genereaza_alerts_membru_detailed($membru) {
-    $alerts = [];
-    
-    // Verifică GDPR
-    if (empty($membru['gdpr']) || $membru['gdpr'] == 0) {
-        $alerts[] = [
-            'tip' => 'error',
-            'nivel' => 'error',
-            'mesaj' => 'Lipsește acordul GDPR'
-        ];
-    }
-    
-    // Verifică expirare CI
-    $cidataexp = $membru['cidataexp'] ?? null;
-    $cidataelib = $membru['cidataelib'] ?? null;
-    if (verifica_expirare_ci($cidataexp, $cidataelib)) {
-        // Preferă cidataexp dacă este disponibil
-        if (!empty($cidataexp)) {
-            $data_expirare = new DateTime($cidataexp);
-        } else {
-            $data_expirare = new DateTime($cidataelib);
-            $data_expirare->modify('+10 years');
-        }
-        $alerts[] = [
-            'tip' => 'warning',
-            'nivel' => 'warning_ci',
-            'mesaj' => 'Expira C.I. pe ' . $data_expirare->format('d.m.Y')
-        ];
-    }
-    
-    // Verifică expirare certificat handicap
-    if (verifica_expirare_certificat($membru['ceexp'] ?? null)) {
-        $data_expirare = new DateTime($membru['ceexp']);
-        $alerts[] = [
-            'tip' => 'warning',
-            'nivel' => 'warning_cert',
-            'mesaj' => 'Expira C.H. pe ' . $data_expirare->format('d.m.Y')
-        ];
-    }
-    
-    return $alerts;
-}
-
-/**
  * Afișează badge-uri de avertizare pentru tabel
  * @param array $membru Date membru
  * @param int|null $membru_id ID membru

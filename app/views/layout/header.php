@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars(get_platform_name()); ?> - Asociația Nevăzătorilor Bihor</title>
     <link href="/css/tailwind.css?v=<?php echo @filemtime(APP_ROOT . '/css/tailwind.css') ?: '1'; ?>" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.344.0"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         /* Contrast ridicat pentru accesibilitate WCAG 2.1 AA */

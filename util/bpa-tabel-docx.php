@@ -8,12 +8,12 @@ require_once __DIR__ . '/../includes/liste_helper.php';
 require_once __DIR__ . '/../includes/document_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
-if ($id <= 0) { header('Location: ajutoare-bpa.php'); exit; }
+if ($id <= 0) { header('Location: /ajutoare-bpa'); exit; }
 $tabel = bpa_get_tabel($pdo, $id);
-if (!$tabel) { header('Location: ajutoare-bpa.php'); exit; }
+if (!$tabel) { header('Location: /ajutoare-bpa'); exit; }
 
 $autoload = __DIR__ . '/../vendor/autoload.php';
-if (!file_exists($autoload)) { header('Location: ajutoare-bpa.php'); exit; }
+if (!file_exists($autoload)) { header('Location: /ajutoare-bpa'); exit; }
 require_once $autoload;
 
 use PhpOffice\PhpWord\PhpWord;

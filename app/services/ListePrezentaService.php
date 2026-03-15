@@ -21,27 +21,17 @@ function liste_prezenta_activitati_select(PDO $pdo): array {
 }
 
 /**
- * Asigura existenta coloanei ora_finalizare in tabela activitati.
+ * No-op: schema is managed by install/schema/migration.php
  */
 function liste_prezenta_ensure_ora_finalizare(PDO $pdo): void {
-    try {
-        $cols_check = $pdo->query("SHOW COLUMNS FROM activitati LIKE 'ora_finalizare'")->fetch();
-        if (!$cols_check) {
-            $pdo->exec("ALTER TABLE activitati ADD COLUMN ora_finalizare TIME DEFAULT NULL AFTER data_ora");
-        }
-    } catch (PDOException $e) {}
+    return;
 }
 
 /**
- * Asigura existenta coloanei nume_manual in tabela liste_prezenta_membri.
+ * No-op: schema is managed by install/schema/migration.php
  */
 function liste_prezenta_ensure_nume_manual(PDO $pdo): void {
-    try {
-        $cols_check = $pdo->query("SHOW COLUMNS FROM liste_prezenta_membri LIKE 'nume_manual'")->fetch();
-        if (!$cols_check) {
-            $pdo->exec("ALTER TABLE liste_prezenta_membri ADD COLUMN nume_manual VARCHAR(255) DEFAULT NULL AFTER membru_id");
-        }
-    } catch (PDOException $e) {}
+    return;
 }
 
 /**

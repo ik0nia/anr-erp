@@ -16,7 +16,7 @@
                 <i data-lucide="plus" class="w-4 h-4 mr-2" aria-hidden="true"></i>
                 Adaugă
             </a>
-            <a href="contacte-import.php" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Import din Excel/CSV">
+            <a href="/contacte/import" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Import din Excel/CSV">
                 <i data-lucide="upload" class="w-4 h-4 mr-2" aria-hidden="true"></i>
                 Import
             </a>

@@ -9,19 +9,10 @@ require_once __DIR__ . '/../bootstrap.php';
 require_once APP_ROOT . '/includes/log_helper.php';
 
 /**
- * Cache per-request: verifica o singura data daca exista coloana utilizator_id.
- * Elimina 5+ apeluri SHOW COLUMNS per request.
+ * utilizator_id column always exists (managed by install/schema/migration.php).
  */
 function taskuri_has_user_id(PDO $pdo): bool {
-    static $result = null;
-    if ($result !== null) return $result;
-    try {
-        $cols = $pdo->query("SHOW COLUMNS FROM taskuri")->fetchAll(PDO::FETCH_COLUMN);
-        $result = in_array('utilizator_id', $cols);
-    } catch (PDOException $e) {
-        $result = false;
-    }
-    return $result;
+    return true;
 }
 
 /**
@@ -210,6 +201,4 @@ function task_badge_class(string $nivel): string {
     return $badges[$nivel] ?? $badges['normal'];
 }
 
-// ---- Compatibilitate cu task_helper.php vechi ----
-// task_create() ramane definita in includes/task_helper.php
-// pentru compatibilitate cu index.php, registratura, administrativ etc.
+// task_helper.php a fost eliminat (task_create() nu era apelat nicăieri).

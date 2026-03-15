@@ -35,18 +35,9 @@ function registratura_urmatorul_nr(PDO $pdo) {
 
 /**
  * Citește o setare din tabelul setari
- * Asigură că tabelul setari există înainte de citire
  */
 function get_setare_registratura(PDO $pdo, string $cheie, $default = null) {
     try {
-        // Asigură existența tabelului setari
-        $pdo->exec("CREATE TABLE IF NOT EXISTS setari (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            cheie VARCHAR(100) NOT NULL UNIQUE,
-            valoare TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-        
         $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = ?");
         $stmt->execute([$cheie]);
         $r = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -55,7 +46,6 @@ function get_setare_registratura(PDO $pdo, string $cheie, $default = null) {
         }
         return $default;
     } catch (PDOException $e) {
-        // În caz de eroare, returnează valoarea default
         return $default;
     }
 }
@@ -64,64 +54,8 @@ function get_setare_registratura(PDO $pdo, string $cheie, $default = null) {
  * Asigură existența tabelului registratura cu toate coloanele necesare
  */
 function ensure_registratura_table(PDO $pdo) {
-    static $done = false;
-    if ($done) return;
-    $done = true;
-    $pdo->exec("CREATE TABLE IF NOT EXISTS setari (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        cheie VARCHAR(100) NOT NULL UNIQUE,
-        valoare TEXT,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS registratura (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nr_intern INT NOT NULL DEFAULT 0,
-        nr_inregistrare VARCHAR(50) NOT NULL,
-        data_ora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        utilizator VARCHAR(100) NOT NULL,
-        tip_act VARCHAR(100) DEFAULT NULL,
-        detalii TEXT DEFAULT NULL,
-        nr_document VARCHAR(100) DEFAULT NULL,
-        data_document DATE DEFAULT NULL,
-        provine_din VARCHAR(500) DEFAULT NULL,
-        continut_document TEXT DEFAULT NULL,
-        destinatar_document VARCHAR(500) DEFAULT NULL,
-        task_deschis TINYINT(1) NOT NULL DEFAULT 0,
-        task_id INT DEFAULT NULL,
-        membru_id INT DEFAULT NULL,
-        document_path VARCHAR(500) DEFAULT NULL,
-        INDEX idx_data_ora (data_ora),
-        INDEX idx_utilizator (utilizator),
-        INDEX idx_nr_inregistrare (nr_inregistrare),
-        INDEX idx_nr_intern (nr_intern)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    // Adaugă coloane noi dacă nu există
-    try {
-        $cols = $pdo->query("SHOW COLUMNS FROM registratura")->fetchAll(PDO::FETCH_COLUMN);
-    } catch (PDOException $e) {
-        return;
-    }
-    $to_add = [
-        'nr_intern' => "ALTER TABLE registratura ADD COLUMN nr_intern INT NOT NULL DEFAULT 0 AFTER id",
-        'nr_document' => "ALTER TABLE registratura ADD COLUMN nr_document VARCHAR(100) DEFAULT NULL AFTER detalii",
-        'data_document' => "ALTER TABLE registratura ADD COLUMN data_document DATE DEFAULT NULL AFTER nr_document",
-        'provine_din' => "ALTER TABLE registratura ADD COLUMN provine_din VARCHAR(500) DEFAULT NULL AFTER data_document",
-        'continut_document' => "ALTER TABLE registratura ADD COLUMN continut_document TEXT DEFAULT NULL AFTER provine_din",
-        'destinatar_document' => "ALTER TABLE registratura ADD COLUMN destinatar_document VARCHAR(500) DEFAULT NULL AFTER continut_document",
-        'task_deschis' => "ALTER TABLE registratura ADD COLUMN task_deschis TINYINT(1) NOT NULL DEFAULT 0 AFTER destinatar_document",
-        'task_id' => "ALTER TABLE registratura ADD COLUMN task_id INT DEFAULT NULL AFTER task_deschis",
-    ];
-    foreach ($to_add as $col => $sql) {
-        if (!in_array($col, $cols)) {
-            try {
-                $pdo->exec($sql);
-            } catch (PDOException $e) {
-                // Coloana poate exista deja sau ALTER eșuează – continuăm
-            }
-        }
-    }
+    // No-op: schema is managed by install/schema/migration.php
+    return;
 }
 
 /**

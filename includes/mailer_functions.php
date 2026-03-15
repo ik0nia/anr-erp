@@ -8,25 +8,8 @@
  * Asigură existența tabelei settings_email și returnează setările (un singur rând, id=1).
  */
 function mailer_ensure_table(PDO $pdo): void {
-    static $done = false;
-    if ($done) return;
-    $done = true;
-    $pdo->exec("CREATE TABLE IF NOT EXISTS settings_email (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        smtp_host VARCHAR(255) DEFAULT NULL,
-        smtp_port INT DEFAULT 587,
-        smtp_user VARCHAR(255) DEFAULT NULL,
-        smtp_pass VARCHAR(255) DEFAULT NULL,
-        smtp_encryption VARCHAR(20) DEFAULT 'tls',
-        from_name VARCHAR(255) DEFAULT NULL,
-        from_email VARCHAR(255) DEFAULT NULL,
-        email_signature TEXT DEFAULT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    $stmt = $pdo->query("SELECT COUNT(*) FROM settings_email");
-    if ((int)$stmt->fetchColumn() === 0) {
-        $pdo->exec("INSERT INTO settings_email (id) VALUES (1)");
-    }
+    // No-op: schema is managed by install/schema/migration.php
+    return;
 }
 
 /**

@@ -7,9 +7,9 @@ require_once __DIR__ . '/../includes/bpa_helper.php';
 require_once __DIR__ . '/../includes/liste_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
-if ($id <= 0) { header('Location: ajutoare-bpa.php'); exit; }
+if ($id <= 0) { header('Location: /ajutoare-bpa'); exit; }
 $tabel = bpa_get_tabel($pdo, $id);
-if (!$tabel) { header('Location: ajutoare-bpa.php'); exit; }
+if (!$tabel) { header('Location: /ajutoare-bpa'); exit; }
 
 $locuri = [];
 if ($tabel['predare_sediul']) $locuri[] = 'Predare la sediu';

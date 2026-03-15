@@ -54,34 +54,8 @@ function require_admin() {
  * Asigură că tabelele utilizatori există.
  */
 function auth_ensure_tables(PDO $pdo) {
-    static $done = false;
-    if ($done) return;
-    $done = true;
-    $pdo->exec("CREATE TABLE IF NOT EXISTS utilizatori (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nume_complet VARCHAR(255) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        functie VARCHAR(255) DEFAULT NULL,
-        username VARCHAR(100) NOT NULL UNIQUE,
-        parola_hash VARCHAR(255) NOT NULL,
-        rol ENUM('administrator', 'operator') NOT NULL DEFAULT 'operator',
-        activ TINYINT(1) NOT NULL DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_username (username),
-        INDEX idx_email (email),
-        INDEX idx_activ (activ)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    $pdo->exec("CREATE TABLE IF NOT EXISTS password_reset_tokens (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        utilizator_id INT NOT NULL,
-        token VARCHAR(64) NOT NULL UNIQUE,
-        expira_la DATETIME NOT NULL,
-        folosit TINYINT(1) NOT NULL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_token (token),
-        INDEX idx_expira (expira_la)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // No-op: schema is managed by install/schema/migration.php
+    return;
 }
 
 /**
@@ -159,8 +133,8 @@ function auth_reset_parola_cu_token(PDO $pdo, $token, $parola_noua) {
         return ['ok' => false, 'mesaj' => 'Link invalid sau expirat.'];
     }
     $parola_noua = (string) $parola_noua;
-    if (strlen($parola_noua) < 6) {
-        return ['ok' => false, 'mesaj' => 'Parola trebuie să aibă minim 6 caractere.'];
+    if (strlen($parola_noua) < 8) {
+        return ['ok' => false, 'mesaj' => 'Parola trebuie să aibă minim 8 caractere.'];
     }
     $hash = password_hash($parola_noua, PASSWORD_DEFAULT);
     $pdo->beginTransaction();
@@ -191,8 +165,8 @@ function auth_schimba_parola(PDO $pdo, $user_id, $parola_actuala, $parola_noua) 
         return ['ok' => false, 'mesaj' => 'Parola actuală este incorectă.'];
     }
     $parola_noua = (string) $parola_noua;
-    if (strlen($parola_noua) < 6) {
-        return ['ok' => false, 'mesaj' => 'Parola nouă trebuie să aibă minim 6 caractere.'];
+    if (strlen($parola_noua) < 8) {
+        return ['ok' => false, 'mesaj' => 'Parola nouă trebuie să aibă minim 8 caractere.'];
     }
     $hash = password_hash($parola_noua, PASSWORD_DEFAULT);
     try {

@@ -5,6 +5,6 @@
 require_once __DIR__ . '/../config.php';
 
 $id = (int)($_GET['id'] ?? 0);
-if ($id <= 0) { header('Location: activitati.php'); exit; }
+if ($id <= 0) { header('Location: /activitati'); exit; }
 header('Location: lista-prezenta-print.php?id=' . $id);
 exit;

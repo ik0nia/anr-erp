@@ -24,16 +24,3 @@ function db_fetch_all(PDO $pdo, string $sql, array $params = []): array {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-/**
- * Execută INSERT/UPDATE/DELETE.
- * INSERT: returnează lastInsertId.
- * UPDATE/DELETE: returnează rowCount.
- */
-function db_execute(PDO $pdo, string $sql, array $params = []): int {
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    if (stripos(ltrim($sql), 'INSERT') === 0) {
-        return (int)$pdo->lastInsertId();
-    }
-    return $stmt->rowCount();
-}

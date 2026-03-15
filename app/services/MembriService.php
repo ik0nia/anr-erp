@@ -1,0 +1,770 @@
+<?php
+/**
+ * MembriService — Business logic pentru modulul Membri.
+ *
+ * Toate operatiile CRUD + validare + logging.
+ * Nu acceseaza $_GET, $_POST, $_SESSION direct.
+ * Nu genereaza HTML.
+ */
+require_once __DIR__ . '/../bootstrap.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/cnp_validator.php';
+require_once APP_ROOT . '/includes/file_helper.php';
+require_once APP_ROOT . '/includes/membri_alerts.php';
+require_once APP_ROOT . '/includes/cotizatii_helper.php';
+require_once APP_ROOT . '/includes/incasari_helper.php';
+
+/**
+ * Lista membri cu filtrare, cautare si paginare.
+ *
+ * @return array ['membri'=>[], 'total'=>int, 'total_pages'=>int, 'indicatori'=>[], 'membri_cu_avertizari'=>int, ...]
+ */
+function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array {
+    $status_filter = $filters['status'] ?? 'activi';
+    $cautare = trim($filters['cautare'] ?? '');
+    $sort_col = $filters['sort'] ?? 'dosarnr';
+    $sort_dir_input = strtolower($filters['dir'] ?? 'asc');
+    $avertizari_filter = !empty($filters['avertizari']);
+    $aniversari_azi_filter = !empty($filters['aniversari_azi']);
+    $actualizare_cnp_ci_filter = !empty($filters['actualizare_cnp_ci']);
+
+    // Validare per_page
+    if (!in_array($per_page, [10, 25, 50])) {
+        $per_page = 25;
+    }
+
+    // Validare coloana sortare
+    $allowed_sort_cols = ['dosarnr', 'nume', 'prenume', 'datanastere', 'ciseria', 'cinumar', 'telefonnev', 'hgrad'];
+    if (!in_array($sort_col, $allowed_sort_cols)) {
+        $sort_col = 'dosarnr';
+    }
+    $sort_dir = $sort_dir_input === 'desc' ? 'DESC' : 'ASC';
+
+    // Construire query cu filtrare dupa status
+    $where_parts = [];
+    $params = [];
+
+    if ($status_filter === 'suspendati') {
+        $where_parts[] = "status_dosar IN ('Suspendat', 'Expirat')";
+    } elseif ($status_filter === 'arhiva') {
+        $where_parts[] = "status_dosar = 'Decedat'";
+    } else {
+        $where_parts[] = "status_dosar = 'Activ'";
+    }
+
+    if ($avertizari_filter) {
+        $where_parts[] = "(
+            status_dosar = 'Activ'
+            AND (
+                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
+                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
+            )
+        )";
+    }
+
+    if ($aniversari_azi_filter) {
+        $where_parts[] = "datanastere IS NOT NULL AND MONTH(datanastere) = MONTH(CURDATE()) AND DAY(datanastere) = DAY(CURDATE())";
+    }
+
+    if ($actualizare_cnp_ci_filter) {
+        $where_parts[] = "(
+            status_dosar = 'Activ'
+            AND (
+                cidataelib IS NULL
+                OR cielib IS NULL OR cielib = ''
+                OR cidataexp IS NULL
+                OR cnp IS NULL OR cnp = '' OR LENGTH(cnp) != 13
+                OR (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 30 DAY))
+            )
+        )";
+    }
+
+    if ($cautare !== '') {
+        $where_parts[] = "(nume LIKE ? OR prenume LIKE ? OR cnp LIKE ? OR dosarnr LIKE ?)";
+        $search_term = '%' . $cautare . '%';
+        $params = array_merge($params, [$search_term, $search_term, $search_term, $search_term]);
+    }
+
+    $where = !empty($where_parts) ? 'WHERE ' . implode(' AND ', $where_parts) : '';
+
+    // Total si paginare
+    $eroare_bd = '';
+    $total_membri = 0;
+    $total_pages = 0;
+    $offset = 0;
+    try {
+        $count_stmt = $pdo->prepare("SELECT COUNT(*) as total FROM membri $where");
+        $count_stmt->execute($params);
+        $total_membri = (int)$count_stmt->fetch()['total'];
+        $total_pages = max(1, (int)ceil($total_membri / $per_page));
+        $page = min($page, $total_pages);
+        $offset = ($page - 1) * $per_page;
+    } catch (PDOException $e) {
+        $error_msg = $e->getMessage();
+        if (strpos($error_msg, "doesn't exist") !== false || strpos($error_msg, "Unknown column") !== false) {
+            $eroare_bd = 'Tabelul membri sau o coloana necesara nu exista. Rulati schema.sql in baza de date ' . (defined('DB_NAME') ? DB_NAME : '') . ' (panou MySQL / phpMyAdmin).';
+        }
+    }
+
+    // Indicatori
+    $indicatori = membri_indicatori($pdo);
+
+    // Calculare numar membri cu avertizari
+    $membri_cu_avertizari = 0;
+    try {
+        $cols = $pdo->query("SHOW COLUMNS FROM membri")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('cidataexp', $cols) && in_array('ceexp', $cols)) {
+            $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
+                status_dosar = 'Activ'
+                AND (
+                    (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
+                    OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
+                )");
+            $membri_cu_avertizari = (int) $stmt->fetch()['n'];
+        }
+    } catch (PDOException $e) {}
+
+    // Numar membri actualizare CNP/CI
+    $membri_actualizare_cnp_ci = 0;
+    try {
+        $cols = $pdo->query("SHOW COLUMNS FROM membri")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('cidataelib', $cols) && in_array('cielib', $cols) && in_array('cidataexp', $cols) && in_array('cnp', $cols)) {
+            $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
+                status_dosar = 'Activ'
+                AND (
+                    cidataelib IS NULL
+                    OR cielib IS NULL OR cielib = ''
+                    OR cidataexp IS NULL
+                    OR cnp IS NULL OR cnp = '' OR LENGTH(cnp) != 13
+                    OR (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 30 DAY))
+                )");
+            $membri_actualizare_cnp_ci = (int) $stmt->fetch()['n'];
+        }
+    } catch (PDOException $e) {}
+
+    // Numar aniversari azi
+    $membri_aniversari_azi_count = 0;
+    try {
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE datanastere IS NOT NULL AND MONTH(datanastere) = MONTH(CURDATE()) AND DAY(datanastere) = DAY(CURDATE())");
+        $membri_aniversari_azi_count = (int) $stmt->fetch()['n'];
+    } catch (PDOException $e) {}
+
+    // Incarcare membri
+    $membri = [];
+    try {
+        $order_by = $sort_col . ' ' . $sort_dir;
+        if ($cautare !== '') {
+            $order_by = "(CASE WHEN status_dosar = 'Activ' OR status_dosar IS NULL THEN 0 ELSE 1 END), " . $order_by;
+        }
+        $order_by .= ", nume ASC, prenume ASC";
+
+        $sql = "SELECT id, dosarnr, status_dosar, nume, prenume, datanastere, ciseria, cinumar, telefonnev, email, cidataelib, cidataexp, ceexp, gdpr, cnp, sex, hgrad, expira_ci_notificat, expira_ch_notificat, cielib
+                FROM membri
+                $where
+                ORDER BY $order_by
+                LIMIT $per_page OFFSET $offset";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $membri = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        $error_msg = $e->getMessage();
+        if (strpos($error_msg, "doesn't exist") !== false || strpos($error_msg, "Unknown column") !== false) {
+            $eroare_bd = 'Tabelul membri sau o coloana necesara nu exista in baza de date ' . (defined('DB_NAME') ? DB_NAME : '') . '. Rulati schema.sql si, daca e cazul, schema_update.sql. Eroare: ' . htmlspecialchars($error_msg);
+        } else {
+            $eroare_bd = 'Eroare la incarcarea membrilor: ' . htmlspecialchars($error_msg);
+        }
+    }
+
+    // ID-uri membri scutiti de cotizatie
+    $membri_scutiti_cotizatie_ids = [];
+    try {
+        $membri_scutiti_cotizatie_ids = cotizatii_membri_scutiti_ids($pdo);
+    } catch (PDOException $e) {}
+
+    // ID-uri membri cotizatie achitata + valori cotizatie
+    $membri_cotizatie_achitata_an_curent = [];
+    $valori_cotizatie_an_curent = [];
+    try {
+        cotizatii_ensure_tables($pdo);
+        $an_curent = (int)date('Y');
+        $membri_cotizatie_achitata_an_curent = incasari_membri_cotizatie_achitata_an($pdo, $an_curent);
+        $rows_cot = $pdo->query("SELECT grad_handicap, valoare_cotizatie FROM cotizatii_anuale WHERE anul = " . $an_curent)->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows_cot as $r) { $valori_cotizatie_an_curent[$r['grad_handicap']] = (float)$r['valoare_cotizatie']; }
+    } catch (PDOException $e) {}
+
+    return [
+        'membri' => $membri,
+        'total' => $total_membri,
+        'total_pages' => $total_pages,
+        'page' => $page,
+        'per_page' => $per_page,
+        'eroare_bd' => $eroare_bd,
+        'indicatori' => $indicatori,
+        'membri_cu_avertizari' => $membri_cu_avertizari,
+        'membri_actualizare_cnp_ci' => $membri_actualizare_cnp_ci,
+        'membri_aniversari_azi_count' => $membri_aniversari_azi_count,
+        'membri_scutiti_cotizatie_ids' => $membri_scutiti_cotizatie_ids,
+        'membri_cotizatie_achitata_an_curent' => $membri_cotizatie_achitata_an_curent,
+        'valori_cotizatie_an_curent' => $valori_cotizatie_an_curent,
+        'sort_col' => $sort_col,
+        'sort_dir' => $sort_dir,
+    ];
+}
+
+/**
+ * Calculeaza indicatorii (total, activi, grade handicap etc.)
+ */
+function membri_indicatori(PDO $pdo): array {
+    $result = [
+        'total_activi' => 0,
+        'membri_activi_count' => 0,
+        'membri_suspendati_expirati_count' => 0,
+        'grad_grav' => 0,
+        'grad_accentuat' => 0,
+        'grad_mediu' => 0,
+        'femei' => 0,
+        'barbati' => 0,
+    ];
+
+    try {
+        $result['total_activi'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri")->fetch()['total'];
+        $result['membri_activi_count'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri WHERE status_dosar = 'Activ'")->fetch()['total'];
+        $result['membri_suspendati_expirati_count'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri WHERE status_dosar IN ('Suspendat', 'Expirat')")->fetch()['total'];
+        $result['grad_grav'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Grav'")->fetch()['total'];
+        $result['grad_accentuat'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Accentuat'")->fetch()['total'];
+        $result['grad_mediu'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri WHERE hgrad = 'Mediu'")->fetch()['total'];
+        $result['femei'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri WHERE sex = 'Feminin'")->fetch()['total'];
+        $result['barbati'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri WHERE sex = 'Masculin'")->fetch()['total'];
+    } catch (PDOException $e) {
+        try {
+            $result['total_activi'] = (int)$pdo->query("SELECT COUNT(*) as total FROM membri")->fetch()['total'];
+        } catch (PDOException $e2) {}
+    }
+
+    return $result;
+}
+
+/**
+ * Obtine un membru dupa ID.
+ *
+ * @return array|null Datele membrului sau null daca nu exista
+ */
+function membri_get(PDO $pdo, int $id): ?array {
+    if ($id <= 0) return null;
+
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM membri WHERE id = ?');
+        $stmt->execute([$id]);
+        $membru = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $membru ?: null;
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+/**
+ * Creeaza un membru nou.
+ *
+ * @return array ['success' => bool, 'error' => string|null, 'membru_id' => int|null]
+ */
+function membri_create(PDO $pdo, array $data, array $files = []): array {
+    return membri_save($pdo, $data, $files, false);
+}
+
+/**
+ * Actualizeaza un membru existent.
+ *
+ * @return array ['success' => bool, 'error' => string|null, 'membru_id' => int|null]
+ */
+function membri_update(PDO $pdo, int $id, array $data, array $files = []): array {
+    $data['membru_id'] = $id;
+    return membri_save($pdo, $data, $files, true);
+}
+
+/**
+ * Sterge un membru (hard delete).
+ *
+ * @return array ['success' => bool, 'error' => string|null]
+ */
+function membri_delete(PDO $pdo, int $id): array {
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'ID membru invalid.'];
+    }
+
+    try {
+        $membru = membri_get($pdo, $id);
+        if (!$membru) {
+            return ['success' => false, 'error' => 'Membrul nu exista.'];
+        }
+
+        $stmt = $pdo->prepare('DELETE FROM membri WHERE id = ?');
+        $stmt->execute([$id]);
+
+        $nume_complet = trim(($membru['nume'] ?? '') . ' ' . ($membru['prenume'] ?? ''));
+        log_activitate($pdo, "membri: Sters membru ({$nume_complet})", null, $id);
+
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la stergere: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Genereaza alertele pentru un membru (wrapper).
+ *
+ * @return array Lista de alerte
+ */
+function membri_alerts(PDO $pdo, int $id): array {
+    $membru = membri_get($pdo, $id);
+    if (!$membru) return [];
+
+    return genereaza_alerts_membru_pentru_profil($membru, $pdo);
+}
+
+/**
+ * Cauta membri (pentru API search).
+ *
+ * @return array Lista de membri gasiti
+ */
+function membri_search(PDO $pdo, string $query): array {
+    $query = trim($query);
+    if ($query === '') return [];
+
+    try {
+        $search_term = '%' . $query . '%';
+        $stmt = $pdo->prepare("
+            SELECT id, nume, prenume, cnp, dosarnr, telefonnev, email, hgrad
+            FROM membri
+            WHERE nume LIKE ? OR prenume LIKE ? OR cnp LIKE ? OR dosarnr LIKE ?
+            ORDER BY nume ASC, prenume ASC
+            LIMIT 20
+        ");
+        $stmt->execute([$search_term, $search_term, $search_term, $search_term]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Obtine urmatorul numar de dosar disponibil.
+ */
+function membri_next_dosar_nr(PDO $pdo): string {
+    try {
+        $stmt = $pdo->query("SELECT MAX(CAST(dosarnr AS UNSIGNED)) AS max_dosar FROM membri");
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (string)max(1, ((int)($row['max_dosar'] ?? 0)) + 1);
+    } catch (PDOException $e) {
+        return '1';
+    }
+}
+
+/**
+ * Obtine istoricul de modificari pentru un membru.
+ */
+function membri_istoric(PDO $pdo, int $id, ?array $membru = null): array {
+    if ($id <= 0) return [];
+
+    try {
+        $cols = $pdo->query("SHOW COLUMNS FROM log_activitate")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('membru_id', $cols, true)) {
+            $stmt = $pdo->prepare("
+                SELECT data_ora, utilizator, actiune
+                FROM log_activitate
+                WHERE membru_id = ?
+                ORDER BY data_ora DESC
+                LIMIT 50
+            ");
+            $stmt->execute([$id]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            // Fallback: filtrare dupa nume
+            if ($membru) {
+                $nume_complet = trim(($membru['nume'] ?? '') . ' ' . ($membru['prenume'] ?? ''));
+                if ($nume_complet !== '') {
+                    $stmt = $pdo->prepare("
+                        SELECT data_ora, utilizator, actiune
+                        FROM log_activitate
+                        WHERE actiune LIKE ?
+                        ORDER BY data_ora DESC
+                        LIMIT 50
+                    ");
+                    $stmt->execute(['%' . $nume_complet . '%']);
+                    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+                }
+            }
+        }
+    } catch (PDOException $e) {}
+
+    return [];
+}
+
+/**
+ * Marcheaza/demarcheaza un alert ca informat.
+ *
+ * @return array ['success' => bool, 'error' => string|null]
+ */
+function membri_toggle_alert_informat(PDO $pdo, int $membru_id, string $alert_tip, bool $debifa): array {
+    if ($membru_id <= 0 || !in_array($alert_tip, ['ci', 'ch', 'cotizatie'])) {
+        return ['success' => false, 'error' => 'Date invalide.'];
+    }
+
+    try {
+        if ($debifa) {
+            $stmt = $pdo->prepare('DELETE FROM membri_alerts_dismissed WHERE membru_id = ? AND alert_tip = ?');
+            $stmt->execute([$membru_id, $alert_tip]);
+            if ($stmt->rowCount() > 0) {
+                log_activitate($pdo, "membri: Avertisment {$alert_tip} debifat (membru nu mai e marcat ca informat) pentru membru ID {$membru_id}");
+            }
+        } else {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS membri_alerts_dismissed (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                membru_id INT NOT NULL,
+                alert_tip VARCHAR(10) NOT NULL,
+                data_informat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_membru_alert (membru_id, alert_tip),
+                FOREIGN KEY (membru_id) REFERENCES membri(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            $stmt_check = $pdo->prepare('SELECT id FROM membri_alerts_dismissed WHERE membru_id = ? AND alert_tip = ?');
+            $stmt_check->execute([$membru_id, $alert_tip]);
+
+            if (!$stmt_check->fetch()) {
+                $stmt = $pdo->prepare('INSERT INTO membri_alerts_dismissed (membru_id, alert_tip) VALUES (?, ?)');
+                $stmt->execute([$membru_id, $alert_tip]);
+                log_activitate($pdo, "membri: Avertisment {$alert_tip} marcat ca informat pentru membru ID {$membru_id}");
+            }
+        }
+
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        $msg = $debifa ? 'Eroare la debifarea avertismentului.' : 'Eroare la marcarea avertismentului.';
+        return ['success' => false, 'error' => $msg . ' ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Obtine date cotizatie si scutire pentru un membru.
+ */
+function membri_cotizatie_info(PDO $pdo, int $membru_id, ?array $membru = null): array {
+    $scutire_cotizatie = null;
+    $cotizatie_achitata_an_curent = false;
+    $valoare_cotizatie_an = 0;
+
+    try {
+        $scutire_cotizatie = cotizatii_membru_este_scutit($pdo, $membru_id);
+    } catch (Exception $e) {}
+
+    try {
+        $cotizatie_achitata_an_curent = !empty($scutire_cotizatie) || incasari_cotizatie_achitata_an($pdo, $membru_id, (int)date('Y'));
+        $hgrad = $membru['hgrad'] ?? 'Fara handicap';
+        $valoare_cotizatie_an = incasari_valoare_cotizatie_anuala($pdo, (int)date('Y'), $hgrad);
+    } catch (Exception $e) {}
+
+    return [
+        'scutire_cotizatie' => $scutire_cotizatie,
+        'cotizatie_achitata_an_curent' => $cotizatie_achitata_an_curent,
+        'valoare_cotizatie_an' => $valoare_cotizatie_an,
+    ];
+}
+
+// =========================================================================
+// INTERNAL: Salvare membru (creare sau actualizare)
+// =========================================================================
+
+/**
+ * Logica interna de salvare (create/update).
+ * Migrata din app/views/partials/membri_processing.php
+ */
+function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update): array {
+    $eroare = '';
+    $membru_id = null;
+
+    // Validare campuri obligatorii
+    $nume = trim($post_data['nume'] ?? '');
+    $prenume = trim($post_data['prenume'] ?? '');
+    $cnp = preg_replace('/\D/', '', $post_data['cnp'] ?? '');
+
+    if (empty($nume) || empty($prenume)) {
+        return ['success' => false, 'error' => 'Numele si prenumele sunt obligatorii.', 'membru_id' => null];
+    }
+
+    // La actualizare: daca CNP-ul din formular e gol, pastram CNP-ul existent
+    if ($is_update) {
+        try {
+            $stmt_cnp = $pdo->prepare('SELECT cnp FROM membri WHERE id = ?');
+            $stmt_cnp->execute([(int)$post_data['membru_id']]);
+            $cnp_existent = $stmt_cnp->fetchColumn();
+            if (empty($cnp) && $cnp_existent !== null && $cnp_existent !== '') {
+                $cnp = preg_replace('/\D/', '', $cnp_existent);
+            }
+        } catch (PDOException $e) {}
+    }
+
+    // CNP obligatoriu doar la adaugare
+    if (!$is_update && empty($cnp)) {
+        return ['success' => false, 'error' => 'CNP-ul este obligatoriu.', 'membru_id' => null];
+    }
+
+    // Validare CNP
+    if ($is_update && empty($cnp)) {
+        // Actualizare fara CNP - fara validare
+    } elseif ($is_update) {
+        try {
+            $stmt_cnp = $pdo->prepare('SELECT cnp FROM membri WHERE id = ?');
+            $stmt_cnp->execute([(int)$post_data['membru_id']]);
+            $cnp_vechi = $stmt_cnp->fetchColumn();
+            if ($cnp_vechi !== $cnp) {
+                $validare_cnp = valideaza_cnp($cnp);
+                if (!$validare_cnp['valid']) {
+                    return ['success' => false, 'error' => $validare_cnp['error'], 'membru_id' => null];
+                }
+            }
+        } catch (PDOException $e) {
+            $validare_cnp = valideaza_cnp($cnp);
+            if (!$validare_cnp['valid']) {
+                return ['success' => false, 'error' => $validare_cnp['error'], 'membru_id' => null];
+            }
+        }
+    } else {
+        $validare_cnp = valideaza_cnp($cnp);
+        if (!$validare_cnp['valid']) {
+            return ['success' => false, 'error' => $validare_cnp['error'], 'membru_id' => null];
+        }
+    }
+
+    // Extrage informatii din CNP
+    $info_cnp = extrage_info_cnp($cnp);
+
+    // Pregateste datele
+    $dosarnr = trim($post_data['dosarnr'] ?? '') ?: null;
+    $dosardata = !empty($post_data['dosardata']) ? date('Y-m-d', strtotime($post_data['dosardata'])) : null;
+    $status_dosar = in_array($post_data['status_dosar'] ?? '', ['Activ', 'Expirat', 'Suspendat', 'Retras', 'Decedat']) ? $post_data['status_dosar'] : 'Activ';
+    $telefonnev = trim($post_data['telefonnev'] ?? '') ?: null;
+    $telefonapartinator = trim($post_data['telefonapartinator'] ?? '') ?: null;
+    $nume_apartinator = trim($post_data['nume_apartinator'] ?? '') ?: null;
+    $prenume_apartinator = trim($post_data['prenume_apartinator'] ?? '') ?: null;
+    $email = trim($post_data['email'] ?? '') ?: null;
+    if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'error' => 'Adresa de email nu este valida.', 'membru_id' => null];
+    }
+
+    $datanastere = !empty($post_data['datanastere']) ? date('Y-m-d', strtotime($post_data['datanastere'])) : ($info_cnp ? $info_cnp['data_nastere'] : null);
+    $locnastere = trim($post_data['locnastere'] ?? '') ?: null;
+    $judnastere = trim($post_data['judnastere'] ?? '') ?: null;
+    $ciseria = trim($post_data['ciseria'] ?? '') ?: null;
+    $cinumar_raw = preg_replace('/\D/', '', (string)($post_data['cinumar'] ?? ''));
+    $cinumar_raw = $cinumar_raw !== '' ? substr($cinumar_raw, 0, 7) : '';
+    $cinumar = $cinumar_raw !== '' ? $cinumar_raw : null;
+    $cielib = trim($post_data['cielib'] ?? '') ?: null;
+    $cidataelib = !empty($post_data['cidataelib']) ? date('Y-m-d', strtotime($post_data['cidataelib'])) : null;
+    $cidataexp = !empty($post_data['cidataexp']) ? date('Y-m-d', strtotime($post_data['cidataexp'])) : null;
+    $gdpr = isset($post_data['gdpr']) ? 1 : 0;
+    $codpost = trim($post_data['codpost'] ?? '') ?: null;
+    $tipmediuur = in_array($post_data['tipmediuur'] ?? '', ['Urban', 'Rural']) ? $post_data['tipmediuur'] : null;
+    $domloc = trim($post_data['domloc'] ?? '') ?: null;
+    $judet_domiciliu = trim($post_data['judet_domiciliu'] ?? '') ?: null;
+    $domstr = trim($post_data['domstr'] ?? '') ?: null;
+    $domnr = trim($post_data['domnr'] ?? '') ?: null;
+    $dombl = trim($post_data['dombl'] ?? '') ?: null;
+    $domsc = trim($post_data['domsc'] ?? '') ?: null;
+    $domet = trim($post_data['domet'] ?? '') ?: null;
+    $domap = trim($post_data['domap'] ?? '') ?: null;
+    $sex = in_array($post_data['sex'] ?? '', ['Masculin', 'Feminin']) ? $post_data['sex'] : ($info_cnp ? $info_cnp['sex'] : null);
+    $hgrad = in_array($post_data['hgrad'] ?? '', ['Grav cu insotitor', 'Grav', 'Accentuat', 'Mediu', 'Usor', 'Alt handicap', 'Asociat', 'Fara handicap']) ? $post_data['hgrad'] : null;
+    $hmotiv = trim($post_data['hmotiv'] ?? '') ?: null;
+    $diagnostic = trim($post_data['diagnostic'] ?? '') ?: null;
+    $hdur = in_array($post_data['hdur'] ?? '', ['Permanent', 'Revizuibil']) ? $post_data['hdur'] : null;
+    $cenr = trim($post_data['cenr'] ?? '') ?: null;
+    $cedata = !empty($post_data['cedata']) ? date('Y-m-d', strtotime($post_data['cedata'])) : null;
+    $ceexp = !empty($post_data['ceexp']) ? date('Y-m-d', strtotime($post_data['ceexp'])) : null;
+    $primaria = trim($post_data['primaria'] ?? '') ?: null;
+    $notamembru = trim($post_data['notamembru'] ?? '') ?: null;
+
+    try {
+        if ($is_update) {
+            $membru_id = (int)$post_data['membru_id'];
+            if ($membru_id <= 0) {
+                return ['success' => false, 'error' => 'ID membru invalid.', 'membru_id' => null];
+            }
+
+            $stmt_old = $pdo->prepare('SELECT * FROM membri WHERE id = ?');
+            $stmt_old->execute([$membru_id]);
+            $membru_vechi = $stmt_old->fetch(PDO::FETCH_ASSOC);
+
+            if (!$membru_vechi) {
+                return ['success' => false, 'error' => 'Membru nu exista in baza de date.', 'membru_id' => null];
+            }
+
+            $sql = 'UPDATE membri SET
+                dosarnr = ?, dosardata = ?, status_dosar = ?, nume = ?, prenume = ?, telefonnev = ?, telefonapartinator = ?,
+                nume_apartinator = ?, prenume_apartinator = ?, email = ?, datanastere = ?, locnastere = ?, judnastere = ?, ciseria = ?, cinumar = ?,
+                cielib = ?, cidataelib = ?, cidataexp = ?, gdpr = ?, codpost = ?, tipmediuur = ?, domloc = ?, judet_domiciliu = ?, domstr = ?,
+                domnr = ?, dombl = ?, domsc = ?, domet = ?, domap = ?, sex = ?, hgrad = ?, hmotiv = ?, diagnostic = ?,
+                hdur = ?, cnp = ?, cenr = ?, cedata = ?, ceexp = ?, primaria = ?, notamembru = ?
+                WHERE id = ?';
+
+            $params = [
+                $dosarnr, $dosardata, $status_dosar, $nume, $prenume, $telefonnev, $telefonapartinator,
+                $nume_apartinator, $prenume_apartinator, $email, $datanastere, $locnastere, $judnastere, $ciseria, $cinumar,
+                $cielib, $cidataelib, $cidataexp, $gdpr, $codpost, $tipmediuur, $domloc, $judet_domiciliu, $domstr,
+                $domnr, $dombl, $domsc, $domet, $domap, $sex, $hgrad, $hmotiv, $diagnostic,
+                $hdur, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru, $membru_id
+            ];
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+
+            // Log modificari
+            $modificari = [];
+            $nume_complet = trim($nume . ' ' . $prenume);
+            if ($membru_vechi) {
+                if (($membru_vechi['telefonnev'] ?? '') !== ($telefonnev ?? '')) {
+                    $modificari[] = log_format_modificare('Numar de telefon', $membru_vechi['telefonnev'] ?? '', $telefonnev ?? '');
+                }
+                if (($membru_vechi['telefonapartinator'] ?? '') !== ($telefonapartinator ?? '')) {
+                    $modificari[] = log_format_modificare('Telefon apartinator', $membru_vechi['telefonapartinator'] ?? '', $telefonapartinator ?? '');
+                }
+                if (($membru_vechi['email'] ?? '') !== ($email ?? '')) {
+                    $modificari[] = log_format_modificare('Email', $membru_vechi['email'] ?? '', $email ?? '');
+                }
+                if (($membru_vechi['status_dosar'] ?? '') !== ($status_dosar ?? '')) {
+                    $modificari[] = log_format_modificare('Status dosar', $membru_vechi['status_dosar'] ?? '', $status_dosar ?? '');
+                }
+                if (($membru_vechi['domloc'] ?? '') !== ($domloc ?? '')) {
+                    $modificari[] = log_format_modificare('Locatie', $membru_vechi['domloc'] ?? '', $domloc ?? '');
+                }
+            }
+
+            // Procesare fisiere
+            if (isset($files['doc_ci']) && $files['doc_ci']['error'] === UPLOAD_ERR_OK) {
+                $result = salveaza_fisier($files['doc_ci'], 'ci', $membru_id);
+                if ($result['success'] && $result['filename']) {
+                    $stmt_old = $pdo->prepare('SELECT doc_ci FROM membri WHERE id = ?');
+                    $stmt_old->execute([$membru_id]);
+                    $old_file = $stmt_old->fetchColumn();
+                    if ($old_file) {
+                        sterge_fisier($old_file, 'ci');
+                        log_activitate($pdo, "membri: Fisier CI sters: {$old_file} > {$result['filename']} / {$nume_complet}", null, $membru_id);
+                    }
+                    $stmt_file = $pdo->prepare('UPDATE membri SET doc_ci = ? WHERE id = ?');
+                    $stmt_file->execute([$result['filename'], $membru_id]);
+                    log_activitate($pdo, "membri: Fisier CI incarcat: {$result['filename']} / {$nume_complet}", null, $membru_id);
+                } elseif (!$result['success']) {
+                    return ['success' => false, 'error' => $result['error'], 'membru_id' => $membru_id];
+                }
+            }
+
+            if (isset($files['doc_ch']) && $files['doc_ch']['error'] === UPLOAD_ERR_OK) {
+                $result = salveaza_fisier($files['doc_ch'], 'ch', $membru_id);
+                if ($result['success'] && $result['filename']) {
+                    $stmt_old = $pdo->prepare('SELECT doc_ch FROM membri WHERE id = ?');
+                    $stmt_old->execute([$membru_id]);
+                    $old_file = $stmt_old->fetchColumn();
+                    if ($old_file) {
+                        sterge_fisier($old_file, 'ch');
+                        log_activitate($pdo, "membri: Fisier CH sters: {$old_file} > {$result['filename']} / {$nume_complet}", null, $membru_id);
+                    }
+                    $stmt_file = $pdo->prepare('UPDATE membri SET doc_ch = ? WHERE id = ?');
+                    $stmt_file->execute([$result['filename'], $membru_id]);
+                    log_activitate($pdo, "membri: Fisier CH incarcat: {$result['filename']} / {$nume_complet}", null, $membru_id);
+                } elseif (!$result['success']) {
+                    return ['success' => false, 'error' => $result['error'], 'membru_id' => $membru_id];
+                }
+            }
+
+            if (!empty($modificari)) {
+                log_activitate($pdo, "membri: " . implode("; ", $modificari) . " / {$nume_complet}", null, $membru_id);
+            } else {
+                log_activitate($pdo, "membri: Actualizat membru ({$nume_complet})", null, $membru_id);
+            }
+        } else {
+            // Verificare CNP unic
+            $stmt = $pdo->prepare('SELECT id FROM membri WHERE cnp = ?');
+            $stmt->execute([$cnp]);
+            if ($stmt->fetch()) {
+                return ['success' => false, 'error' => 'Un membru cu acest CNP exista deja in baza de date.', 'membru_id' => null];
+            }
+
+            $sql = 'INSERT INTO membri (
+                dosarnr, dosardata, status_dosar, nume, prenume, telefonnev, telefonapartinator,
+                nume_apartinator, prenume_apartinator, email, datanastere, locnastere, judnastere, ciseria, cinumar,
+                cielib, cidataelib, cidataexp, gdpr, codpost, tipmediuur, domloc, judet_domiciliu, domstr,
+                domnr, dombl, domsc, domet, domap, sex, hgrad, hmotiv, diagnostic,
+                hdur, cnp, cenr, cedata, ceexp, primaria, notamembru
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+            $params = [
+                $dosarnr, $dosardata, $status_dosar, $nume, $prenume, $telefonnev, $telefonapartinator,
+                $nume_apartinator, $prenume_apartinator, $email, $datanastere, $locnastere, $judnastere, $ciseria, $cinumar,
+                $cielib, $cidataelib, $cidataexp, $gdpr, $codpost, $tipmediuur, $domloc, $judet_domiciliu, $domstr,
+                $domnr, $dombl, $domsc, $domet, $domap, $sex, $hgrad, $hmotiv, $diagnostic,
+                $hdur, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru
+            ];
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $membru_id = $pdo->lastInsertId();
+
+            // Procesare fisiere pentru membru nou
+            if (isset($files['doc_ci']) && $files['doc_ci']['error'] === UPLOAD_ERR_OK) {
+                $result = salveaza_fisier($files['doc_ci'], 'ci', $membru_id);
+                if ($result['success'] && $result['filename']) {
+                    $stmt_file = $pdo->prepare('UPDATE membri SET doc_ci = ? WHERE id = ?');
+                    $stmt_file->execute([$result['filename'], $membru_id]);
+                } elseif (!$result['success']) {
+                    $pdo->prepare('DELETE FROM membri WHERE id = ?')->execute([$membru_id]);
+                    return ['success' => false, 'error' => $result['error'], 'membru_id' => null];
+                }
+            }
+
+            if (isset($files['doc_ch']) && $files['doc_ch']['error'] === UPLOAD_ERR_OK) {
+                $result = salveaza_fisier($files['doc_ch'], 'ch', $membru_id);
+                if ($result['success'] && $result['filename']) {
+                    $stmt_file = $pdo->prepare('UPDATE membri SET doc_ch = ? WHERE id = ?');
+                    $stmt_file->execute([$result['filename'], $membru_id]);
+                } elseif (!$result['success']) {
+                    $pdo->prepare('DELETE FROM membri WHERE id = ?')->execute([$membru_id]);
+                    return ['success' => false, 'error' => $result['error'], 'membru_id' => null];
+                }
+            }
+
+            log_activitate($pdo, log_format_creare('membri', trim($nume . ' ' . $prenume)), null, $membru_id);
+        }
+
+        return ['success' => true, 'error' => null, 'membru_id' => $membru_id];
+
+    } catch (PDOException $e) {
+        error_log('Eroare MembriService: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'A aparut o eroare la salvare: ' . $e->getMessage(), 'membru_id' => $membru_id];
+    } catch (Exception $e) {
+        error_log('Eroare MembriService (Exception): ' . $e->getMessage());
+        return ['success' => false, 'error' => 'A aparut o eroare neasteptata: ' . $e->getMessage(), 'membru_id' => $membru_id];
+    }
+}
+
+/**
+ * Calculeaza varsta din data nasterii.
+ */
+function membri_calculeaza_varsta($data_nastere) {
+    if (empty($data_nastere)) return '-';
+    $birth = new DateTime($data_nastere);
+    $today = new DateTime();
+    return $today->diff($birth)->y;
+}
+
+/**
+ * Genereaza link de sortare pentru tabel.
+ */
+function membri_sort_link(string $col, string $label, string $current_col, string $current_dir, array $extra_params = []): string {
+    $new_dir = ($current_col === $col && strtoupper($current_dir) === 'ASC') ? 'desc' : 'asc';
+    $icon = '';
+    if ($current_col === $col) {
+        $icon = strtoupper($current_dir) === 'ASC' ? ' <i data-lucide="chevron-up" class="inline w-3 h-3"></i>' : ' <i data-lucide="chevron-down" class="inline w-3 h-3"></i>';
+    }
+
+    $params = array_merge($extra_params, ['sort' => $col, 'dir' => $new_dir]);
+    $url = '/membri?' . http_build_query($params);
+    return "<a href=\"{$url}\" class=\"hover:text-amber-600 dark:hover:text-amber-400\">{$label}{$icon}</a>";
+}

@@ -11,7 +11,7 @@ $username = $_SESSION['username'] ?? $utilizator_nume;
 $schimba_eroare = $_SESSION['schimba_parola_eroare'] ?? '';
 $schimba_succes = $_SESSION['schimba_parola_succes'] ?? '';
 unset($_SESSION['schimba_parola_eroare'], $_SESSION['schimba_parola_succes']);
-$redirect_uri = htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'index.php');
+$redirect_uri = htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/dashboard');
 ?>
 <div class="<?php echo empty($sidebar_user_in_topbar) && empty($sidebar_user_icon_only) ? 'border-t border-slate-700 dark:border-slate-600 pt-3 mt-2' : ''; ?><?php echo !empty($sidebar_user_icon_only) ? ' flex-1 min-w-0' : ''; ?>" role="region" aria-label="Meniu cont utilizator">
     <div class="relative w-full" id="user-menu-container">

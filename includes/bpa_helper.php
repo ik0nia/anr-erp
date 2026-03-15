@@ -8,58 +8,8 @@
  * Asigură existența tabelelor BPA
  */
 function bpa_ensure_tables(PDO $pdo) {
-    static $done = false;
-    if ($done) return;
-    $done = true;
-    $pdo->exec("CREATE TABLE IF NOT EXISTS bpa_gestiune (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nr_document VARCHAR(100) NOT NULL,
-        data_document DATE NOT NULL,
-        tip_document ENUM('aviz','tabel_distributie') NOT NULL,
-        cantitate DECIMAL(12,2) NOT NULL,
-        loc_distributie VARCHAR(255) DEFAULT NULL,
-        nr_beneficiari INT DEFAULT NULL,
-        tabel_distributie_id INT DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        utilizator VARCHAR(100) DEFAULT NULL,
-        INDEX idx_data (data_document),
-        INDEX idx_tip (tip_document),
-        INDEX idx_tabel_id (tabel_distributie_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    try {
-        $pdo->exec("ALTER TABLE bpa_gestiune MODIFY COLUMN tip_document ENUM('aviz','tabel_distributie','tabel_cristal') NOT NULL");
-    } catch (PDOException $e) { /* coloana poate avea deja noul ENUM */ }
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS bpa_tabele_distributie (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nr_tabel VARCHAR(50) NOT NULL,
-        data_tabel DATE NOT NULL,
-        predare_sediul TINYINT(1) NOT NULL DEFAULT 0,
-        predare_centru TINYINT(1) NOT NULL DEFAULT 0,
-        livrare_domiciliu TINYINT(1) NOT NULL DEFAULT 0,
-        cantitate_totala DECIMAL(12,2) NOT NULL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        created_by VARCHAR(100) DEFAULT NULL,
-        INDEX idx_data (data_tabel),
-        INDEX idx_nr (nr_tabel)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS bpa_tabel_distributie_randuri (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        tabel_id INT NOT NULL,
-        nr_crt INT NOT NULL DEFAULT 0,
-        membru_id INT DEFAULT NULL,
-        nume_manual VARCHAR(255) DEFAULT NULL,
-        prenume_manual VARCHAR(255) DEFAULT NULL,
-        localitate VARCHAR(255) DEFAULT NULL,
-        seria_nr_ci VARCHAR(100) DEFAULT NULL,
-        data_nastere DATE DEFAULT NULL,
-        greutate_pachet DECIMAL(10,2) NOT NULL DEFAULT 0,
-        semnatura_note VARCHAR(255) DEFAULT NULL,
-        ordine INT NOT NULL DEFAULT 0,
-        INDEX idx_tabel (tabel_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // No-op: schema is managed by install/schema/migration.php
+    return;
 }
 
 /**

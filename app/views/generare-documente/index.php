@@ -1,0 +1,167 @@
+<?php
+/**
+ * View: Generare Documente — Management templateuri
+ *
+ * Variabile disponibile (setate de controller):
+ *   $templates, $taguri, $eroare
+ */
+?>
+
+<main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
+    <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
+        <div class="flex items-center gap-2">
+            <a href="/setari" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">
+                <i data-lucide="arrow-left" class="w-5 h-5 inline" aria-hidden="true"></i> Inapoi
+            </a>
+            <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Management Generare Documente</h1>
+        </div>
+    </header>
+
+    <div class="p-6 overflow-y-auto flex-1 space-y-6">
+        <?php if (isset($_GET['succes'])): ?>
+        <div class="p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg" role="status">
+            <?php
+            if ($_GET['succes'] == '2') echo 'Template actualizat cu succes.';
+            elseif ($_GET['succes'] == '3') echo 'Template sters cu succes.';
+            else echo 'Template incarcat cu succes.';
+            ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($eroare)): ?>
+        <div class="p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-lg" role="alert">
+            <?php echo htmlspecialchars($eroare); ?>
+        </div>
+        <?php endif; ?>
+
+        <!-- Upload template -->
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="upload-heading">
+            <h2 id="upload-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                <i data-lucide="upload" class="inline w-5 h-5 mr-2" aria-hidden="true"></i>
+                Incarcare template
+            </h2>
+            <form method="post" enctype="multipart/form-data" class="flex flex-wrap gap-4 items-end">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="upload_template" value="1">
+                <div>
+                    <label for="nume_afisare" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Nume afisat</label>
+                    <input type="text" id="nume_afisare" name="nume_afisare" required
+                           placeholder="Ex: Cerere pentru loc de parcare"
+                           class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg w-64 text-slate-900 dark:text-white dark:bg-gray-700">
+                </div>
+                <div>
+                    <label for="fisier_template" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Fisier .docx</label>
+                    <input type="file" id="fisier_template" name="fisier_template" accept=".docx" required
+                           class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-900 dark:text-white dark:bg-gray-700">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Incarca template-ul selectat">
+                    Incarca
+                </button>
+            </form>
+        </section>
+
+        <!-- Tabel templateuri -->
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden" aria-labelledby="tabel-heading">
+            <h2 id="tabel-heading" class="text-lg font-semibold text-slate-900 dark:text-white p-4">Templateuri incarcate</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table">
+                    <thead class="bg-slate-100 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Nume</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Fisier</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Activ</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Actiuni</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+                        <?php if (empty($templates)): ?>
+                        <tr>
+                            <td colspan="4" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista templateuri.</td>
+                        </tr>
+                        <?php else: ?>
+                        <?php foreach ($templates as $t): ?>
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-slate-900 dark:text-white"><?php echo htmlspecialchars($t['nume_afisare']); ?></td>
+                            <td class="px-4 py-3 text-sm text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($t['nume_fisier']); ?></td>
+                            <td class="px-4 py-3">
+                                <form method="post" class="inline">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="actualizeaza_template" value="1">
+                                    <input type="hidden" name="id" value="<?php echo $t['id']; ?>">
+                                    <input type="hidden" name="nume_afisare" value="<?php echo htmlspecialchars($t['nume_afisare']); ?>">
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" name="activ" value="1" <?php echo $t['activ'] ? 'checked' : ''; ?>
+                                               onchange="this.form.submit()"
+                                               aria-label="Template activ">
+                                    </label>
+                                </form>
+                            </td>
+                            <td class="px-4 py-3 flex flex-wrap gap-2 items-center">
+                                <button type="button" onclick="document.getElementById('edit-<?php echo $t['id']; ?>').showModal()"
+                                        class="px-3 py-1.5 text-sm bg-amber-100 dark:bg-amber-800/70 text-amber-900 dark:text-amber-100 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-700"
+                                        aria-label="Editeaza template: <?php echo htmlspecialchars($t['nume_afisare']); ?>">
+                                    <i data-lucide="edit" class="w-4 h-4 inline" aria-hidden="true"></i> Editeaza
+                                </button>
+                                <form method="post" class="inline" onsubmit="return confirm('Stergeti acest template? Fisierul va fi sters de pe server.');">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="sterge_template" value="1">
+                                    <input type="hidden" name="id" value="<?php echo $t['id']; ?>">
+                                    <button type="submit" class="px-3 py-1.5 text-sm bg-red-100 dark:bg-red-800/70 text-red-900 dark:text-red-100 rounded-lg hover:bg-red-200 dark:hover:bg-red-700"
+                                            aria-label="Sterge template: <?php echo htmlspecialchars($t['nume_afisare']); ?>">
+                                        <i data-lucide="trash-2" class="w-4 h-4 inline" aria-hidden="true"></i> Sterge documentul
+                                    </button>
+                                </form>
+                                <dialog id="edit-<?php echo $t['id']; ?>" class="rounded-lg shadow-xl p-0 max-w-md w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto">
+                                    <form method="post" class="p-6">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="actualizeaza_template" value="1">
+                                        <input type="hidden" name="id" value="<?php echo $t['id']; ?>">
+                                        <h3 class="text-lg font-semibold mb-4">Editeaza template</h3>
+                                        <label class="block text-sm font-medium mb-2">Nume afisat</label>
+                                        <input type="text" name="nume_afisare" value="<?php echo htmlspecialchars($t['nume_afisare']); ?>" required
+                                               class="w-full px-3 py-2 border rounded-lg mb-4 dark:bg-gray-700 dark:text-white">
+                                        <label class="flex items-center gap-2 mb-4">
+                                            <input type="checkbox" name="activ" value="1" <?php echo $t['activ'] ? 'checked' : ''; ?>>
+                                            <span>Activ (apare in lista)</span>
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <button type="button" onclick="this.closest('dialog').close()" class="px-4 py-2 border rounded-lg" aria-label="Anuleaza editare template">Anulare</button>
+                                            <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded-lg" aria-label="Salveaza modificarile template">Salveaza</button>
+                                        </div>
+                                    </form>
+                                </dialog>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Taguri disponibile -->
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="taguri-heading">
+            <h2 id="taguri-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                <i data-lucide="tag" class="inline w-5 h-5 mr-2" aria-hidden="true"></i>
+                Taguri disponibile
+            </h2>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">
+                Templateurile se stocheaza in folderul <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">uploads/documente_template</code>. Folositi in documentele Word tagurile sub forma <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[nume_tag]</code>. Ex: <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[nume]</code>, <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[prenume]</code>, <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[datagenerare]</code>.
+            </p>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
+                Tagurile fara date in profilul membrului si <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[datagenerare]</code> (daca nu este bifata optiunea la generare) vor aparea ca spatiu in documentul generat; nu se afiseaza textul <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[tag]</code>.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
+                <?php foreach ($taguri as $tag): ?>
+                <div class="flex items-center gap-2 text-sm py-1">
+                    <code class="bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded font-mono text-xs">[<?php echo htmlspecialchars($tag['tag']); ?>]</code>
+                    <span class="text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($tag['desc']); ?></span>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

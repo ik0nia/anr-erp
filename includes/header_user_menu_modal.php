@@ -18,7 +18,7 @@
         <?php endif; ?>
         <form method="post" action="/schimba-parola" id="form-schimba-parola">
             <?php echo csrf_field(); ?>
-            <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect_uri ?? $_SERVER['REQUEST_URI'] ?? 'index.php'); ?>">
+            <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirect_uri ?? $_SERVER['REQUEST_URI'] ?? '/dashboard'); ?>">
             <div class="space-y-4">
                 <div>
                     <label for="parola_actuala" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Parola actuală <span class="text-red-600" aria-hidden="true">*</span></label>

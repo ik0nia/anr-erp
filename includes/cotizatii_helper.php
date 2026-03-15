@@ -4,70 +4,8 @@
  */
 
 function cotizatii_ensure_tables($pdo) {
-    static $done = false;
-    if ($done) return;
-    $done = true;
-    $pdo->exec("CREATE TABLE IF NOT EXISTS cotizatii_opts_grad_handicap (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nume VARCHAR(100) NOT NULL,
-        ordine INT NOT NULL DEFAULT 0,
-        UNIQUE KEY uk_nume (nume)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS cotizatii_opts_asistent_personal (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nume VARCHAR(100) NOT NULL,
-        ordine INT NOT NULL DEFAULT 0
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS cotizatii_anuale (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        anul SMALLINT UNSIGNED NOT NULL,
-        grad_handicap VARCHAR(50) NOT NULL,
-        asistent_personal VARCHAR(100) NOT NULL DEFAULT '',
-        valoare_cotizatie DECIMAL(10,2) NOT NULL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uk_anul_grad_asistent (anul, grad_handicap, asistent_personal),
-        INDEX idx_anul (anul)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $stmt = $pdo->query("SHOW COLUMNS FROM cotizatii_anuale LIKE 'asistent_personal'");
-    if (!$stmt->fetch()) {
-        $pdo->exec("ALTER TABLE cotizatii_anuale ADD COLUMN asistent_personal VARCHAR(100) NOT NULL DEFAULT '' AFTER grad_handicap");
-        try {
-            $pdo->exec("ALTER TABLE cotizatii_anuale DROP INDEX uk_anul_grad");
-        } catch (PDOException $e) {}
-        $pdo->exec("ALTER TABLE cotizatii_anuale ADD UNIQUE KEY uk_anul_grad_asistent (anul, grad_handicap, asistent_personal)");
-    }
-
-    $n = $pdo->query("SELECT COUNT(*) FROM cotizatii_opts_grad_handicap")->fetchColumn();
-    if ((int)$n === 0) {
-        $seed = [
-            'Grav cu insotitor', 'Grav', 'Accentuat', 'Mediu', 'Usor', 'Alt handicap', 'Asociat', 'Fara handicap'
-        ];
-        $stmt = $pdo->prepare("INSERT INTO cotizatii_opts_grad_handicap (nume, ordine) VALUES (?, ?)");
-        foreach ($seed as $i => $nume) {
-            $stmt->execute([$nume, $i]);
-        }
-    }
-
-    $n = $pdo->query("SELECT COUNT(*) FROM cotizatii_opts_asistent_personal")->fetchColumn();
-    if ((int)$n === 0) {
-        $pdo->exec("INSERT INTO cotizatii_opts_asistent_personal (nume, ordine) VALUES ('Cu asistent personal', 0), ('Fara asistent personal', 1)");
-    }
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS cotizatii_scutiri (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        membru_id INT NOT NULL,
-        data_scutire_pana_la DATE DEFAULT NULL,
-        scutire_permanenta TINYINT(1) NOT NULL DEFAULT 0,
-        motiv TEXT DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (membru_id) REFERENCES membri(id) ON DELETE CASCADE,
-        INDEX idx_membru (membru_id),
-        INDEX idx_scutire_activa (membru_id, scutire_permanenta, data_scutire_pana_la)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // No-op: schema is managed by install/schema/migration.php
+    return;
 }
 
 /**

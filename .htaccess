@@ -1,5 +1,10 @@
 RewriteEngine On
 
+# --- Security: block direct access to sensitive files and directories ---
+RewriteRule ^config\.php$ - [F,L]
+RewriteRule ^includes/ - [F,L]
+RewriteRule ^app/(controllers|services|legacy|auth|views)/ - [F,L]
+
 # --- Static assets: serve directly ---
 RewriteRule ^(css|js|vendor|docs|logs|install)/ - [L]
 
@@ -11,12 +16,8 @@ RewriteRule ^ - [L]
 # --- Utility files in util/ subdirectory: serve directly ---
 RewriteRule ^util/ - [L]
 
-# --- Files that must be served directly (APIs, utilities, cron, print/export) ---
+# --- Cron scripts: serve directly ---
 RewriteRule ^cron/ - [L]
-RewriteRule ^app/ - [L]
-RewriteCond %{REQUEST_URI} ^/(config)\.php$
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^ - [L]
 
 # --- index.php -> /dashboard (must be before generic .php redirect) ---
 RewriteCond %{THE_REQUEST} \s/index\.php[\s?]

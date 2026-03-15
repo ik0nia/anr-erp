@@ -1,0 +1,674 @@
+<?php
+/**
+ * SetariService — Business logic for the Settings module.
+ *
+ * Centralised settings CRUD, user management, email config,
+ * cotizatii/incasari/registratura/newsletter/documente settings.
+ * Does NOT access $_GET, $_POST, $_SESSION directly.
+ * Does NOT generate HTML.
+ */
+require_once __DIR__ . '/../bootstrap.php';
+require_once APP_ROOT . '/includes/log_helper.php';
+require_once APP_ROOT . '/includes/excel_import.php';
+require_once APP_ROOT . '/includes/file_helper.php';
+require_once APP_ROOT . '/includes/registru_interactiuni_v2_helper.php';
+require_once APP_ROOT . '/includes/mailer_functions.php';
+require_once APP_ROOT . '/includes/cotizatii_helper.php';
+require_once APP_ROOT . '/includes/incasari_helper.php';
+
+// ---------------------------------------------------------------------------
+// Setari table (key-value store) — ensure + get/set
+// ---------------------------------------------------------------------------
+
+/**
+ * Ensure the `setari` key-value table exists.
+ */
+function setari_ensure_table(PDO $pdo): void
+{
+    $pdo->exec("CREATE TABLE IF NOT EXISTS setari (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        cheie VARCHAR(100) NOT NULL UNIQUE,
+        valoare TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+/**
+ * Get a setting value by key. Returns null when not found.
+ */
+function setari_get(PDO $pdo, string $key): ?string
+{
+    try {
+        $stmt = $pdo->prepare('SELECT valoare FROM setari WHERE cheie = ?');
+        $stmt->execute([$key]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? (string)$val : null;
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+/**
+ * Set (insert or update) a setting value. Returns old value.
+ */
+function setari_set(PDO $pdo, string $key, string $value): ?string
+{
+    setari_ensure_table($pdo);
+    $old = setari_get($pdo, $key);
+    $stmt = $pdo->prepare('INSERT INTO setari (cheie, valoare) VALUES (?, ?) ON DUPLICATE KEY UPDATE valoare = VALUES(valoare)');
+    $stmt->execute([$key, $value]);
+    return $old;
+}
+
+/**
+ * Bulk-load multiple settings by keys.
+ * Returns associative array keyed by setting key.
+ */
+function setari_get_bulk(PDO $pdo, array $keys): array
+{
+    if (empty($keys)) return [];
+    $placeholders = implode(',', array_fill(0, count($keys), '?'));
+    $result = [];
+    try {
+        $stmt = $pdo->prepare("SELECT cheie, valoare FROM setari WHERE cheie IN ($placeholders)");
+        $stmt->execute($keys);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $result[$row['cheie']] = (string)($row['valoare'] ?? '');
+        }
+    } catch (PDOException $e) {}
+    return $result;
+}
+
+// ---------------------------------------------------------------------------
+// User management
+// ---------------------------------------------------------------------------
+
+/**
+ * List all users (admin only).
+ */
+function setari_users_list(PDO $pdo): array
+{
+    auth_ensure_tables($pdo);
+    try {
+        $stmt = $pdo->query('SELECT id, nume_complet, email, functie, username, rol, activ, created_at FROM utilizatori ORDER BY nume_complet');
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
+ * Create a new user. Returns ['success' => bool, 'error' => string|null].
+ */
+function setari_user_create(PDO $pdo, array $data): array
+{
+    auth_ensure_tables($pdo);
+    $nume_complet = trim($data['nume_complet'] ?? '');
+    $email = trim($data['email'] ?? '');
+    $functie = trim($data['functie'] ?? '');
+    $username = trim($data['username'] ?? '');
+    $parola = (string)($data['parola'] ?? '');
+    $rol = in_array($data['rol'] ?? '', ['administrator', 'operator']) ? $data['rol'] : 'operator';
+
+    if ($nume_complet === '' || $email === '' || $username === '' || $parola === '') {
+        return ['success' => false, 'error' => 'Numele complet, emailul, numele de utilizator și parola sunt obligatorii.'];
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'error' => 'Adresa de email nu este validă.'];
+    }
+    if (strlen($parola) < 6) {
+        return ['success' => false, 'error' => 'Parola trebuie să aibă minim 6 caractere.'];
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT id FROM utilizatori WHERE username = ? LIMIT 1');
+        $stmt->execute([$username]);
+        if ($stmt->fetch()) {
+            return ['success' => false, 'error' => 'Există deja un utilizator cu acest nume de utilizator.'];
+        }
+
+        $hash = password_hash($parola, PASSWORD_DEFAULT);
+        $pdo->prepare('INSERT INTO utilizatori (nume_complet, email, functie, username, parola_hash, rol, activ) VALUES (?, ?, ?, ?, ?, ?, 1)')
+            ->execute([$nume_complet, $email, $functie ?: null, $username, $hash, $rol]);
+
+        auth_trimite_email_confirmare_utilizator($nume_complet, $email, $username, $functie, $rol);
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare utilizator: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Update an existing user (placeholder for future use).
+ */
+function setari_user_update(PDO $pdo, int $id, array $data): array
+{
+    // Reserved for future implementation
+    return ['success' => false, 'error' => 'Funcționalitate neimplementată.'];
+}
+
+/**
+ * Delete/deactivate a user (placeholder for future use).
+ */
+function setari_user_delete(PDO $pdo, int $id): array
+{
+    // Reserved for future implementation
+    return ['success' => false, 'error' => 'Funcționalitate neimplementată.'];
+}
+
+// ---------------------------------------------------------------------------
+// Logo
+// ---------------------------------------------------------------------------
+
+/**
+ * Update the platform logo URL.
+ */
+function setari_update_logo(PDO $pdo, string $logo_url): array
+{
+    if (empty($logo_url)) {
+        return ['success' => false, 'error' => 'URL-ul logo-ului este obligatoriu.'];
+    }
+    if (!filter_var($logo_url, FILTER_VALIDATE_URL)) {
+        return ['success' => false, 'error' => 'URL-ul introdus nu este valid.'];
+    }
+    try {
+        $old = setari_set($pdo, 'logo_url', $logo_url);
+        log_activitate($pdo, log_format_modificare('Logo URL', $old ?: '(gol)', $logo_url, 'setari'));
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare: ' . $e->getMessage()];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Platform name
+// ---------------------------------------------------------------------------
+
+/**
+ * Update the platform name.
+ */
+function setari_update_platform_name(PDO $pdo, string $name): array
+{
+    if (empty($name)) {
+        return ['success' => false, 'error' => 'Numele platformei este obligatoriu.'];
+    }
+    try {
+        $old = setari_set($pdo, 'platform_name', $name);
+        if ($old === null) $old = PLATFORM_NAME;
+        log_activitate($pdo, log_format_modificare('Nume platforma', $old, $name, 'setari'));
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare: ' . $e->getMessage()];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Antet asociatie (DOCX upload)
+// ---------------------------------------------------------------------------
+
+/**
+ * Upload and save the association header DOCX file.
+ * $file is the $_FILES['antet_docx'] entry.
+ */
+function setari_upload_antet(PDO $pdo, array $file): array
+{
+    if (!isset($file) || ($file['error'] ?? 0) !== UPLOAD_ERR_OK) {
+        $err = $file['error'] ?? 0;
+        return ['success' => false, 'error' => $err === UPLOAD_ERR_NO_FILE ? 'Selectați un fișier DOCX.' : 'Eroare la încărcarea fișierului.'];
+    }
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if ($ext !== 'docx') {
+        return ['success' => false, 'error' => 'Doar fișiere DOCX sunt acceptate.'];
+    }
+    if ($file['size'] > 10 * 1024 * 1024) {
+        return ['success' => false, 'error' => 'Fișierul depășește 10 MB.'];
+    }
+
+    $upload_dir = APP_ROOT . '/uploads/antet/';
+    if (!file_exists($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+    $filename = 'antet_' . time() . '_' . preg_replace('/[^a-z0-9_-]/i', '', substr(uniqid(), -8)) . '.docx';
+    $full_path = $upload_dir . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $full_path)) {
+        return ['success' => false, 'error' => 'Eroare la salvarea fișierului pe server.'];
+    }
+
+    try {
+        $rel_path = 'uploads/antet/' . $filename;
+        setari_set($pdo, 'antet_asociatie_docx', $rel_path);
+        log_activitate($pdo, 'Setări: antet asociație DOCX încărcat – ' . $filename);
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        @unlink($full_path);
+        return ['success' => false, 'error' => 'Eroare la salvare setare: ' . $e->getMessage()];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Email settings
+// ---------------------------------------------------------------------------
+
+/**
+ * Get current email (SMTP) settings.
+ */
+function setari_email_config(PDO $pdo): array
+{
+    mailer_ensure_table($pdo);
+    return mailer_get_settings($pdo);
+}
+
+/**
+ * Save SMTP / sender settings.
+ */
+function setari_email_save(PDO $pdo, array $data): array
+{
+    mailer_ensure_table($pdo);
+    $smtp_host = trim($data['smtp_host'] ?? '');
+    $smtp_port = (int)($data['smtp_port'] ?? 587);
+    if ($smtp_port < 1 || $smtp_port > 65535) $smtp_port = 587;
+    $smtp_user = trim($data['smtp_user'] ?? '');
+    $smtp_pass = (string)($data['smtp_pass'] ?? '');
+    $smtp_encryption = in_array($data['smtp_encryption'] ?? '', ['tls', 'ssl', '']) ? trim($data['smtp_encryption']) : 'tls';
+    $from_name = trim($data['from_name'] ?? '');
+    $from_email = trim($data['from_email'] ?? '');
+    $email_signature = trim($data['email_signature'] ?? '');
+
+    try {
+        $pass_val = $smtp_pass !== '' ? $smtp_pass : (mailer_get_settings($pdo)['smtp_pass'] ?? '');
+        $stmt = $pdo->prepare("UPDATE settings_email SET smtp_host=?, smtp_port=?, smtp_user=?, smtp_pass=?, smtp_encryption=?, from_name=?, from_email=?, email_signature=? WHERE id=1");
+        $stmt->execute([$smtp_host ?: null, $smtp_port, $smtp_user ?: null, $pass_val, $smtp_encryption ?: null, $from_name ?: null, $from_email ?: null, $email_signature ?: null]);
+        log_activitate($pdo, 'Setări Email (EMAILCRM) actualizate.');
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare setări email: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Send a test email. Returns ['success' => bool, 'error' => string|null].
+ */
+function setari_email_test(PDO $pdo, string $destinatar, ?int $user_id): array
+{
+    if ($destinatar === '' && $user_id) {
+        $stmt = $pdo->prepare('SELECT email FROM utilizatori WHERE id = ? AND activ = 1');
+        $stmt->execute([$user_id]);
+        $destinatar = trim((string)$stmt->fetchColumn());
+    }
+    if ($destinatar === '' || !filter_var($destinatar, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'error' => 'Introduceți o adresă de email validă sau asigurați-vă că utilizatorul logat are email setat.'];
+    }
+    $ok = sendAutomatedEmail($pdo, $destinatar, 'Test Email CRM – Setări email', 'Acesta este un email de test trimis din modulul Setări → Email. Setările SMTP/expeditor sunt funcționale.');
+    if ($ok) {
+        return ['success' => true, 'error' => null, 'destinatar' => $destinatar];
+    }
+    return ['success' => false, 'error' => 'Trimiterea emailului de test a eșuat. Verificați setările SMTP și adresa expeditor.'];
+}
+
+// ---------------------------------------------------------------------------
+// Registratura settings
+// ---------------------------------------------------------------------------
+
+/**
+ * Save the registratura starting number.
+ */
+function setari_registratura_save(PDO $pdo, int $nr_pornire): array
+{
+    if ($nr_pornire < 1) $nr_pornire = 1;
+    try {
+        $old = setari_set($pdo, 'registratura_nr_pornire', (string)$nr_pornire);
+        log_activitate($pdo, log_format_modificare('Registratura nr pornire', $old ?: '(gol)', (string)$nr_pornire, 'setari'));
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare: ' . $e->getMessage()];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Newsletter settings
+// ---------------------------------------------------------------------------
+
+/**
+ * Save newsletter sender email.
+ */
+function setari_newsletter_save(PDO $pdo, string $email): array
+{
+    try {
+        $old = setari_set($pdo, 'newsletter_email', $email);
+        if ($old !== $email) {
+            log_activitate($pdo, log_format_modificare('Email newsletter (expeditor)', $old ?: '(gol)', $email ?: '(gol)', 'setari'));
+        }
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare: ' . $e->getMessage()];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Documente settings
+// ---------------------------------------------------------------------------
+
+/**
+ * Save document generation settings (email + LibreOffice path).
+ */
+function setari_documente_save(PDO $pdo, string $email_asoc, string $libreoffice): array
+{
+    try {
+        $old_email = setari_set($pdo, 'email_asociatie', $email_asoc);
+        $old_lo = setari_set($pdo, 'cale_libreoffice', $libreoffice);
+
+        if ($old_email !== $email_asoc) {
+            log_activitate($pdo, log_format_modificare('Email asociatie', $old_email ?: '(gol)', $email_asoc ?: '(gol)', 'setari'));
+        }
+        if ($old_lo !== $libreoffice) {
+            log_activitate($pdo, log_format_modificare('Cale LibreOffice', $old_lo ?: '(gol)', $libreoffice ?: '(gol)', 'setari'));
+        }
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare: ' . $e->getMessage()];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Cotizatii settings (delegates to cotizatii_helper)
+// ---------------------------------------------------------------------------
+
+/**
+ * Save a cotizatie anuala entry. Returns ['success' => bool, 'error' => string|null].
+ */
+function setari_cotizatie_anuala_save(PDO $pdo, int $id, int $anul, string $grad, string $asistent, float $valoare): array
+{
+    if ($anul < 1900 || $anul > 2100 || $grad === '' || $valoare < 0) {
+        return ['success' => false, 'error' => 'Date invalide pentru cotizație.'];
+    }
+    cotizatii_ensure_tables($pdo);
+    cotizatii_salveaza_anuala($pdo, $id, $anul, $grad, $asistent, $valoare);
+    log_activitate($pdo, 'Setări: cotizație anuală salvată – ' . $anul . ' / ' . $grad);
+    return ['success' => true, 'error' => null];
+}
+
+/**
+ * Delete a cotizatie anuala entry.
+ */
+function setari_cotizatie_anuala_delete(PDO $pdo, int $id): array
+{
+    cotizatii_ensure_tables($pdo);
+    if ($id > 0 && cotizatii_sterge_anuala($pdo, $id)) {
+        log_activitate($pdo, 'Setări: cotizație anuală ștearsă ID ' . $id);
+        return ['success' => true, 'error' => null];
+    }
+    return ['success' => false, 'error' => 'Cotizația nu a putut fi ștearsă.'];
+}
+
+/**
+ * Add a cotizatie exemption.
+ */
+function setari_scutire_add(PDO $pdo, int $membru_id, ?string $data_pana, bool $permanenta, string $motiv): array
+{
+    if ($membru_id <= 0) {
+        return ['success' => false, 'error' => 'Membru invalid.'];
+    }
+    cotizatii_ensure_tables($pdo);
+    cotizatii_adauga_scutire($pdo, $membru_id, $data_pana, $permanenta, $motiv);
+    log_activitate($pdo, 'Setări: scutire cotizație adăugată pentru membru ID ' . $membru_id);
+    return ['success' => true, 'error' => null];
+}
+
+/**
+ * Update a cotizatie exemption.
+ */
+function setari_scutire_update(PDO $pdo, int $id, ?string $data_pana, bool $permanenta, string $motiv): array
+{
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'Scutire invalidă.'];
+    }
+    cotizatii_ensure_tables($pdo);
+    cotizatii_actualizeaza_scutire($pdo, $id, $data_pana, $permanenta, $motiv);
+    log_activitate($pdo, 'Setări: scutire cotizație actualizată ID ' . $id);
+    return ['success' => true, 'error' => null];
+}
+
+/**
+ * Delete a cotizatie exemption.
+ */
+function setari_scutire_delete(PDO $pdo, int $id): array
+{
+    cotizatii_ensure_tables($pdo);
+    if ($id > 0 && cotizatii_sterge_scutire($pdo, $id)) {
+        log_activitate($pdo, 'Setări: scutire cotizație ștearsă ID ' . $id);
+        return ['success' => true, 'error' => null];
+    }
+    return ['success' => false, 'error' => 'Scutirea nu a putut fi ștearsă.'];
+}
+
+// ---------------------------------------------------------------------------
+// Incasari settings (delegates to incasari_helper)
+// ---------------------------------------------------------------------------
+
+/**
+ * Save receipt series for incasari.
+ */
+function setari_incasari_serii_save(PDO $pdo, array $data): array
+{
+    incasari_ensure_tables($pdo);
+    incasari_salveaza_serie($pdo, 'donatii', trim($data['serie_donatii'] ?? 'D'), (int)($data['nr_start_donatii'] ?? 1), (int)($data['nr_curent_donatii'] ?? 1));
+    incasari_salveaza_serie($pdo, 'incasari', trim($data['serie_incasari'] ?? 'INC'), (int)($data['nr_start_incasari'] ?? 1), (int)($data['nr_curent_incasari'] ?? 1));
+    log_activitate($pdo, 'Setări: serii chitanțe Încasări actualizate.');
+    return ['success' => true, 'error' => null];
+}
+
+/**
+ * Save receipt design settings.
+ */
+function setari_incasari_design_save(PDO $pdo, array $data): array
+{
+    incasari_set_setare($pdo, 'logo_chitanta', trim($data['logo_chitanta'] ?? ''));
+    incasari_set_setare($pdo, 'date_asociatie', trim($data['date_asociatie'] ?? ''));
+    log_activitate($pdo, 'Setări: design chitanțe Încasări actualizat.');
+    return ['success' => true, 'error' => null];
+}
+
+/**
+ * Save FGO.ro API settings.
+ */
+function setari_incasari_fgo_save(PDO $pdo, array $data): array
+{
+    incasari_set_setare($pdo, 'fgo_api_key', trim($data['fgo_api_key'] ?? ''));
+    incasari_set_setare($pdo, 'fgo_merchant_name', trim($data['fgo_merchant_name'] ?? ''));
+    incasari_set_setare($pdo, 'fgo_merchant_tax_id', trim($data['fgo_merchant_tax_id'] ?? ''));
+    incasari_set_setare($pdo, 'fgo_api_url', trim($data['fgo_api_url'] ?? ''));
+    incasari_set_setare($pdo, 'fgo_mediu', in_array($data['fgo_mediu'] ?? '', ['test', 'productie']) ? $data['fgo_mediu'] : 'test');
+    log_activitate($pdo, 'Setări: parametri FGO.ro API actualizați.');
+    return ['success' => true, 'error' => null];
+}
+
+/**
+ * Load incasari tab data (series, design, donatii list).
+ */
+function setari_incasari_load(PDO $pdo): array
+{
+    incasari_ensure_tables($pdo);
+    return [
+        'serie_donatii' => incasari_get_serie($pdo, 'donatii'),
+        'serie_incasari' => incasari_get_serie($pdo, 'incasari'),
+        'donatii' => incasari_lista_donatii($pdo, 500),
+        'design' => [
+            'logo_chitanta' => incasari_get_setare($pdo, 'logo_chitanta') ?: (defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : ''),
+            'date_asociatie' => incasari_get_setare($pdo, 'date_asociatie') ?: '',
+            'fgo_api_key' => incasari_get_setare($pdo, 'fgo_api_key') ?: '',
+            'fgo_merchant_name' => incasari_get_setare($pdo, 'fgo_merchant_name') ?: '',
+            'fgo_merchant_tax_id' => incasari_get_setare($pdo, 'fgo_merchant_tax_id') ?: '',
+            'fgo_api_url' => incasari_get_setare($pdo, 'fgo_api_url') ?: 'https://api.fgo.ro',
+            'fgo_mediu' => incasari_get_setare($pdo, 'fgo_mediu') ?: 'test',
+        ],
+    ];
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard settings (registru interactiuni v2 subiecte)
+// ---------------------------------------------------------------------------
+
+/**
+ * Add a new registru interactiuni v2 subject.
+ */
+function setari_subiect_v2_add(PDO $pdo, string $nume): array
+{
+    if (empty($nume)) {
+        return ['success' => false, 'error' => 'Numele subiectului este obligatoriu.'];
+    }
+    ensure_registru_v2_tables($pdo);
+    try {
+        $r = $pdo->query('SELECT COALESCE(MAX(ordine), 0) + 1 as next_ord FROM registru_interactiuni_v2_subiecte')->fetch();
+        $ord = (int)($r['next_ord'] ?? 0);
+        $stmt = $pdo->prepare('INSERT INTO registru_interactiuni_v2_subiecte (nume, ordine, activ) VALUES (?, ?, 1)');
+        $stmt->execute([$nume, $ord]);
+        log_activitate($pdo, "registru_interactiuni_v2: Subiect adaugat: {$nume} / Modul: Setari");
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la adăugare subiect v2: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Toggle active status of a registru interactiuni v2 subject.
+ */
+function setari_subiect_v2_toggle(PDO $pdo, int $id): array
+{
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'ID invalid.'];
+    }
+    ensure_registru_v2_tables($pdo);
+    try {
+        $stmt = $pdo->prepare('SELECT nume, activ FROM registru_interactiuni_v2_subiecte WHERE id = ?');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $nou_activ = $row['activ'] ? 0 : 1;
+            $pdo->prepare('UPDATE registru_interactiuni_v2_subiecte SET activ = ? WHERE id = ?')->execute([$nou_activ, $id]);
+            $act = $nou_activ ? 'activat' : 'dezactivat';
+            log_activitate($pdo, "registru_interactiuni_v2: Subiect {$row['nume']} {$act} / Modul: Setari");
+            return ['success' => true, 'error' => null];
+        }
+        return ['success' => false, 'error' => 'Subiectul nu a fost găsit.'];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la actualizare v2: ' . $e->getMessage()];
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Import Excel (legacy — kept for backward compat)
+// ---------------------------------------------------------------------------
+
+/**
+ * Process Excel file import. Returns import results or error.
+ */
+function setari_import_excel(PDO $pdo, array $file, array $post): array
+{
+    if (!isset($file) || ($file['error'] ?? 0) !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'Nu s-a selectat niciun fișier sau a apărut o eroare la încărcare.'];
+    }
+
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($extension, ['csv', 'xlsx', 'xls'])) {
+        return ['success' => false, 'error' => 'Tipul fișierului nu este suportat. Folosiți CSV sau Excel (.xlsx, .xls).'];
+    }
+    if ($file['size'] > 10 * 1024 * 1024) {
+        return ['success' => false, 'error' => 'Fișierul depășește 10 MB.'];
+    }
+
+    $upload_dir = APP_ROOT . '/uploads/import/';
+    if (!file_exists($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+
+    $filename = 'import_' . time() . '_' . uniqid() . '.' . $extension;
+    $file_path = $upload_dir . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+        return ['success' => false, 'error' => 'Eroare la încărcarea fișierului.'];
+    }
+
+    $excel_data = citeste_fisier_excel($file_path);
+    if (empty($excel_data['headers'])) {
+        unlink($file_path);
+        return ['success' => false, 'error' => 'Nu s-au putut citi header-urile din fișier.'];
+    }
+
+    $mapare_coloane = mapeaza_coloane($excel_data['headers']);
+
+    // If manual mapping was submitted
+    if (isset($post['mapare_coloane']) && is_array($post['mapare_coloane'])) {
+        $mapare_coloane = [];
+        foreach ($post['mapare_coloane'] as $index => $db_field) {
+            if (!empty($db_field) && $db_field !== 'ignora') {
+                $mapare_coloane[$index] = $db_field;
+            }
+        }
+    }
+
+    // Execute import if requested
+    if (isset($post['executa_import']) && !empty($mapare_coloane)) {
+        $skip_duplicates = isset($post['skip_duplicates']) ? 1 : 0;
+        $import_result = importa_membri($pdo, $excel_data['rows'], $mapare_coloane, $skip_duplicates);
+        unlink($file_path);
+
+        $succes = '';
+        $eroare = '';
+        if ($import_result['importati'] > 0) {
+            $succes = "Import reușit: {$import_result['importati']} membri importați";
+            if ($import_result['skipati'] > 0) {
+                $succes .= ", {$import_result['skipati']} membri săriți (duplicate)";
+            }
+        }
+        if (!empty($import_result['eroare'])) {
+            $eroare = "Erori la import: " . implode("; ", array_slice($import_result['eroare'], 0, 10));
+            if (count($import_result['eroare']) > 10) {
+                $eroare .= " ... și " . (count($import_result['eroare']) - 10) . " altele";
+            }
+        }
+
+        return [
+            'success' => true,
+            'succes_msg' => $succes,
+            'error' => $eroare ?: null,
+            'excel_data' => null,
+            'mapare_coloane' => null,
+            'import_result' => $import_result,
+        ];
+    }
+
+    return [
+        'success' => true,
+        'error' => null,
+        'excel_data' => $excel_data,
+        'mapare_coloane' => $mapare_coloane,
+        'file_path' => $file_path,
+    ];
+}
+
+// ---------------------------------------------------------------------------
+// Load general settings (for view)
+// ---------------------------------------------------------------------------
+
+/**
+ * Load all general settings needed for the view.
+ */
+function setari_load_general(PDO $pdo): array
+{
+    setari_ensure_table($pdo);
+    $bulk = setari_get_bulk($pdo, [
+        'logo_url', 'platform_name', 'email_asociatie', 'cale_libreoffice',
+        'registratura_nr_pornire', 'newsletter_email', 'antet_asociatie_docx',
+    ]);
+
+    return [
+        'logo_url_actual' => !empty($bulk['logo_url']) ? $bulk['logo_url'] : PLATFORM_LOGO_URL,
+        'nume_platforma_actual' => !empty($bulk['platform_name']) ? $bulk['platform_name'] : PLATFORM_NAME,
+        'email_asociatie' => $bulk['email_asociatie'] ?? '',
+        'cale_libreoffice' => $bulk['cale_libreoffice'] ?? '',
+        'registratura_nr_pornire' => (int)($bulk['registratura_nr_pornire'] ?? 1) ?: 1,
+        'newsletter_email' => $bulk['newsletter_email'] ?? '',
+        'antet_asociatie_docx' => $bulk['antet_asociatie_docx'] ?? '',
+    ];
+}

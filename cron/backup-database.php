@@ -11,6 +11,17 @@
 
 require_once __DIR__ . '/../config.php';
 
+$run_from_cli = (php_sapi_name() === 'cli');
+
+if (!$run_from_cli) {
+    // Apel din browser: permite doar cu cheie secretă (CRON_NEWSLETTER_KEY în config)
+    $key = $_GET['key'] ?? '';
+    if (!defined('CRON_NEWSLETTER_KEY') || CRON_NEWSLETTER_KEY === '' || $key !== CRON_NEWSLETTER_KEY) {
+        header('HTTP/1.1 403 Forbidden');
+        exit('Forbidden');
+    }
+}
+
 // Configurare backup
 $backup_dir = __DIR__ . '/../backups/';
 $max_backups = 30; // Păstrează ultimele 30 backup-uri

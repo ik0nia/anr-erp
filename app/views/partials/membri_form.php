@@ -56,7 +56,7 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
     }
     ?>
     
-    <form method="post" action="<?php echo $is_edit ? 'membru-profil.php?id=' . $membru['id'] : 'membri.php'; ?>" 
+    <form method="post" action="<?php echo $is_edit ? '/membru-profil?id=' . $membru['id'] : '/membri'; ?>" 
           enctype="multipart/form-data" 
           id="form-membru" 
           class="space-y-6">

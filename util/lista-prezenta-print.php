@@ -8,13 +8,13 @@ require_once __DIR__ . '/../includes/log_helper.php';
 require_once __DIR__ . '/../includes/document_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
-if ($id <= 0) { header('Location: activitati.php'); exit; }
+if ($id <= 0) { header('Location: /activitati'); exit; }
 
 try {
     $stmt = $pdo->prepare('SELECT * FROM liste_prezenta WHERE id = ?');
     $stmt->execute([$id]);
     $lista = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$lista) { header('Location: activitati.php'); exit; }
+    if (!$lista) { header('Location: /activitati'); exit; }
 
     // Log printare
     log_activitate($pdo, "liste_prezenta: Lista de prezenta printata - {$lista['tip_titlu']} (ID: {$id}) / Data: " . date(DATE_FORMAT, strtotime($lista['data_lista'])));
@@ -22,7 +22,7 @@ try {
     $stmt->execute([$id]);
     $participanti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    header('Location: activitati.php');
+    header('Location: /activitati');
     exit;
 }
 $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','nume_prenume','semnatura'];

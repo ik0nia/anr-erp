@@ -18,70 +18,8 @@ if (!defined('INCASARI_MOD_NUMERAR')) {
 }
 
 function incasari_ensure_tables($pdo) {
-    static $done = false;
-    if ($done) return;
-    $done = true;
-    $pdo->exec("CREATE TABLE IF NOT EXISTS incasari (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        membru_id INT DEFAULT NULL,
-        contact_id INT DEFAULT NULL,
-        tip VARCHAR(30) NOT NULL,
-        anul SMALLINT UNSIGNED DEFAULT NULL,
-        suma DECIMAL(12,2) NOT NULL,
-        mod_plata VARCHAR(30) NOT NULL,
-        data_incasare DATE NOT NULL,
-        seria_chitanta VARCHAR(20) DEFAULT NULL,
-        nr_chitanta INT UNSIGNED DEFAULT NULL,
-        reprezentand VARCHAR(255) DEFAULT NULL,
-        observatii TEXT DEFAULT NULL,
-        created_by VARCHAR(100) DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_membru (membru_id),
-        INDEX idx_contact (contact_id),
-        INDEX idx_tip (tip),
-        INDEX idx_anul (anul),
-        INDEX idx_data (data_incasare)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-    // Migrare: adaugă contact_id și reprezentand dacă lipsesc; face membru_id nullable dacă e NOT NULL
-    try {
-        $cols = $pdo->query("SHOW COLUMNS FROM incasari")->fetchAll(PDO::FETCH_COLUMN);
-        if (!in_array('contact_id', $cols)) {
-            $pdo->exec("ALTER TABLE incasari ADD COLUMN contact_id INT DEFAULT NULL AFTER membru_id, ADD INDEX idx_contact (contact_id)");
-        }
-        if (!in_array('reprezentand', $cols)) {
-            $pdo->exec("ALTER TABLE incasari ADD COLUMN reprezentand VARCHAR(255) DEFAULT NULL AFTER nr_chitanta");
-        }
-        $membruCol = $pdo->query("SHOW COLUMNS FROM incasari WHERE Field = 'membru_id'")->fetch(PDO::FETCH_ASSOC);
-        if ($membruCol && ($membruCol['Null'] ?? '') === 'NO') {
-            foreach ($pdo->query("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'incasari' AND REFERENCED_TABLE_NAME = 'membri'")->fetchAll(PDO::FETCH_COLUMN) as $fkName) {
-                $safe = '`' . str_replace('`', '``', $fkName) . '`';
-                try { $pdo->exec("ALTER TABLE incasari DROP FOREIGN KEY " . $safe); } catch (PDOException $e) { break; }
-            }
-            $pdo->exec("ALTER TABLE incasari MODIFY COLUMN membru_id INT DEFAULT NULL");
-        }
-    } catch (PDOException $e) { /* migrare opțională */ }
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS incasari_serii (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        tip_serie VARCHAR(20) NOT NULL UNIQUE,
-        serie VARCHAR(20) NOT NULL,
-        nr_start INT UNSIGNED NOT NULL DEFAULT 1,
-        nr_curent INT UNSIGNED NOT NULL DEFAULT 1,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS incasari_setari (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        cheie VARCHAR(80) NOT NULL UNIQUE,
-        valoare TEXT,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    // Serii implicite dacă nu există
-    $stmt = $pdo->query("SELECT 1 FROM incasari_serii WHERE tip_serie IN ('donatii','incasari') LIMIT 1");
-    if ($stmt && $stmt->fetch() === false) {
-        $pdo->exec("INSERT INTO incasari_serii (tip_serie, serie, nr_start, nr_curent) VALUES ('donatii','D',1,1), ('incasari','INC',1,1)");
-    }
+    // No-op: schema is managed by install/schema/migration.php
+    return;
 }
 
 /** Verifică dacă membru a achitat cotizația pentru anul dat (inclusiv scutit). */

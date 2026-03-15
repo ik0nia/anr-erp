@@ -41,7 +41,7 @@ function render_formular_profil_membru($membru, $eroare = '', $istoric_modificar
     $input_class = 'w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-slate-900 dark:text-white dark:bg-gray-700';
     ?>
     
-    <form id="form-membru-profil" method="post" action="membru-profil.php?id=<?php echo $membru['id']; ?>" 
+    <form id="form-membru-profil" method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>" 
           enctype="multipart/form-data" 
           class="space-y-6">
         <?php echo csrf_field(); ?>

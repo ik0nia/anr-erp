@@ -8,26 +8,26 @@ require_once __DIR__ . '/../includes/log_helper.php';
 require_once __DIR__ . '/../includes/document_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
-if ($id <= 0) { header('Location: activitati.php'); exit; }
+if ($id <= 0) { header('Location: /activitati'); exit; }
 
 try {
     $stmt = $pdo->prepare('SELECT * FROM liste_prezenta WHERE id = ?');
     $stmt->execute([$id]);
     $lista = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$lista) { header('Location: activitati.php'); exit; }
+    if (!$lista) { header('Location: /activitati'); exit; }
 
     $stmt = $pdo->prepare('SELECT lm.ordine, lm.nume_manual, m.nume, m.prenume, m.datanastere, m.ciseria, m.cinumar, m.domloc FROM liste_prezenta_membri lm LEFT JOIN membri m ON lm.membru_id = m.id WHERE lm.lista_id = ? ORDER BY lm.ordine');
     $stmt->execute([$id]);
     $participanti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    header('Location: activitati.php');
+    header('Location: /activitati');
     exit;
 }
 
 $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','nume_prenume','semnatura'];
 
 $autoload = __DIR__ . '/../vendor/autoload.php';
-if (!file_exists($autoload)) { header('Location: activitati.php'); exit; }
+if (!file_exists($autoload)) { header('Location: /activitati'); exit; }
 require_once $autoload;
 
 use PhpOffice\PhpWord\PhpWord;

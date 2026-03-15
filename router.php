@@ -14,8 +14,8 @@ $path = '/' . trim($path, '/');
 // --- Route definitions ---
 $routes = [
     // MVC Controller routes
-    '/'                        => ['type' => 'legacy', 'script' => 'index.php', 'file' => 'app/legacy/index.php'],
-    '/dashboard'               => ['type' => 'legacy', 'script' => 'index.php', 'file' => 'app/legacy/index.php'],
+    '/'                        => ['type' => 'controller', 'script' => 'index.php', 'file' => 'app/controllers/dashboard/index.php'],
+    '/dashboard'               => ['type' => 'controller', 'script' => 'index.php', 'file' => 'app/controllers/dashboard/index.php'],
     '/activitati'              => ['type' => 'controller', 'script' => 'activitati.php',              'file' => 'app/controllers/activitati/index.php'],
     '/activitati/istoric'      => ['type' => 'controller', 'script' => 'activitati-istoric.php',      'file' => 'app/controllers/activitati/istoric.php'],
     '/ajutoare-bpa'            => ['type' => 'controller', 'script' => 'ajutoare-bpa.php',            'file' => 'app/controllers/bpa/index.php'],
@@ -38,20 +38,22 @@ $routes = [
     '/voluntariat'             => ['type' => 'controller', 'script' => 'voluntariat.php',             'file' => 'app/controllers/voluntariat/index.php'],
 
     // Legacy modules (not yet migrated to MVC)
-    '/membri'                  => ['type' => 'legacy', 'script' => 'membri.php',                'file' => 'app/legacy/membri.php'],
-    '/setari'                  => ['type' => 'legacy', 'script' => 'setari.php',                'file' => 'app/legacy/setari.php'],
-    '/administrativ'           => ['type' => 'legacy', 'script' => 'administrativ.php',         'file' => 'app/legacy/administrativ.php'],
-    '/formular-230'            => ['type' => 'legacy', 'script' => 'formular-230.php',          'file' => 'app/legacy/formular-230.php'],
-    '/fundraising'             => ['type' => 'legacy', 'script' => 'fundraising.php',           'file' => 'app/legacy/fundraising.php'],
-    '/membru-profil'           => ['type' => 'legacy', 'script' => 'membru-profil.php',         'file' => 'app/legacy/membru-profil.php'],
-    '/aniversari'              => ['type' => 'legacy', 'script' => 'aniversari.php',            'file' => 'app/legacy/aniversari.php'],
-    '/generare-documente'      => ['type' => 'legacy', 'script' => 'generare-documente.php',    'file' => 'app/legacy/generare-documente.php'],
-    '/log-activitate'          => ['type' => 'legacy', 'script' => 'log-activitate.php',        'file' => 'app/legacy/log-activitate.php'],
-    '/newsletter-view'         => ['type' => 'legacy', 'script' => 'newsletter-view.php',       'file' => 'app/legacy/newsletter-view.php'],
-    '/registratura/sumar'      => ['type' => 'legacy', 'script' => 'registratura-sumar.php',    'file' => 'app/legacy/registratura-sumar.php'],
-    '/actualizezcsv'           => ['type' => 'legacy', 'script' => 'actualizezcsv.php',         'file' => 'app/legacy/actualizezcsv.php'],
-    '/import-membri-csv'       => ['type' => 'legacy', 'script' => 'import-membri-csv.php',     'file' => 'app/legacy/import-membri-csv.php'],
-    '/contacte/import'         => ['type' => 'legacy', 'script' => 'contacte-import.php',       'file' => 'app/views/partials/contacte-import.php'],
+    '/membri'                  => ['type' => 'controller', 'script' => 'membri.php',            'file' => 'app/controllers/membri/index.php'],
+    '/membri/adauga'           => ['type' => 'controller', 'script' => 'membri-adauga.php',    'file' => 'app/controllers/membri/store.php'],
+    '/setari'                  => ['type' => 'controller', 'script' => 'setari.php',             'file' => 'app/controllers/setari/index.php'],
+    '/administrativ'           => ['type' => 'controller', 'script' => 'administrativ.php',      'file' => 'app/controllers/administrativ/index.php'],
+    '/formular-230'            => ['type' => 'controller', 'script' => 'formular-230.php',       'file' => 'app/controllers/formular-230/index.php'],
+    '/fundraising'             => ['type' => 'controller', 'script' => 'fundraising.php',        'file' => 'app/controllers/fundraising/index.php'],
+    '/membru-profil'           => ['type' => 'controller', 'script' => 'membru-profil.php',     'file' => 'app/controllers/membri/profil.php'],
+    '/aniversari'              => ['type' => 'controller', 'script' => 'aniversari.php',         'file' => 'app/controllers/aniversari/index.php'],
+    '/generare-documente'      => ['type' => 'controller', 'script' => 'generare-documente.php', 'file' => 'app/controllers/generare-documente/index.php'],
+    '/log-activitate'          => ['type' => 'controller', 'script' => 'log-activitate.php',     'file' => 'app/controllers/log-activitate/index.php'],
+    '/newsletter-view'         => ['type' => 'controller', 'script' => 'newsletter-view.php',    'file' => 'app/controllers/newsletter/view.php'],
+    '/registratura/sumar'      => ['type' => 'controller', 'script' => 'registratura-sumar.php', 'file' => 'app/controllers/registratura/sumar.php'],
+    '/actualizeaza-csv'        => ['type' => 'controller', 'script' => 'actualizezcsv.php',      'file' => 'app/controllers/import/actualizeaza-csv.php'],
+    '/actualizezcsv'           => ['type' => 'controller', 'script' => 'actualizezcsv.php',      'file' => 'app/controllers/import/actualizeaza-csv.php'],
+    '/import-membri-csv'       => ['type' => 'controller', 'script' => 'import-membri-csv.php',  'file' => 'app/controllers/import/membri-csv.php'],
+    '/contacte/import'         => ['type' => 'controller', 'script' => 'contacte-import.php',    'file' => 'app/controllers/contacte/import.php'],
 
     // Auth pages
     '/login'                   => ['type' => 'legacy', 'script' => 'login.php',                 'file' => 'app/auth/login.php'],

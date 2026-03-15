@@ -4,6 +4,18 @@
  * Rulează o dată pe zi (ex: cron 0 8 * * * php .../cron/aniversari-notificare.php sau acces URL dimineața).
  */
 require_once __DIR__ . '/../config.php';
+
+$run_from_cli = (php_sapi_name() === 'cli');
+
+if (!$run_from_cli) {
+    // Apel din browser: permite doar cu cheie secretă (CRON_NEWSLETTER_KEY în config)
+    $key = $_GET['key'] ?? '';
+    if (!defined('CRON_NEWSLETTER_KEY') || CRON_NEWSLETTER_KEY === '' || $key !== CRON_NEWSLETTER_KEY) {
+        header('HTTP/1.1 403 Forbidden');
+        exit('Forbidden');
+    }
+}
+
 require_once __DIR__ . '/../includes/notificari_helper.php';
 require_once __DIR__ . '/../includes/contacte_helper.php';
 require_once __DIR__ . '/../includes/log_helper.php';

@@ -8,13 +8,13 @@ require_once __DIR__ . '/../includes/incasari_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
-    header('Location: membri.php');
+    header('Location: /membri');
     exit;
 }
 incasari_ensure_tables($pdo);
 $inc = incasari_get($pdo, $id);
 if (!$inc) {
-    header('Location: membri.php');
+    header('Location: /membri');
     exit;
 }
 

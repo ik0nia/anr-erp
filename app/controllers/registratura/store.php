@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_registratura
     $result = registratura_create($pdo, $_POST, $_SESSION['utilizator'] ?? 'Utilizator');
 
     if ($result['success']) {
-        header('Location: registratura-sumar.php?id=' . (int)$result['id'] . '&redirect=' . urlencode($redirect_param));
+        header('Location: /registratura/sumar?id=' . (int)$result['id'] . '&redirect=' . urlencode($redirect_param));
         exit;
     }
     $eroare = $result['error'];

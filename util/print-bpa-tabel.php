@@ -7,7 +7,7 @@ require_once __DIR__ . '/../includes/document_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
-    header('Location: ajutoare-bpa.php');
+    header('Location: /ajutoare-bpa');
     exit;
 }
 $url_pdf = 'bpa-tabel-pdf.php?id=' . (int)$id;

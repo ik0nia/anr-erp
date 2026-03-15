@@ -7,65 +7,8 @@
  * Asigură tabelele modulului Voluntariat și setarea mesajului zilei
  */
 function voluntariat_ensure_tables(PDO $pdo) {
-    static $done = false;
-    if ($done) return;
-    $done = true;
-    $pdo->exec("CREATE TABLE IF NOT EXISTS voluntari (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nume VARCHAR(100) NOT NULL,
-        prenume VARCHAR(100) DEFAULT NULL,
-        cnp VARCHAR(20) DEFAULT NULL,
-        seria_ci VARCHAR(10) DEFAULT NULL,
-        nr_ci VARCHAR(20) DEFAULT NULL,
-        codpost VARCHAR(10) DEFAULT NULL,
-        domloc VARCHAR(100) DEFAULT NULL,
-        judet_domiciliu VARCHAR(50) DEFAULT NULL,
-        domstr VARCHAR(255) DEFAULT NULL,
-        domnr VARCHAR(20) DEFAULT NULL,
-        dombl VARCHAR(20) DEFAULT NULL,
-        domsc VARCHAR(20) DEFAULT NULL,
-        domet VARCHAR(20) DEFAULT NULL,
-        domap VARCHAR(20) DEFAULT NULL,
-        telefon VARCHAR(50) DEFAULT NULL,
-        email VARCHAR(255) DEFAULT NULL,
-        contact_id INT DEFAULT NULL,
-        nr_registratura VARCHAR(50) DEFAULT NULL,
-        contract_path VARCHAR(500) DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_contact_id (contact_id),
-        INDEX idx_nume (nume),
-        INDEX idx_cnp (cnp)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS voluntariat_activitati (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        nume VARCHAR(255) NOT NULL,
-        data_activitate DATE NOT NULL,
-        ora_inceput TIME DEFAULT NULL,
-        ora_sfarsit TIME DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_data (data_activitate)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS voluntariat_participanti (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        activitate_id INT NOT NULL,
-        voluntar_id INT NOT NULL,
-        ore_prestate DECIMAL(5,2) DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uk_act_vol (activitate_id, voluntar_id),
-        INDEX idx_activitate (activitate_id),
-        INDEX idx_voluntar (voluntar_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS setari (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        cheie VARCHAR(100) NOT NULL UNIQUE,
-        valoare TEXT,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    // No-op: schema is managed by install/schema/migration.php
+    return;
 }
 
 /**
