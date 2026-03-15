@@ -76,17 +76,83 @@ if (empty($selected_cols)) {
 <body>
 
 <div class="no-print">
-    <h2>Configurare Print - Selecteaza coloanele</h2>
-    <form id="cols-form" class="cols-grid">
-        <?php foreach ($all_columns as $key => $label): ?>
-        <label>
-            <input type="checkbox" name="col" value="<?php echo $key; ?>" <?php echo in_array($key, $selected_cols) ? 'checked' : ''; ?>>
-            <?php echo htmlspecialchars($label); ?>
-        </label>
-        <?php endforeach; ?>
-    </form>
+    <h2>Configurare Print</h2>
+
+    <!-- Filtre -->
+    <div style="margin-bottom:15px; padding:12px; background:#fff; border:1px solid #ddd; border-radius:8px;">
+        <h3 style="font-size:14px; margin-bottom:8px; color:#374151;">Filtre membri</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:end;">
+            <div>
+                <label style="font-size:12px; display:block; margin-bottom:2px; font-weight:600;">Status</label>
+                <select id="f_status" style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    <option value="toti" <?php echo ($_GET['status'] ?? '') === 'toti' || empty($_GET['status']) ? 'selected' : ''; ?>>Toti</option>
+                    <option value="activi" <?php echo ($_GET['status'] ?? '') === 'activi' ? 'selected' : ''; ?>>Activi</option>
+                    <option value="suspendati" <?php echo ($_GET['status'] ?? '') === 'suspendati' ? 'selected' : ''; ?>>Suspendati/Expirati</option>
+                    <option value="arhiva" <?php echo ($_GET['status'] ?? '') === 'arhiva' ? 'selected' : ''; ?>>Arhiva (Decedat)</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:12px; display:block; margin-bottom:2px; font-weight:600;">Sex</label>
+                <select id="f_sex" style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    <option value="">Toate</option>
+                    <option value="Masculin" <?php echo ($_GET['sex'] ?? '') === 'Masculin' ? 'selected' : ''; ?>>Masculin</option>
+                    <option value="Feminin" <?php echo ($_GET['sex'] ?? '') === 'Feminin' ? 'selected' : ''; ?>>Feminin</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:12px; display:block; margin-bottom:2px; font-weight:600;">Grad handicap</label>
+                <select id="f_hgrad" style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    <option value="">Toate</option>
+                    <?php foreach (['Grav cu insotitor','Grav','Accentuat','Mediu','Usor','Alt handicap','Asociat','Fara handicap'] as $g): ?>
+                    <option value="<?php echo $g; ?>" <?php echo ($_GET['hgrad'] ?? '') === $g ? 'selected' : ''; ?>><?php echo $g; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:12px; display:block; margin-bottom:2px; font-weight:600;">Localitate</label>
+                <input type="text" id="f_localitate" value="<?php echo htmlspecialchars($_GET['localitate'] ?? ''); ?>" placeholder="Cauta..." style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px; width:140px;">
+            </div>
+            <div>
+                <label style="font-size:12px; display:block; margin-bottom:2px; font-weight:600;">Mediu</label>
+                <select id="f_mediu" style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px;">
+                    <option value="">Toate</option>
+                    <option value="Urban" <?php echo ($_GET['mediu'] ?? '') === 'Urban' ? 'selected' : ''; ?>>Urban</option>
+                    <option value="Rural" <?php echo ($_GET['mediu'] ?? '') === 'Rural' ? 'selected' : ''; ?>>Rural</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:12px; display:block; margin-bottom:2px; font-weight:600;">Cautare</label>
+                <input type="text" id="f_cautare" value="<?php echo htmlspecialchars($_GET['cautare'] ?? ''); ?>" placeholder="Nume, CNP..." style="padding:5px 8px; border:1px solid #ccc; border-radius:4px; font-size:12px; width:160px;">
+            </div>
+            <div>
+                <button class="btn" style="background:#374151; color:#fff; padding:6px 14px;" onclick="applyFilters()">Aplica filtre</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coloane -->
+    <div style="margin-bottom:12px; padding:12px; background:#fff; border:1px solid #ddd; border-radius:8px;">
+        <h3 style="font-size:14px; margin-bottom:8px; color:#374151;">Coloane vizibile <span style="font-weight:400; font-size:11px; color:#888;">(trage pentru reordonare sau foloseste sagetile)</span></h3>
+        <div id="cols-form" style="display:flex; flex-direction:column; gap:3px; max-width:500px;">
+            <?php
+            // Ordinea: mai intai coloanele selectate (in ordinea din URL), apoi restul
+            $ordered_keys = array_merge($selected_cols, array_diff(array_keys($all_columns), $selected_cols));
+            foreach ($ordered_keys as $key):
+                $checked = in_array($key, $selected_cols);
+            ?>
+            <div class="col-item" draggable="true" data-key="<?php echo $key; ?>" style="display:flex; align-items:center; gap:6px; padding:4px 8px; background:<?php echo $checked ? '#fef3c7' : '#f9fafb'; ?>; border:1px solid <?php echo $checked ? '#d97706' : '#e5e7eb'; ?>; border-radius:5px; cursor:grab; font-size:13px;">
+                <span style="cursor:grab; color:#999;">&#9776;</span>
+                <input type="checkbox" value="<?php echo $key; ?>" <?php echo $checked ? 'checked' : ''; ?> style="accent-color:#d97706;">
+                <span style="flex:1;"><?php echo htmlspecialchars($all_columns[$key]); ?></span>
+                <button type="button" onclick="moveItem(this.parentElement, -1)" style="border:none; background:none; cursor:pointer; font-size:14px; color:#666;" title="Muta sus">&#9650;</button>
+                <button type="button" onclick="moveItem(this.parentElement, 1)" style="border:none; background:none; cursor:pointer; font-size:14px; color:#666;" title="Muta jos">&#9660;</button>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+
     <button class="btn btn-print" onclick="applyAndPrint()">Printeaza</button>
-    <button class="btn btn-print" onclick="applyColumns()" style="background:#374151">Actualizeaza coloane</button>
+    <button class="btn btn-print" onclick="applyAll()" style="background:#374151">Actualizeaza</button>
     <button class="btn btn-close" onclick="window.close()">Inchide</button>
 </div>
 
@@ -138,32 +204,103 @@ if (empty($selected_cols)) {
 <div class="total-row">Total: <?php echo count($all_members); ?> membri</div>
 
 <script>
+// Coloane selectate (in ordinea din lista)
 function getSelectedCols() {
-    var checks = document.querySelectorAll('#cols-form input[type=checkbox]:checked');
+    var items = document.querySelectorAll('#cols-form .col-item');
     var cols = [];
-    checks.forEach(function(c) { cols.push(c.value); });
+    items.forEach(function(item) {
+        var cb = item.querySelector('input[type=checkbox]');
+        if (cb && cb.checked) cols.push(cb.value);
+    });
     return cols.join(',');
 }
-function applyColumns() {
+
+// Construieste URL cu filtre + coloane
+function buildUrl(extra) {
+    var url = new URL(window.location.href);
+    // Filtre
+    var filters = {
+        status: document.getElementById('f_status').value,
+        sex: document.getElementById('f_sex').value,
+        hgrad: document.getElementById('f_hgrad').value,
+        localitate: document.getElementById('f_localitate').value,
+        mediu: document.getElementById('f_mediu').value,
+        cautare: document.getElementById('f_cautare').value,
+    };
+    // Seteaza sau sterge parametrii
+    for (var k in filters) {
+        if (filters[k]) url.searchParams.set(k, filters[k]);
+        else url.searchParams.delete(k);
+    }
+    // Coloane
+    var cols = getSelectedCols();
+    if (cols) url.searchParams.set('cols', cols);
+    // Pastreaza print=1
+    url.searchParams.set('print', '1');
+    // Extra params
+    if (extra) for (var ek in extra) url.searchParams.set(ek, extra[ek]);
+    return url.toString();
+}
+
+function applyFilters() {
+    window.location.href = buildUrl();
+}
+
+function applyAll() {
     var cols = getSelectedCols();
     if (!cols) { alert('Selecteaza cel putin o coloana.'); return; }
-    var url = new URL(window.location.href);
-    url.searchParams.set('cols', cols);
-    window.location.href = url.toString();
+    window.location.href = buildUrl();
 }
+
 function applyAndPrint() {
     var cols = getSelectedCols();
     if (!cols) { alert('Selecteaza cel putin o coloana.'); return; }
-    var currentCols = '<?php echo implode(',', $selected_cols); ?>';
-    if (cols !== currentCols) {
-        var url = new URL(window.location.href);
-        url.searchParams.set('cols', cols);
-        url.searchParams.set('autoprint', '1');
-        window.location.href = url.toString();
-    } else {
-        window.print();
-    }
+    window.location.href = buildUrl({ autoprint: '1' });
 }
+
+// Muta coloana sus/jos
+function moveItem(el, dir) {
+    var parent = el.parentElement;
+    if (dir === -1 && el.previousElementSibling) {
+        parent.insertBefore(el, el.previousElementSibling);
+    } else if (dir === 1 && el.nextElementSibling) {
+        parent.insertBefore(el.nextElementSibling, el);
+    }
+    updateItemStyles();
+}
+
+function updateItemStyles() {
+    document.querySelectorAll('#cols-form .col-item').forEach(function(item) {
+        var cb = item.querySelector('input[type=checkbox]');
+        item.style.background = cb.checked ? '#fef3c7' : '#f9fafb';
+        item.style.borderColor = cb.checked ? '#d97706' : '#e5e7eb';
+    });
+}
+
+// Checkbox change updates style
+document.querySelectorAll('#cols-form input[type=checkbox]').forEach(function(cb) {
+    cb.addEventListener('change', updateItemStyles);
+});
+
+// Drag and drop
+var dragItem = null;
+document.querySelectorAll('#cols-form .col-item').forEach(function(item) {
+    item.addEventListener('dragstart', function(e) { dragItem = this; this.style.opacity = '0.4'; });
+    item.addEventListener('dragend', function() { this.style.opacity = '1'; dragItem = null; });
+    item.addEventListener('dragover', function(e) { e.preventDefault(); });
+    item.addEventListener('drop', function(e) {
+        e.preventDefault();
+        if (dragItem && dragItem !== this) {
+            var parent = this.parentElement;
+            var items = Array.from(parent.children);
+            var fromIdx = items.indexOf(dragItem);
+            var toIdx = items.indexOf(this);
+            if (fromIdx < toIdx) parent.insertBefore(dragItem, this.nextSibling);
+            else parent.insertBefore(dragItem, this);
+        }
+    });
+});
+
 <?php if (isset($_GET['autoprint'])): ?>
 window.onload = function() { setTimeout(function() { window.print(); }, 300); };
 <?php endif; ?>
