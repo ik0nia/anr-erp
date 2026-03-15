@@ -66,6 +66,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_interactiune_v
     }
 }
 
+// --- POST: Adauga task rapid (din modal) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_task_rapid'])) {
+    csrf_require_valid();
+    $task_nume = trim($_POST['task_nume'] ?? '');
+    $task_data = trim($_POST['task_data'] ?? date('Y-m-d H:i:s'));
+    $task_detalii = trim($_POST['task_detalii'] ?? '');
+    $task_urgenta = in_array($_POST['task_urgenta'] ?? '', ['normal', 'important']) ? $_POST['task_urgenta'] : 'normal';
+
+    if ($task_nume !== '') {
+        try {
+            $user_id = $_SESSION['user_id'] ?? null;
+            $stmt = $pdo->prepare("INSERT INTO taskuri (nume, data_ora, detalii, nivel_urgenta, utilizator_id) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$task_nume, $task_data, $task_detalii ?: null, $task_urgenta, $user_id]);
+            log_activitate($pdo, 'Task creat: ' . $task_nume);
+            while (ob_get_level()) { ob_end_clean(); }
+            header('Location: /dashboard?succes_task=1');
+            exit;
+        } catch (PDOException $e) {
+            $eroare = 'Eroare la crearea taskului: ' . $e->getMessage();
+        }
+    } else {
+        $eroare = 'Numele taskului este obligatoriu.';
+    }
+}
+
 // --- GET: Incarca date ---
 $taskuri_active = [];
 $taskuri_istoric_count = 0;

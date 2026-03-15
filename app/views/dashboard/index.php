@@ -57,11 +57,11 @@
                         <i data-lucide="users" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
                         <span class="text-xs font-medium text-slate-800 dark:text-gray-200 text-center px-1">Actualizare membri</span>
                     </a>
-                    <a href="/todo/adauga?redirect=<?php echo urlencode($_SERVER['REQUEST_URI'] ?? '/dashboard'); ?>" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"
+                    <button type="button" onclick="document.getElementById('modal-task-nou').showModal()" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"
                        aria-label="Adauga task nou">
                         <i data-lucide="plus-circle" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
                         <span class="text-xs font-medium text-slate-800 dark:text-gray-200 text-center px-1">Adauga task</span>
-                    </a>
+                    </button>
                     <a href="/registratura/adauga?redirect=dashboard" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"
                        aria-label="Inregistrare document in registratura">
                         <i data-lucide="book-open" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
@@ -180,12 +180,12 @@
                         <h2 id="titlu-todo" class="text-lg font-semibold text-slate-900 dark:text-white">
                             <a href="/todo" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">Taskuri</a>
                         </h2>
-                        <a href="/todo/adauga?redirect=<?php echo urlencode($_SERVER['REQUEST_URI'] ?? '/dashboard'); ?>"
+                        <button type="button" onclick="document.getElementById('modal-task-nou').showModal()"
                            class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white dark:text-white bg-orange-500 dark:bg-orange-600 border border-orange-600 dark:border-orange-700 rounded-lg hover:bg-orange-600 dark:hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition"
                            aria-label="Adauga task nou">
                             <i data-lucide="plus" class="w-4 h-4" aria-hidden="true"></i>
                             <span>Task Nou</span>
-                        </a>
+                        </button>
                     </header>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-label="Taskuri active" id="todo-table-dashboard">
@@ -212,7 +212,7 @@
                             <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                                 <?php if (empty($taskuri_active)): ?>
                                 <tr>
-                                    <td colspan="4" class="px-4 py-8 text-center text-slate-600 dark:text-gray-400">Nu exista taskuri active. <a href="/todo/adauga" class="text-amber-600 dark:text-amber-400 hover:underline">Adauga un task</a></td>
+                                    <td colspan="4" class="px-4 py-8 text-center text-slate-600 dark:text-gray-400">Nu exista taskuri active. <button type="button" onclick="document.getElementById('modal-task-nou').showModal()" class="text-amber-600 dark:text-amber-400 hover:underline">Adauga un task</button></td>
                                 </tr>
                                 <?php else: ?>
                                 <?php foreach ($taskuri_active as $t): ?>
@@ -637,5 +637,51 @@ if (dlgTask) {
 })();
 </script>
 <?php require_once APP_ROOT . '/includes/incasari_dashboard_modal.php'; ?>
+
+<!-- Modal Task Nou -->
+<dialog id="modal-task-nou" class="p-0 rounded-lg shadow-xl max-w-lg w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-700 dark:bg-gray-800 backdrop:bg-black/30" aria-labelledby="modal-task-titlu" aria-modal="true">
+    <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="modal-task-titlu" class="text-lg font-bold text-slate-900 dark:text-white">Task Nou</h2>
+            <button type="button" onclick="document.getElementById('modal-task-nou').close()" class="text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200" aria-label="Inchide">
+                <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
+            </button>
+        </div>
+        <form method="post" action="/dashboard" class="space-y-4">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="adauga_task_rapid" value="1">
+            <div>
+                <label for="task_nume" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume task <span class="text-red-600">*</span></label>
+                <input type="text" id="task_nume" name="task_nume" required
+                       class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                       placeholder="Ex: Suna membrul X pentru certificat">
+            </div>
+            <div>
+                <label for="task_data" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data / Termen</label>
+                <input type="datetime-local" id="task_data" name="task_data"
+                       value="<?php echo date('Y-m-d\TH:i'); ?>"
+                       class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+            </div>
+            <div>
+                <label for="task_detalii" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Detalii</label>
+                <textarea id="task_detalii" name="task_detalii" rows="3"
+                          class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                          placeholder="Detalii suplimentare (optional)"></textarea>
+            </div>
+            <div>
+                <label for="task_urgenta" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Urgenta</label>
+                <select id="task_urgenta" name="task_urgenta"
+                        class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                    <option value="normal">Normal</option>
+                    <option value="important">Important</option>
+                </select>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">Salveaza task</button>
+                <button type="button" onclick="document.getElementById('modal-task-nou').close()" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">Anulare</button>
+            </div>
+        </form>
+    </div>
+</dialog>
 </body>
 </html>
