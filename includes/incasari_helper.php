@@ -111,8 +111,9 @@ function incasari_get($pdo, $id) {
 }
 
 function incasari_lista_membru($pdo, $membru_id, $limit = 100) {
-    $stmt = $pdo->prepare("SELECT * FROM incasari WHERE membru_id = ? ORDER BY data_incasare DESC, id DESC LIMIT ?");
-    $stmt->execute([(int)$membru_id, (int)$limit]);
+    $limit = (int)$limit;
+    $stmt = $pdo->prepare("SELECT * FROM incasari WHERE membru_id = ? ORDER BY data_incasare DESC, id DESC LIMIT " . $limit);
+    $stmt->execute([(int)$membru_id]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 

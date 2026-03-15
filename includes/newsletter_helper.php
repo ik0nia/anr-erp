@@ -271,8 +271,9 @@ function newsletter_programeaza(PDO $pdo, array $date, string $data_programata_m
  */
 function newsletter_lista_trimise(PDO $pdo, int $limit = 20) {
     newsletter_ensure_tables($pdo);
-    $stmt = $pdo->prepare("SELECT id, subiect, nr_recipienti, categoria_contacte, data_trimiterii, status FROM newsletter WHERE status = 'trimis' ORDER BY data_trimiterii DESC LIMIT ?");
-    $stmt->execute([$limit]);
+    $limit = (int)$limit;
+    $stmt = $pdo->prepare("SELECT id, subiect, nr_recipienti, categoria_contacte, data_trimiterii, status FROM newsletter WHERE status = 'trimis' ORDER BY data_trimiterii DESC LIMIT " . $limit);
+    $stmt->execute([]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
