@@ -47,22 +47,7 @@ $nr = $inc['nr_chitanta'] ?? '-';
 
 $text_chitanta = "Am primit de la " . htmlspecialchars($nume) . ", CNP: " . htmlspecialchars($cnp) . ", din loc. " . htmlspecialchars($domloc) . ", Județ: " . htmlspecialchars($judet) . ", suma de " . htmlspecialchars($suma_litere) . " (" . htmlspecialchars($inc['suma']) . " RON), reprezentând " . htmlspecialchars($reprezentant) . ".";
 $date_asoc_esc = nl2br(htmlspecialchars($date_asociatie));
-$logo_img = $logo_url ? '<img src="' . htmlspecialchars($logo_url) . '" style="max-width:32mm;max-height:22mm;" alt="">' : '';
-
-$block = '
-<div style="height:148mm; padding:8mm; border-bottom:1px dashed #ccc; position:relative;">
-    <div style="display:table; width:100%; margin-bottom:4mm;">
-        <div style="display:table-cell; width:70%; white-space:pre-wrap; font-size:10px;">' . $date_asoc_esc . '</div>
-        <div style="display:table-cell; width:30%; text-align:right;">' . $logo_img . '</div>
-    </div>
-    <h1 style="text-align:center; font-size:13px; margin:2mm 0;">CHITANȚA</h1>
-    <p style="text-align:center; margin-bottom:3mm; font-weight:bold;">Seria: ' . htmlspecialchars($seria) . ' &nbsp; Nr. ' . htmlspecialchars($nr) . '</p>
-    <p style="margin:3mm 0; line-height:1.35;">' . $text_chitanta . '</p>
-    <div style="position:absolute; right:8mm; bottom:18mm; text-align:right;">
-        Încasat de: ' . htmlspecialchars($incasat_de) . '<br>
-        Semnătura: <span style="border-bottom:1px solid #000; width:25mm; display:inline-block;"></span>
-    </div>
-</div>';
+$logo_img = $logo_url ? '<img src="' . htmlspecialchars($logo_url) . '" style="max-width:30mm;max-height:18mm;" alt="">' : '';
 
 $autoload = __DIR__ . '/../vendor/autoload.php';
 if (!file_exists($autoload)) {
@@ -71,18 +56,63 @@ if (!file_exists($autoload)) {
 }
 require_once $autoload;
 
+$format = strtolower(trim($_GET['format'] ?? 'a4'));
+
+// Construim conținutul unei chitanțe
+$one = '';
+if ($date_asoc_esc !== '' || $logo_img !== '') {
+    $one .= '<table width="100%"><tr>';
+    $one .= '<td width="70%" style="vertical-align:top; white-space:pre-wrap; font-size:9px; line-height:1.1;">' . $date_asoc_esc . '</td>';
+    $one .= '<td width="30%" style="vertical-align:top; text-align:right;">' . $logo_img . '</td>';
+    $one .= '</tr></table>';
+}
+$one .= '<div style="text-align:center; font-size:15px; font-weight:bold; margin-top:2mm;">CHITANȚA</div>';
+$data_chitanta = date('d.m.Y', strtotime($inc['data_incasare']));
+$one .= '<div style="text-align:center; font-weight:bold; font-size:11px; margin-bottom:0;">Seria: ' . htmlspecialchars($seria) . ' &nbsp;&nbsp; Nr. ' . htmlspecialchars($nr) . ' &nbsp;&nbsp; Data: ' . htmlspecialchars($data_chitanta) . '</div>';
+$one .= '<br><br>';
+$one .= '<div style="font-size:11px; line-height:1.4;">' . $text_chitanta . '</div>';
+$one .= '<div style="text-align:right; font-size:11px; margin-top:12mm;">';
+$one .= 'Încasat de: ' . htmlspecialchars($incasat_de) . '<br>';
+$one .= 'Semnătura: ___________________';
+$one .= '</div>';
+
 try {
-    $mpdf = new \Mpdf\Mpdf([
-        'mode' => 'utf-8',
-        'format' => 'A4',
-        'margin_left' => 0,
-        'margin_right' => 0,
-        'margin_top' => 0,
-        'margin_bottom' => 0,
-    ]);
-    $mpdf->WriteHTML($block);
-    $mpdf->WriteHTML($block);
-    $filename = 'chitanta-' . preg_replace('/[^a-z0-9_-]/i', '-', $seria . '-' . $nr) . '.pdf';
+    if ($format === 'a5') {
+        // O singură chitanță pe pagină A5
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A5-L',
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 5,
+            'margin_bottom' => 5,
+        ]);
+        $mpdf->WriteHTML('<div style="font-family:sans-serif;">' . $one . '</div>');
+    } else {
+        // 2 chitanțe pe o pagină A4 - fiecare exact pe jumătate (148.5mm)
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 5,
+            'margin_bottom' => 5,
+        ]);
+        $mpdf->autoPageBreak = false;
+
+        // Prima chitanță
+        $mpdf->WriteHTML('<div style="font-family:sans-serif;">' . $one . '</div>');
+
+        // Forțăm poziția Y la exact jumătatea paginii A4 (297mm / 2 = 148.5mm)
+        $mpdf->SetY(148.5);
+        // Linie separatoare la jumătate
+        $mpdf->WriteHTML('<div style="border-top:1px dashed #999; padding-top:2mm;"></div>');
+
+        // A doua chitanță
+        $mpdf->WriteHTML('<div style="font-family:sans-serif;">' . $one . '</div>');
+    }
+
+    $filename = 'chitanta-' . preg_replace('/[^a-z0-9_-]/i', '-', $seria . '-' . $nr) . ($format === 'a5' ? '-a5' : '') . '.pdf';
     $mpdf->Output($filename, 'D');
     exit;
 } catch (Exception $e) {

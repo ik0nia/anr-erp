@@ -20,7 +20,7 @@ function aniversari_membri_azi(PDO $pdo): array {
     try {
         $stmt = $pdo->query("
             SELECT id, nume, prenume, datanastere, domloc, telefonnev, telefonapartinator, email,
-                   gdpr, cidataelib, ceexp
+                   gdpr, cidataelib, ceexp, status_dosar
             FROM membri
             WHERE datanastere IS NOT NULL
               AND MONTH(datanastere) = MONTH(CURDATE())
@@ -115,7 +115,7 @@ function aniversari_membri_la_data(PDO $pdo, string $data): array {
     try {
         $stmt = $pdo->prepare("
             SELECT id, nume, prenume, datanastere, domloc, telefonnev, telefonapartinator, email,
-                   gdpr, cidataelib, ceexp
+                   gdpr, cidataelib, ceexp, status_dosar
             FROM membri
             WHERE datanastere IS NOT NULL
               AND MONTH(datanastere) = MONTH(?)

@@ -74,6 +74,9 @@ foreach ($submenu_pages as $sp) {
         <a href="/registru-interactiuni" class="<?php echo sidebar_link_class('/registru-interactiuni', $current_path); ?>" aria-label="Registru Interacțiuni">
             <i data-lucide="phone-call" class="mr-3 w-5 h-5 shrink-0" aria-hidden="true"></i> Registru Interacțiuni
         </a>
+        <a href="/incasari" class="<?php echo sidebar_link_class('/incasari', $current_path); ?>" aria-label="Încasări">
+            <i data-lucide="receipt" class="mr-3 w-5 h-5 shrink-0" aria-hidden="true"></i> Încasări
+        </a>
         <a href="/registratura" class="<?php echo sidebar_link_class('/registratura', $current_path); ?>" aria-label="Registratura">
             <i data-lucide="file-text" class="mr-3 w-5 h-5 shrink-0" aria-hidden="true"></i> Registratura
         </a>

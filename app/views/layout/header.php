@@ -44,21 +44,26 @@
                 font-size: 16px !important;
             }
 
-            /* Touch targets minim 44x44px */
-            button, a, input[type="submit"], input[type="button"] {
+            /* Touch targets minim 44x44px (exclus shortcut-urile din dashboard) */
+            button:not([class*="aspect-square"]),
+            a:not([class*="aspect-square"]),
+            input[type="submit"],
+            input[type="button"] {
                 min-height: 44px;
-                min-width: 44px;
             }
 
-            /* Padding suplimentar pentru butoane */
-            button, a.btn {
-                padding: 0.75rem 1rem;
-            }
-
-            /* Modals responsive */
+            /* Modals full-screen pe mobile - arată ca o pagină nouă */
             dialog {
-                max-width: calc(100% - 2rem) !important;
-                margin: 1rem auto !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+                border: none !important;
+            }
+            dialog > div {
+                min-height: 100vh;
             }
 
             /* Tabele cu scroll indicator */
@@ -157,7 +162,10 @@
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 flex h-screen overflow-hidden">
-<!-- Mobile hamburger -->
-<button id="mobile-menu-btn" class="lg:hidden fixed top-3 left-3 z-50 p-2 bg-slate-800 dark:bg-slate-700 text-white rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500" aria-label="Deschide meniul">
-    <i data-lucide="menu" class="w-6 h-6" aria-hidden="true"></i>
-</button>
+<!-- Top bar mobile cu logo -->
+<div class="lg:hidden fixed top-0 left-0 right-0 z-30 bg-slate-900 dark:bg-slate-800 flex items-center justify-center py-2.5 shadow-lg">
+    <a href="/dashboard">
+        <img src="<?php echo defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : ''; ?>" alt="Logo" class="h-16 w-auto object-contain">
+    </a>
+</div>
+<!-- Mobile hamburger este creat de mobile-navigation.js -->

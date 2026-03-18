@@ -27,23 +27,22 @@ $redirect_uri = htmlspecialchars($_SERVER['REQUEST_URI'] ?? '/dashboard');
             <i data-lucide="chevron-down" class="w-4 h-4 ml-auto flex-shrink-0" aria-hidden="true"></i>
             <?php endif; ?>
         </button>
-        <div id="user-menu-dropdown" 
-             class="hidden absolute bottom-full left-0 right-0 mb-1 w-full rounded-lg shadow-lg bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 py-2 z-50"
+        <div id="user-menu-dropdown"
+             class="hidden absolute bottom-full left-0 mb-1 min-w-[200px] rounded-lg shadow-lg bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-500 py-2 z-50"
              role="menu"
              aria-orientation="vertical"
              aria-labelledby="user-menu-toggle">
-            <div class="px-4 py-2 border-b border-slate-200 dark:border-gray-600" role="none">
-                <p class="text-sm font-medium text-slate-900 dark:text-white truncate" id="user-menu-username"><?php echo htmlspecialchars($username); ?></p>
-                <p class="text-xs text-slate-500 dark:text-gray-400 truncate" aria-hidden="true"><?php echo htmlspecialchars($utilizator_nume); ?></p>
+            <div class="px-4 py-2 border-b border-slate-200 dark:border-gray-500" role="none">
+                <p class="text-sm font-medium text-slate-900 dark:text-white" id="user-menu-username"><?php echo htmlspecialchars($utilizator_nume); ?></p>
             </div>
-            <button type="button" id="user-menu-schimba-parola" 
-                    class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 focus:bg-slate-100 dark:focus:bg-gray-700 focus:outline-none flex items-center gap-2"
+            <button type="button" id="user-menu-schimba-parola"
+                    class="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-gray-600 focus:bg-slate-100 dark:focus:bg-gray-600 focus:outline-none flex items-center gap-2"
                     role="menuitem">
                 <i data-lucide="key" class="w-4 h-4 flex-shrink-0" aria-hidden="true"></i>
                 Schimbă parola
             </button>
-            <a href="/logout" 
-               class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 focus:bg-slate-100 dark:focus:bg-gray-700 focus:outline-none border-t border-slate-200 dark:border-gray-600 mt-1 pt-2"
+            <a href="/logout"
+               class="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-gray-600 focus:bg-slate-100 dark:focus:bg-gray-600 focus:outline-none border-t border-slate-200 dark:border-gray-500 mt-1 pt-2"
                role="menuitem">
                 <i data-lucide="log-out" class="w-4 h-4 flex-shrink-0" aria-hidden="true"></i>
                 Logout

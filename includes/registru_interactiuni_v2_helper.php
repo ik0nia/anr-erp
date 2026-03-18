@@ -62,7 +62,7 @@ function registru_v2_statistici_lunare($pdo, $an = null) {
             $luna = (int)$row['luna'];
             $tip = $row['tip'];
             if (!isset($statistici[$luna])) {
-                $statistici[$luna] = ['apel' => 0, 'vizita' => 0];
+                $statistici[$luna] = ['apel' => 0, 'vizita' => 0, 'incasare' => 0];
             }
             $statistici[$luna][$tip] = (int)$row['numar'];
         }
@@ -113,7 +113,7 @@ function registru_v2_statistici_subiecte($pdo) {
  * Returnează array: ['apel' => count, 'vizita' => count]
  */
 function registru_v2_interactiuni_azi($pdo) {
-    $rezultat = ['apel' => 0, 'vizita' => 0];
+    $rezultat = ['apel' => 0, 'vizita' => 0, 'incasare' => 0];
     try {
         $azi = date('Y-m-d');
         $stmt = $pdo->prepare("
@@ -165,5 +165,28 @@ function registru_v2_interactiuni_recente($pdo, $limit = 50, $zile = null) {
     } catch (PDOException $e) {
         error_log('Eroare interacțiuni recente v2: ' . $e->getMessage());
         return [];
+    }
+}
+
+/**
+ * Înregistrează o încasare în Registrul de Interacțiuni v2.
+ * @param string $persoana Numele persoanei (membru/donator)
+ * @param string $descriere Detalii încasare (tip, sumă, serie/nr chitanță)
+ * @param string|null $utilizator Utilizatorul care a înregistrat
+ */
+function registru_v2_adauga_incasare($pdo, $persoana, $descriere, $utilizator = null) {
+    if ($utilizator === null) {
+        $utilizator = $_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? 'Sistem';
+    }
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO registru_interactiuni_v2 (tip, persoana, notite, utilizator, data_ora)
+            VALUES ('incasare', ?, ?, ?, NOW())
+        ");
+        $stmt->execute([$persoana, $descriere, $utilizator]);
+        return (int)$pdo->lastInsertId();
+    } catch (PDOException $e) {
+        error_log('Eroare adăugare încasare în registru v2: ' . $e->getMessage());
+        return false;
     }
 }

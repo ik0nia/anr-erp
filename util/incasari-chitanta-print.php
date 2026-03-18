@@ -38,7 +38,7 @@ $nume = trim(($inc['nume'] ?? '') . ' ' . ($inc['prenume'] ?? ''));
 $cnp = $inc['cnp'] ?? '';
 $domloc = $inc['domloc'] ?? '';
 $judet = $inc['judet_domiciliu'] ?? '';
-if ($domloc === '' && $judet === '' && $inc['contact_id']) {
+if ($domloc === '' && $judet === '' && !empty($inc['contact_id'])) {
     $domloc = '-';
     $judet = '-';
 }
@@ -50,51 +50,69 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
 <!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="utf-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chitanță <?php echo htmlspecialchars($seria . ' ' . $nr); ?></title>
     <style>
-        @media print {
-            body { margin: 0; padding: 0; }
-            .no-print { display: none !important; }
-            .a4-sheet { box-shadow: none !important; }
+        /* Forțăm pagina fără margini la print - compatibil A4 și Letter */
+        @page {
+            size: auto;
+            margin: 0;
         }
-        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; padding: 8px; }
-        .a4-sheet { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 0; box-sizing: border-box; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .chitanta-half { width: 210mm; height: 148.5mm; padding: 8mm; box-sizing: border-box; border-bottom: 1px dashed #ccc; position: relative; }
-        .chitanta-half:last-child { border-bottom: 0; }
-        .chitanta-half .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4mm; }
-        .chitanta-half .date-asociatie { flex: 1; white-space: pre-wrap; font-size: 10px; }
-        .chitanta-half .logo { width: 32mm; text-align: right; }
-        .chitanta-half .logo img { max-width: 100%; max-height: 22mm; }
-        .chitanta-half h1 { text-align: center; font-size: 13px; margin: 2mm 0; }
-        .chitanta-half .seria-nr { text-align: center; margin-bottom: 3mm; font-weight: bold; }
-        .chitanta-half .text-incasare { margin: 3mm 0; line-height: 1.35; }
-        .chitanta-half .footer { position: absolute; right: 8mm; bottom: 18mm; text-align: right; }
-        .chitanta-half .footer .semnatura { margin-top: 2mm; border-bottom: 1px solid #000; width: 25mm; display: inline-block; }
-        .no-print { text-align: center; margin: 10px 0; }
+        @media print {
+            html, body { margin: 0 !important; padding: 0 !important; }
+            .no-print { display: none !important; }
+            .a4-sheet { box-shadow: none !important; page-break-after: avoid; page-break-inside: avoid; }
+        }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; padding: 0; }
+        .no-print { text-align: center; padding: 10px 0; }
         .no-print a, .no-print button { margin: 0 4px; padding: 8px 16px; text-decoration: none; background: #b45309; color: #fff; border: 0; border-radius: 6px; cursor: pointer; font-size: 14px; }
         .no-print a:hover, .no-print button:hover { background: #92400a; }
+        /* Letter = 279.4mm înălțime, A4 = 297mm. Folosim Letter ca referință (mai mic). */
+        /* Jumătate din Letter minus margini minime browser (~5mm sus/jos) = ~134mm per chitanță */
+        .a4-sheet { width: 200mm; max-height: 275mm; margin: 0 auto; padding: 0; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .chitanta-half {
+            width: 100%;
+            height: 134mm;  /* jumătate din Letter minus margini browser */
+            padding: 5mm 8mm;
+            overflow: hidden;
+        }
+        .chitanta-half:first-child { border-bottom: 1px dashed #ccc; }
+        .chitanta-half .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2mm; }
+        .chitanta-half .date-asociatie { flex: 1; white-space: pre-wrap; font-size: 9px; line-height: 1.15; }
+        .chitanta-half .logo { width: 32mm; text-align: right; }
+        .chitanta-half .logo img { max-width: 100%; max-height: 18mm; }
+        .chitanta-half h1 { text-align: center; font-size: 15px; margin: 2mm 0 0 0; }
+        .chitanta-half .seria-nr { text-align: center; font-weight: bold; margin: 0; }
+        .chitanta-half .spacer { height: 8mm; }
+        .chitanta-half .text-incasare { line-height: 1.4; }
+        .chitanta-half .footer { text-align: right; margin-top: 12mm; }
+        .chitanta-half .footer .semnatura { margin-top: 2mm; border-bottom: 1px solid #000; width: 25mm; display: inline-block; }
     </style>
 </head>
 <body>
     <div class="no-print">
         <button type="button" onclick="window.print();">Tipărește</button>
-        <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?>">Descarcă PDF</a>
-        <a href="https://wa.me/?text=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON - ' . (isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . '/util/incasari-chitanta-print.php?id=' . $id); ?>" target="_blank" rel="noopener noreferrer">Distribuie WhatsApp</a>
-        <a href="mailto:?subject=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr); ?>&body=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON' . "\n" . (isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . '/util/incasari-chitanta-print.php?id=' . $id); ?>">Distribuie Email</a>
+        <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?>">PDF A4</a>
+        <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?>&format=a5">PDF A5</a>
+        <?php $pdf_a5_url = (isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . '/util/incasari-chitanta-pdf.php?id=' . $id . '&format=a5'; ?>
+        <a href="https://wa.me/?text=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON - ' . $pdf_a5_url); ?>" target="_blank" rel="noopener noreferrer">Distribuie WhatsApp</a>
+        <a href="mailto:?subject=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr); ?>&body=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON' . "\n" . $pdf_a5_url); ?>">Distribuie Email</a>
     </div>
     <div class="a4-sheet">
         <?php for ($ex = 1; $ex <= 2; $ex++): ?>
         <div class="chitanta-half">
+            <?php if ($date_asociatie !== '' || $logo_url): ?>
             <div class="header">
                 <div class="date-asociatie"><?php echo nl2br(htmlspecialchars($date_asociatie)); ?></div>
                 <?php if ($logo_url): ?>
                 <div class="logo"><img src="<?php echo htmlspecialchars($logo_url); ?>" alt="Logo"></div>
                 <?php endif; ?>
             </div>
+            <?php endif; ?>
             <h1>CHITANȚA</h1>
-            <div class="seria-nr">Seria: <?php echo htmlspecialchars($seria); ?> &nbsp; Nr. <?php echo htmlspecialchars($nr); ?></div>
+            <div class="seria-nr">Seria: <?php echo htmlspecialchars($seria); ?> &nbsp;&nbsp; Nr. <?php echo htmlspecialchars($nr); ?> &nbsp;&nbsp; Data: <?php echo date('d.m.Y', strtotime($inc['data_incasare'])); ?></div>
+            <div class="spacer"></div>
             <div class="text-incasare"><?php echo htmlspecialchars($text_chitanta); ?></div>
             <div class="footer">
                 Încasat de: <?php echo htmlspecialchars($incasat_de); ?><br>

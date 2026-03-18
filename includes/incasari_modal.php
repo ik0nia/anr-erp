@@ -48,6 +48,11 @@
                 <input type="text" id="incasari-suma" name="suma" placeholder="0.00" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" inputmode="decimal">
             </div>
 
+            <div id="incasari-wrap-reprezentand" class="hidden">
+                <label for="incasari-reprezentand" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Reprezentând</label>
+                <input type="text" id="incasari-reprezentand" name="reprezentand" value="" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" placeholder="Donație">
+            </div>
+
             <div class="flex flex-wrap gap-2 pt-2">
                 <button type="button" id="incasari-btn-chitanta" class="hidden px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Tipărește chitanță</button>
                 <button type="button" id="incasari-btn-salveaza" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg">Salvează încasarea</button>
@@ -72,6 +77,8 @@
     var btnChitanta = document.getElementById('incasari-btn-chitanta');
     var btnSalveaza = document.getElementById('incasari-btn-salveaza');
     var dataInput = document.getElementById('incasari-data');
+    var wrapReprezentand = document.getElementById('incasari-wrap-reprezentand');
+    var inputReprezentand = document.getElementById('incasari-reprezentand');
 
     function resetModal() {
         tipInput.value = '';
@@ -80,6 +87,8 @@
         document.querySelectorAll('.incasari-mod-btn').forEach(function(b){ b.classList.remove('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500'); });
         wrapSuma.classList.add('hidden');
         inputSuma.value = '';
+        wrapReprezentand.classList.add('hidden');
+        inputReprezentand.value = '';
         btnChitanta.classList.add('hidden');
         btnSalveaza.classList.add('hidden');
         dataInput.value = new Date().toISOString().slice(0,10);
@@ -122,10 +131,10 @@
             tipInput.value = t;
             document.querySelectorAll('.incasari-tip-btn').forEach(function(b){ b.classList.remove('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500'); });
             this.classList.add('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500');
-            if (t === 'donatie') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Donație (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; }
-            else if (t === 'taxa_participare') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Taxă participare (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; }
-            else if (t === 'alte') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Încasare (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; }
-            else { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Cotizație (RON)'; inputSuma.value = valCot.value || '0'; inputSuma.readOnly = true; }
+            if (t === 'donatie') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Donație (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; wrapReprezentand.classList.remove('hidden'); inputReprezentand.value = 'Donație'; }
+            else if (t === 'taxa_participare') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Taxă participare (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; wrapReprezentand.classList.add('hidden'); inputReprezentand.value = ''; }
+            else if (t === 'alte') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Încasare (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; wrapReprezentand.classList.add('hidden'); inputReprezentand.value = ''; }
+            else { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Cotizație (RON)'; inputSuma.value = valCot.value || '0'; inputSuma.readOnly = true; wrapReprezentand.classList.add('hidden'); inputReprezentand.value = ''; }
             if (modInput.value) { if (modInput.value === 'numerar' || modInput.value === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); } else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); } }
         });
     });

@@ -57,14 +57,20 @@
                                     }
                                     $nr = $aniversari_per_zi[$zi] ?? 0;
                                     $e_azi = ($zi === $zi_azi);
+                                    $data_zi = sprintf('%04d-%02d-%02d', $anul_curent, $luna_curenta, $zi);
+                                    $e_selectata = ($data_zi === $data_selectata);
                             ?>
                                 <td class="p-0.5 w-[14%] align-top">
-                                    <div class="min-h-[2.5rem] rounded text-center <?php echo $e_azi ? 'bg-amber-500 dark:bg-amber-600 text-white font-bold ring-2 ring-amber-600 dark:ring-amber-500' : 'bg-slate-50 dark:bg-gray-700/50 text-slate-800 dark:text-gray-200'; ?>">
-                                        <span class="block text-xs"><?php echo $zi; ?></span>
+                                    <a href="/aniversari?data=<?php echo $data_zi; ?>" class="block min-h-[3rem] rounded text-center py-0.5 <?php
+                                        if ($e_selectata) echo 'bg-amber-500 dark:bg-amber-600 text-white font-bold ring-2 ring-amber-600 dark:ring-amber-500';
+                                        elseif ($e_azi) echo 'bg-slate-200 dark:bg-gray-600 text-slate-900 dark:text-white font-semibold ring-1 ring-slate-400 dark:ring-gray-400';
+                                        else echo 'bg-slate-50 dark:bg-gray-700/50 text-slate-800 dark:text-gray-200 hover:bg-amber-100 dark:hover:bg-amber-900/30';
+                                    ?>" style="text-decoration:none;">
+                                        <span class="block text-sm font-bold"><?php echo $zi; ?></span>
                                         <?php if ($nr > 0): ?>
-                                        <span class="block text-xs font-semibold" aria-label="<?php echo $nr; ?> aniversari"><?php echo $nr; ?></span>
+                                        <span class="block text-[10px] text-amber-600 dark:text-amber-400 mt-0.5" aria-label="<?php echo $nr; ?> aniversari"><?php echo $nr; ?> aniv.</span>
                                         <?php endif; ?>
-                                    </div>
+                                    </a>
                                 </td>
                             <?php endfor; ?>
                             </tr>
@@ -86,7 +92,7 @@
         </div>
 
         <section class="mb-8" aria-labelledby="titlu-membri">
-            <h2 id="titlu-membri" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari membri – <?php echo date('d.m.Y', strtotime($data_selectata)); ?></h2>
+            <h2 id="titlu-membri" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari membri – <?php echo date('d.m.Y', strtotime($data_selectata)); ?> (<?php echo count($aniversari_membri); ?>)</h2>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-label="Aniversari membri">
@@ -95,6 +101,7 @@
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Nume si prenume</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Data nasterii</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Varsta</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Status dosar</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Localitatea</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Numar telefon</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Avertizari</th>
@@ -104,7 +111,7 @@
                         <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                             <?php if (empty($aniversari_membri)): ?>
                             <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista aniversari ale membrilor in aceasta zi.</td>
+                                <td colspan="8" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista aniversari ale membrilor in aceasta zi.</td>
                             </tr>
                             <?php else: ?>
                             <?php foreach ($aniversari_membri as $m):
@@ -123,6 +130,23 @@
                                 </td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo $m['datanastere'] ? date('d.m.Y', strtotime($m['datanastere'])) : '-'; ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo aniversari_calculeaza_varsta($m['datanastere']); ?></td>
+                                <td class="px-4 py-3 text-sm">
+                                    <?php
+                                    $status = $m['status_dosar'] ?? '';
+                                    ?>
+                                    <?php
+                                    $status_styles = [
+                                        'Activ' => 'background:#059669;color:#fff;',
+                                        'Suspendat' => 'background:#d97706;color:#fff;',
+                                        'Expirat' => 'background:#dc2626;color:#fff;',
+                                        'Transferat' => 'background:#7c3aed;color:#fff;',
+                                        'Decedat' => 'background:#374151;color:#fff;',
+                                        'Arhiva' => 'background:#6b7280;color:#fff;',
+                                    ];
+                                    $s_style = $status_styles[$status] ?? 'background:#94a3b8;color:#fff;';
+                                    ?>
+                                    <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded" style="<?php echo $s_style; ?>"><?php echo htmlspecialchars($status ?: '-'); ?></span>
+                                </td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($m['domloc'] ?? '-'); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($tel_primar ?: ($tel_personal ?: '-')); ?></td>
                                 <td class="px-4 py-3 text-sm">

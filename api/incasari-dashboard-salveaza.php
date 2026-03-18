@@ -131,6 +131,20 @@ if ($tip_form === 'donatie') {
 }
 
 $inc = incasari_get($pdo, $id);
+
+// Înregistrează în Registrul de Interacțiuni v2
+require_once __DIR__ . '/../includes/registru_interactiuni_v2_helper.php';
+$tipuri_afis = incasari_tipuri_afisare();
+$tip_reg = $tip_form === 'cotizatie' ? ($tip_incasare ?? 'cotizatie') : 'donatie';
+$tip_afis = $tipuri_afis[$tip_reg] ?? $tip_reg;
+$nume_persoana = trim(($inc['nume'] ?? '') . ' ' . ($inc['prenume'] ?? ''));
+$descriere_registru = "{$tip_afis}: {$suma} RON";
+$doc_info_reg = ($inc['seria_chitanta'] ?? '-') . ' nr. ' . ($inc['nr_chitanta'] ?? '-');
+if (!empty($inc['seria_chitanta'])) {
+    $descriere_registru .= " – Chitanță {$doc_info_reg}";
+}
+registru_v2_adauga_incasare($pdo, $nume_persoana, $descriere_registru, $utilizator);
+
 echo json_encode([
     'ok' => true,
     'id' => $id,

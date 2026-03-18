@@ -58,7 +58,7 @@
                         <i data-lucide="users" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
                         <span class="text-xs font-medium text-slate-800 dark:text-gray-200 text-center px-1">Actualizare membri</span>
                         <?php if ($ci_de_actualizat > 0 || $ch_de_actualizat > 0): ?>
-                        <span class="text-[10px] text-slate-500 dark:text-gray-400">CI: <?php echo $ci_de_actualizat; ?> | CH: <?php echo $ch_de_actualizat; ?></span>
+                        <span class="text-[10px] text-slate-500 dark:text-gray-400 hidden lg:block">CI: <?php echo $ci_de_actualizat; ?> | CH: <?php echo $ch_de_actualizat; ?></span>
                         <?php endif; ?>
                     </a>
                     <button type="button" onclick="document.getElementById('modal-task-nou').showModal()" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"

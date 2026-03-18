@@ -90,17 +90,19 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-slate-600 dark:text-gray-400">Status:</span>
                     <?php
-                    $status_colors = [
-                        'Activ' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-                        'Expirat' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                        'Suspendat' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                        'Retras' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                        'Decedat' => 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300',
-                    ];
                     $status_val = $membru['status_dosar'] ?? 'Activ';
-                    $status_cls = $status_colors[$status_val] ?? 'bg-slate-100 text-slate-700 dark:bg-gray-600 dark:text-gray-200';
+                    $status_styles = [
+                        'Activ' => 'background:#059669;color:#fff;',
+                        'Suspendat' => 'background:#d97706;color:#fff;',
+                        'Expirat' => 'background:#dc2626;color:#fff;',
+                        'Transferat' => 'background:#7c3aed;color:#fff;',
+                        'Retras' => 'background:#be185d;color:#fff;',
+                        'Decedat' => 'background:#374151;color:#fff;',
+                        'Arhiva' => 'background:#6b7280;color:#fff;',
+                    ];
+                    $s_style = $status_styles[$status_val] ?? 'background:#94a3b8;color:#fff;';
                     ?>
-                    <span class="px-2.5 py-1 text-sm font-medium rounded-full <?php echo $status_cls; ?>">
+                    <span class="px-2.5 py-1 text-sm font-semibold rounded-full" style="<?php echo $s_style; ?>">
                         <?php echo htmlspecialchars($status_val); ?>
                     </span>
                 </div>
@@ -671,14 +673,16 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                                 <?php
                                 $sv = $membru['status_dosar'] ?? 'Activ';
                                 $sc = [
-                                    'Activ' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-                                    'Expirat' => 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300',
-                                    'Suspendat' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-                                    'Retras' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
-                                    'Decedat' => 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300',
-                                ][$sv] ?? 'bg-slate-100 text-slate-700 dark:bg-gray-600 dark:text-gray-200';
+                                    'Activ' => 'background:#059669;color:#fff;',
+                                    'Expirat' => 'background:#dc2626;color:#fff;',
+                                    'Suspendat' => 'background:#d97706;color:#fff;',
+                                    'Retras' => 'background:#be185d;color:#fff;',
+                                    'Decedat' => 'background:#374151;color:#fff;',
+                                    'Transferat' => 'background:#7c3aed;color:#fff;',
+                                    'Arhiva' => 'background:#6b7280;color:#fff;',
+                                ][$sv] ?? 'background:#94a3b8;color:#fff;';
                                 ?>
-                                <span class="px-2.5 py-1 text-sm font-medium rounded-full <?php echo $sc; ?>">
+                                <span class="px-2.5 py-1 text-sm font-semibold rounded-full" style="<?php echo $sc; ?>">
                                     <?php echo htmlspecialchars($sv); ?>
                                 </span>
                             </dd>
