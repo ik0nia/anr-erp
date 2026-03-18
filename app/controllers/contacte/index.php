@@ -10,6 +10,18 @@ require_once APP_ROOT . '/app/services/ContacteService.php';
 
 contacte_ensure_table($pdo);
 
+// --- POST: Sincronizare membri -> contacte ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sync_membri'])) {
+    csrf_require_valid();
+    $sync_result = contacte_sync_membri($pdo, $_SESSION['utilizator'] ?? 'Sistem');
+    if ($sync_result['success']) {
+        header('Location: /contacte?succes_sync=1&created=' . $sync_result['created'] . '&updated=' . $sync_result['updated']);
+    } else {
+        header('Location: /contacte?eroare_sync=1');
+    }
+    exit;
+}
+
 // --- POST: Stergere contact ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_contact'])) {
     csrf_require_valid();
@@ -60,6 +72,14 @@ $total_pages = $data['total_pages'];
 $counts = $data['counts'];
 $tipuri_ordered = ['toate' => 'Toate'] + $tipuri;
 $succes_msg = isset($_GET['succes']) ? 'Contactul a fost salvat cu succes.' : null;
+if (isset($_GET['succes_sync'])) {
+    $created = (int)($_GET['created'] ?? 0);
+    $updated = (int)($_GET['updated'] ?? 0);
+    $succes_msg = "Sincronizare finalizată: {$created} contacte noi create, {$updated} contacte actualizate.";
+}
+if (isset($_GET['eroare_sync'])) {
+    $eroare_bd = 'Eroare la sincronizarea membrilor în contacte.';
+}
 
 // --- Render ---
 include APP_ROOT . '/header.php';

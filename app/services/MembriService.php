@@ -870,7 +870,7 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
     $diagnostic = trim($post_data['diagnostic'] ?? '') ?: null;
     $hdur = in_array($post_data['hdur'] ?? '', ['Permanent', 'Revizuibil']) ? $post_data['hdur'] : null;
     $insotitor_allowed = ['INDEMNIZATIE INSOTITOR', 'ASISTENT PERSONAL', 'FARA', 'NESPECIFICAT', '0'];
-    $insotitor = in_array($post_data['insotitor'] ?? '', $insotitor_allowed) ? $post_data['insotitor'] : null;
+    $insotitor = in_array($post_data['insotitor'] ?? '', $insotitor_allowed) ? $post_data['insotitor'] : '0';
     $cenr = trim($post_data['cenr'] ?? '') ?: null;
     $cedata = !empty($post_data['cedata']) ? date('Y-m-d', strtotime($post_data['cedata'])) : null;
     $ceexp = !empty($post_data['ceexp']) ? date('Y-m-d', strtotime($post_data['ceexp'])) : null;
@@ -1037,6 +1037,18 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
             }
 
             log_activitate($pdo, log_format_creare('membri', trim($nume . ' ' . $prenume)), null, $membru_id);
+
+            // Sincronizare automata membru nou -> contacte
+            try {
+                require_once APP_ROOT . '/app/services/ContacteService.php';
+                $membru_pentru_sync = [
+                    'nume' => $nume, 'prenume' => $prenume, 'cnp' => $cnp,
+                    'telefonnev' => $telefonnev, 'email' => $email, 'datanastere' => $datanastere,
+                ];
+                contacte_sync_membru($pdo, $membru_pentru_sync, $_SESSION['utilizator'] ?? 'Sistem');
+            } catch (Exception $e) {
+                error_log('Sync membru->contacte eroare: ' . $e->getMessage());
+            }
         }
 
         return ['success' => true, 'error' => null, 'membru_id' => $membru_id];

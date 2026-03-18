@@ -20,6 +20,14 @@
                 <i data-lucide="upload" class="w-4 h-4 mr-2" aria-hidden="true"></i>
                 Import
             </a>
+            <form method="post" action="/contacte" class="inline" onsubmit="return confirm('Sincronizați toți membrii activi în contacte?');">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="sync_membri" value="1">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-blue-300 dark:border-blue-600 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 focus:ring-2 focus:ring-blue-500" aria-label="Sincronizare date membri în contacte">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-2" aria-hidden="true"></i>
+                    Sync Membri
+                </button>
+            </form>
         </div>
     </header>
 

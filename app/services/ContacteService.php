@@ -275,6 +275,95 @@ function contacte_creeaza_donator(PDO $pdo, string $nume, ?string $prenume = nul
 }
 
 /**
+ * Sincronizeaza membrii in modulul contacte.
+ * Pentru fiecare membru: daca exista deja un contact cu acelasi CNP, il actualizeaza;
+ * daca nu exista, il creeaza ca tip "Beneficiar".
+ *
+ * @return array ['success'=>bool, 'created'=>int, 'updated'=>int, 'error'=>string|null]
+ */
+function contacte_sync_membri(PDO $pdo, string $utilizator = 'Sistem'): array {
+    try {
+        $stmt = $pdo->query("SELECT id, nume, prenume, cnp, telefonnev, email, datanastere FROM membri WHERE status_dosar = 'Activ' ORDER BY nume, prenume");
+        $membri = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return ['success' => false, 'created' => 0, 'updated' => 0, 'error' => 'Eroare la citirea membrilor: ' . $e->getMessage()];
+    }
+
+    $created = 0;
+    $updated = 0;
+
+    foreach ($membri as $membru) {
+        $cnp = trim($membru['cnp'] ?? '');
+        $nume = trim($membru['nume'] ?? '');
+        $prenume = trim($membru['prenume'] ?? '');
+        if ($nume === '') continue;
+
+        $contact_existent = null;
+        if ($cnp !== '') {
+            $stmt = $pdo->prepare('SELECT id FROM contacte WHERE cnp = ? LIMIT 1');
+            $stmt->execute([$cnp]);
+            $contact_existent = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        $telefon = trim($membru['telefonnev'] ?? '') ?: null;
+        $email = trim($membru['email'] ?? '') ?: null;
+        $data_nasterii = $membru['datanastere'] ?? null;
+
+        if ($contact_existent) {
+            $stmt = $pdo->prepare('UPDATE contacte SET nume = ?, prenume = ?, telefon = COALESCE(?, telefon), email = COALESCE(?, email), data_nasterii = COALESCE(?, data_nasterii) WHERE id = ?');
+            $stmt->execute([$nume, $prenume, $telefon, $email, $data_nasterii, $contact_existent['id']]);
+            $updated++;
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO contacte (nume, prenume, cnp, tip_contact, telefon, email, data_nasterii, referinta_contact) VALUES (?, ?, ?, 'Beneficiar', ?, ?, ?, 'Sincronizat din membri')");
+            $stmt->execute([$nume, $prenume ?: null, $cnp ?: null, $telefon, $email, $data_nasterii]);
+            $created++;
+        }
+    }
+
+    log_activitate($pdo, "contacte: Sincronizare membri -> contacte (creati: {$created}, actualizati: {$updated})", $utilizator);
+
+    return ['success' => true, 'created' => $created, 'updated' => $updated, 'error' => null];
+}
+
+/**
+ * Sincronizeaza un singur membru in contacte (la adaugare membru nou).
+ *
+ * @return int|null ID-ul contactului creat/actualizat
+ */
+function contacte_sync_membru(PDO $pdo, array $membru, string $utilizator = 'Sistem'): ?int {
+    $cnp = trim($membru['cnp'] ?? '');
+    $nume = trim($membru['nume'] ?? '');
+    $prenume = trim($membru['prenume'] ?? '');
+    if ($nume === '') return null;
+
+    $telefon = trim($membru['telefonnev'] ?? '') ?: null;
+    $email = trim($membru['email'] ?? '') ?: null;
+    $data_nasterii = $membru['datanastere'] ?? null;
+
+    try {
+        $contact_existent = null;
+        if ($cnp !== '') {
+            $stmt = $pdo->prepare('SELECT id FROM contacte WHERE cnp = ? LIMIT 1');
+            $stmt->execute([$cnp]);
+            $contact_existent = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        if ($contact_existent) {
+            $stmt = $pdo->prepare('UPDATE contacte SET nume = ?, prenume = ?, telefon = COALESCE(?, telefon), email = COALESCE(?, email), data_nasterii = COALESCE(?, data_nasterii) WHERE id = ?');
+            $stmt->execute([$nume, $prenume, $telefon, $email, $data_nasterii, $contact_existent['id']]);
+            return (int)$contact_existent['id'];
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO contacte (nume, prenume, cnp, tip_contact, telefon, email, data_nasterii, referinta_contact) VALUES (?, ?, ?, 'Beneficiar', ?, ?, ?, 'Sincronizat din membri')");
+            $stmt->execute([$nume, $prenume ?: null, $cnp ?: null, $telefon, $email, $data_nasterii]);
+            return (int)$pdo->lastInsertId();
+        }
+    } catch (PDOException $e) {
+        error_log('contacte_sync_membru eroare: ' . $e->getMessage());
+        return null;
+    }
+}
+
+/**
  * Mapare standard coloane Excel -> campuri contacte (pentru import).
  */
 function contacte_mapare_import(): array {

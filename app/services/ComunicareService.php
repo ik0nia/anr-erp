@@ -271,6 +271,14 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
             if (!empty($membru['judet_domiciliu'])) {
                 $pdf->Cell($w, $linie_h, iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', 'jud. ' . $membru['judet_domiciliu']), 0, 1);
             }
+
+            // Data tiparirii - dreapta jos, scris mic
+            $font_size_data = min(7, max(5, $inaltime_mm / 9));
+            $data_tiparire = 'Data tiparirii: ' . date('d/m/Y');
+            $pdf->SetFont('Arial', '', $font_size_data);
+            $text_width = $pdf->GetStringWidth(iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $data_tiparire));
+            $pdf->SetXY($latime_mm - $margin - $text_width, $inaltime_mm - $margin - ($font_size_data * 0.4));
+            $pdf->Cell($text_width, $font_size_data * 0.4, iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $data_tiparire), 0, 0, 'R');
         }
 
         $pdf->Output('F', $output_path);
