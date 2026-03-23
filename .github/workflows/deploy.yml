@@ -19,12 +19,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/web/erp.anrbihor.ro/public_html
+            git config --global --add safe.directory ~/web/erp.anrbihor.ro/public_html
             BEFORE=$(md5sum composer.lock 2>/dev/null || echo "none")
-            git pull origin main 2>&1 || true
+            git pull origin main 2>&1
             AFTER=$(md5sum composer.lock 2>/dev/null || echo "none")
             if [ "$BEFORE" != "$AFTER" ]; then
               echo "composer.lock changed, running composer install..."
-              composer install --no-dev --no-interaction 2>&1 || true
+              composer install --no-dev --no-interaction 2>&1
             else
               echo "composer.lock unchanged, skipping composer install"
             fi
