@@ -14,7 +14,7 @@
 | 1 | #2 | Sidebar: eliminare afișare versiune |
 | 2 | #3 | Setări: după numele paginii afișare „Versiune CRM: X.XX” |
 | 3 | #11 | Sidebar: aliniere text butoane la stânga; submeniu la mijloc |
-| 4 | #1 | Aniversari: nu afișa membri cu status dosar Decedat; contacte fără Beneficiar (deja) |
+| 4 | #1 | Aniversari: nu afișa membri cu status dosar Decedat; contacte fără Beneficiari (deja) |
 | 5 | #8 | Toate câmpurile de căutare: Enter execută căutarea |
 | 6 | #7 | Liste prezență: Enter în câmp căutare execută căutarea (nu salvare) |
 | 7 | #13 | Sidebar: mutare „Librărie documente” în submeniul Administrativ |
@@ -44,7 +44,7 @@
 - **Evidență:** Creat fișier `UPDATE_LOG.md` (acest document) pentru raport final și transplant pe hosting.
 - **Sidebar (#2, #11, #13):** Eliminat afișarea versiunii din footer-ul sidebar-ului. Textul butoanelor din meniul principal aliniat la stânga (`justify-start`, `text-left`). Elementele din submeniul Administrativ aliniate la mijloc (`justify-center`, `text-center`). „Librărie documente” mutată din meniul principal în submeniul Administrativ (după ToDo List).
 - **Setări (#3):** După titlul „Setări” se afișează „Versiune CRM: X.XX” (folosește `get_platform_version()` / `PLATFORM_VERSION`).
-- **Aniversari (#1):** La afișarea aniversarilor din membri se exclud persoanele cu status dosar „Decedat” (clauză `AND (status_dosar IS NULL OR status_dosar != 'Decedat')` în interogările din `aniversari.php`). Calendarul lunar folosește același filtru. Aniversările din contacte excludeau deja categoria Beneficiar (neschimbat).
+- **Aniversari (#1):** La afișarea aniversarilor din membri se exclud persoanele cu status dosar „Decedat” (clauză `AND (status_dosar IS NULL OR status_dosar != 'Decedat')` în interogările din `aniversari.php`). Calendarul lunar folosește același filtru. Aniversările din contacte excludeau deja categoria Beneficiari (neschimbat).
 - **Căutare Enter (#7, #8):** În toate câmpurile de căutare (liste prezență create/edit, BPA, setări scutire, voluntariat), apăsarea tastei Enter execută căutarea (nu submitează formularul). Formularele GET (contacte, membri, index, administrativ proceduri) au deja submit la Enter. Adăugat buton „Caută” la câmpul de căutare membru din BPA (#17).
 - **Librărie documente (#12):** Butonul Print deschide fereastra de tipărire (pagină intermediară `print-librarie-document.php` care încarcă documentul și apelează `window.print()`). Eliminat butonul „Editează” și modalul de editare. Adăugat coloana `ordine` în tabelul `librarie_documente`, reordonare via drag-and-drop și salvare prin POST `reordoneaza_ids[]`.
 - **Membri – profil (#5):** Câmpuri editabile „Nr. Dosar” (max. 6 caractere) și „Data Dosar” în formularul de profil membru (`membru-profil-form.php`); salvate prin `membri_processing.php`.
