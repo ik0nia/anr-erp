@@ -228,6 +228,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                     <input type="hidden" name="membru_id" value="<?php echo $membru_id; ?>">
                     <input type="hidden" name="alert_tip" value="<?php echo htmlspecialchars($alert_key); ?>">
                     <label class="flex items-center gap-1 cursor-pointer" title="Bifeaza daca membrul a fost informat; debifeaza pentru a reseta (se salveaza la schimbare).">
+                        <input type="hidden" name="marcat_informat" value="0">
                         <input type="checkbox" name="marcat_informat" value="1" onchange="(this.form.requestSubmit && this.form.requestSubmit()) || this.form.submit()" <?php echo !empty($alert['dismissed']) ? 'checked' : ''; ?>
                                class="w-4 h-4 rounded border-2 border-current focus:ring-2 focus:ring-black"
                                aria-label="Membru informat; poti debifa pentru a reseta marcarea">
@@ -959,6 +960,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <div class="grid grid-cols-2 gap-4">
                                 <div class="flex items-end pb-2">
                                     <label class="flex items-center">
+                                        <input type="hidden" name="gdpr" value="0">
                                         <input type="checkbox" name="gdpr" value="1" <?php echo $checked('gdpr', '1'); ?>
                                                class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                                         <span class="ml-2 text-sm text-slate-800 dark:text-gray-200">Acord GDPR</span>

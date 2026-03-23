@@ -296,6 +296,7 @@
                     <?php endif; ?>
                     <div class="mb-3">
                         <label class="flex items-center gap-2 text-slate-700 dark:text-gray-300">
+                            <input type="hidden" name="scutire_permanenta" value="0">
                             <input type="checkbox" name="scutire_permanenta" value="1" id="scutire-permanenta" <?php echo ($edit_scutire_cotizatie && !empty($edit_scutire_cotizatie['scutire_permanenta'])) ? 'checked' : ''; ?> class="rounded border-slate-300 dark:border-gray-500 text-amber-600">
                             Scutire permanentă
                         </label>

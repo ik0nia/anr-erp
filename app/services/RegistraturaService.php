@@ -58,15 +58,31 @@ function registratura_create(PDO $pdo, array $data, string $utilizator = 'Sistem
     $task_deschis = isset($data['task_deschis']) ? 1 : 0;
 
     try {
-        $nr_intern = registratura_urmatorul_nr($pdo);
-        $nr_inregistrare = (string) $nr_intern;
+        // Retry în caz de conflict pe nr_intern (UNIQUE constraint)
+        $max_incercari = 3;
+        $id = null;
+        $nr_intern = null;
+        $nr_inregistrare = null;
 
-        $stmt = $pdo->prepare('INSERT INTO registratura (nr_intern, nr_inregistrare, utilizator, tip_act, nr_document, data_document, provine_din, continut_document, destinatar_document, task_deschis) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([
-            $nr_intern, $nr_inregistrare, $utilizator, 'Înregistrare document',
-            $nr_document, $data_document, $provine_din, $continut_document, $destinatar_document, $task_deschis
-        ]);
-        $id = (int)$pdo->lastInsertId();
+        for ($incercare = 0; $incercare < $max_incercari; $incercare++) {
+            $nr_intern = registratura_urmatorul_nr($pdo);
+            $nr_inregistrare = (string) $nr_intern;
+
+            try {
+                $stmt = $pdo->prepare('INSERT INTO registratura (nr_intern, nr_inregistrare, utilizator, tip_act, nr_document, data_document, provine_din, continut_document, destinatar_document, task_deschis) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([
+                    $nr_intern, $nr_inregistrare, $utilizator, 'Înregistrare document',
+                    $nr_document, $data_document, $provine_din, $continut_document, $destinatar_document, $task_deschis
+                ]);
+                $id = (int)$pdo->lastInsertId();
+                break; // Insert reușit
+            } catch (PDOException $e) {
+                if ($incercare < $max_incercari - 1 && strpos($e->getMessage(), 'Duplicate') !== false) {
+                    continue;
+                }
+                throw $e;
+            }
+        }
 
         // Creare task asociat
         $task_id = null;

@@ -216,10 +216,12 @@
                 </div>
                 <div class="flex flex-col gap-2">
                     <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300">
+                        <input type="hidden" name="creare_task" value="0">
                         <input type="checkbox" name="creare_task" value="1" class="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
                         Creeaza task automat
                     </label>
                     <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300">
+                        <input type="hidden" name="notifica_utilizatori" value="0">
                         <input type="checkbox" name="notifica_utilizatori" value="1" class="w-4 h-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
                         Notifica utilizatorii platformei
                     </label>

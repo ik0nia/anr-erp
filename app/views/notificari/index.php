@@ -145,6 +145,7 @@
                         <p id="atasament-desc" class="text-xs text-slate-600 dark:text-gray-400 mt-1">Opțional. Maxim <?php echo NOTIFICARI_ATAŞAMENT_MAX_MB; ?> MB.</p>
                     </div>
                     <div class="flex items-center gap-2">
+                        <input type="hidden" name="trimite_email" value="0">
                         <input type="checkbox" id="trimite_email" name="trimite_email" value="1" <?php echo isset($_POST['trimite_email']) ? 'checked' : ''; ?>
                                class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700"
                                aria-describedby="trimite-email-desc">

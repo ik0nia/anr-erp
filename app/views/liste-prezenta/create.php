@@ -150,6 +150,7 @@
 
             <div class="mb-4">
                 <label class="flex items-center gap-2 text-slate-900 dark:text-white cursor-pointer">
+                    <input type="hidden" name="creaza_activitate" value="0">
                     <input type="checkbox" name="creaza_activitate" value="1" class="rounded border-slate-300 dark:border-gray-500 text-amber-600 focus:ring-amber-500"
                            <?php echo (isset($_POST['creaza_activitate']) || ($din_activitate && $activitate_nume)) ? 'checked' : ''; ?>
                            aria-describedby="creaza-activitate-desc">

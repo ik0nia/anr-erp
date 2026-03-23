@@ -25,6 +25,7 @@
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="toggle_hide_bifat" value="1">
                 <label class="flex items-center text-sm text-slate-700 dark:text-gray-200">
+                    <input type="hidden" name="hide_bifat" value="0">
                     <input type="checkbox" name="hide_bifat" value="1" <?php echo $hide_bifat ? 'checked' : ''; ?>
                            class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                     <span class="ml-2">
@@ -232,18 +233,22 @@
                     <span class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Canal formular</span>
                     <div class="space-y-1 text-sm text-slate-700 dark:text-gray-200">
                         <label class="flex items-center gap-2">
+                            <input type="hidden" name="canal_tiparit" value="0">
                             <input type="checkbox" name="canal_tiparit" value="1" class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                             Tiparit
                         </label>
                         <label class="flex items-center gap-2">
+                            <input type="hidden" name="canal_online" value="0">
                             <input type="checkbox" name="canal_online" value="1" class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                             Formular online
                         </label>
                         <label class="flex items-center gap-2">
+                            <input type="hidden" name="canal_campanie" value="0">
                             <input type="checkbox" name="canal_campanie" value="1" class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                             Campanie
                         </label>
                         <label class="flex items-center gap-2">
+                            <input type="hidden" name="canal_altele" value="0">
                             <input type="checkbox" name="canal_altele" value="1" class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                             Altele
                         </label>
@@ -267,6 +272,7 @@
             <?php if ($an_curent_form): ?>
                 <div>
                     <label class="flex items-center gap-2 text-sm text-slate-800 dark:text-gray-200">
+                        <input type="hidden" name="bifat_an_recent" value="0">
                         <input type="checkbox" name="bifat_an_recent" value="1"
                                class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                         Formular depus pentru anul curent (<?php echo (int)$an_curent_form; ?>)

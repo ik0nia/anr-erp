@@ -71,6 +71,7 @@
                     </div>
                     <div>
                         <label class="flex items-center">
+                            <input type="hidden" name="task_deschis" value="0">
                             <input type="checkbox" name="task_deschis" value="1" <?php echo isset($_POST['task_deschis']) ? 'checked' : ''; ?>
                                    class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700"
                                    aria-describedby="task-desc">

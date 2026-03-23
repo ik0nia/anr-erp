@@ -89,6 +89,7 @@
                                     <input type="hidden" name="id" value="<?php echo $t['id']; ?>">
                                     <input type="hidden" name="nume_afisare" value="<?php echo htmlspecialchars($t['nume_afisare']); ?>">
                                     <label class="inline-flex items-center">
+                                        <input type="hidden" name="activ" value="0">
                                         <input type="checkbox" name="activ" value="1" <?php echo $t['activ'] ? 'checked' : ''; ?>
                                                onchange="this.form.submit()"
                                                aria-label="Template activ">
@@ -120,6 +121,7 @@
                                         <input type="text" name="nume_afisare" value="<?php echo htmlspecialchars($t['nume_afisare']); ?>" required
                                                class="w-full px-3 py-2 border rounded-lg mb-4 dark:bg-gray-700 dark:text-white">
                                         <label class="flex items-center gap-2 mb-4">
+                                            <input type="hidden" name="activ" value="0">
                                             <input type="checkbox" name="activ" value="1" <?php echo $t['activ'] ? 'checked' : ''; ?>>
                                             <span>Activ (apare in lista)</span>
                                         </label>

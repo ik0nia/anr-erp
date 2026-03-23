@@ -123,7 +123,9 @@
                         <div><span class="block text-slate-700 dark:text-gray-300 mb-0.5">Instruire PSI/SSM</span>
                             <div class="flex gap-1"><input type="date" name="data_inceput_psi_ssm" value="<?php echo $edit_angajat && !empty($edit_angajat['data_inceput_psi_ssm']) ? $edit_angajat['data_inceput_psi_ssm'] : ''; ?>" class="flex-1 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-2 py-1"><input type="date" name="data_expirarii_psi_ssm" value="<?php echo $edit_angajat && !empty($edit_angajat['data_expirarii_psi_ssm']) ? $edit_angajat['data_expirarii_psi_ssm'] : ''; ?>" class="flex-1 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-2 py-1"></div></div>
                     </div>
+                    <input type="hidden" name="notificare_medicina_muncii" value="0">
                     <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300"><input type="checkbox" name="notificare_medicina_muncii" value="1" <?php echo (!$edit_angajat || !empty($edit_angajat['notificare_medicina_muncii'])) ? 'checked' : ''; ?> class="rounded border-slate-300 dark:border-gray-500 text-amber-600"> Notificare Medicina muncii</label>
+                    <input type="hidden" name="notificare_instruire_psi_ssm" value="0">
                     <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300"><input type="checkbox" name="notificare_instruire_psi_ssm" value="1" <?php echo (!$edit_angajat || !empty($edit_angajat['notificare_instruire_psi_ssm'])) ? 'checked' : ''; ?> class="rounded border-slate-300 dark:border-gray-500 text-amber-600"> Notificare Instructaj PSI/SSM</label>
                     <div class="flex gap-2">
                         <button type="submit" class="flex-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg"><?php echo $edit_angajat ? 'Salveaza modificarile' : 'Adauga angajat'; ?></button>
@@ -324,6 +326,8 @@
                         <input type="time" name="ora" value="09:00" class="rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-2 py-1.5"></label>
                     <label class="block"><span class="text-sm text-slate-700 dark:text-gray-300">Loc</span>
                         <input type="text" name="loc" placeholder="Loc sedinta" class="rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-2 py-1.5"></label>
+                    <input type="hidden" name="creaza_activitate" value="0">
+                    <input type="hidden" name="creaza_activitate" value="0">
                     <label class="flex items-center gap-2 text-slate-700 dark:text-gray-300"><input type="checkbox" name="creaza_activitate" value="1" checked> Creeaza activitate in calendar</label>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg">Programeaza sedinta</button>
                 </form>
@@ -360,6 +364,7 @@
                         <input type="time" name="ora" value="09:00" class="rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-2 py-1.5"></label>
                     <label class="block"><span class="text-sm text-slate-700 dark:text-gray-300">Loc</span>
                         <input type="text" name="loc" placeholder="Loc sedinta" class="rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-2 py-1.5"></label>
+                    <input type="hidden" name="creaza_activitate" value="0">
                     <label class="flex items-center gap-2 text-slate-700 dark:text-gray-300"><input type="checkbox" name="creaza_activitate" value="1" checked> Creeaza activitate in calendar</label>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg">Programeaza sedinta</button>
                 </form>
@@ -417,12 +422,15 @@
                         <textarea id="juridic-continut" name="continut" rows="6" class="w-full rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-3 py-2"></textarea>
                     </div>
                     <div>
+                        <input type="hidden" name="creaza_task_todo" value="0">
                         <label class="flex items-center gap-2 text-slate-700 dark:text-gray-300"><input type="checkbox" name="creaza_task_todo" value="1" class="rounded border-slate-300 dark:border-gray-500 text-amber-600"> Creeaza task in Taskuri</label>
                     </div>
                     <div class="w-full">
+                        <input type="hidden" name="trimite_notificare_platforma" value="0">
                         <label class="flex items-center gap-2 text-slate-700 dark:text-gray-300"><input type="checkbox" name="trimite_notificare_platforma" value="1" class="rounded border-slate-300 dark:border-gray-500 text-amber-600"> Trimite notificare in platforma pentru toti utilizatorii</label>
                     </div>
                     <div class="w-full">
+                        <input type="hidden" name="creaza_procedura_interna" value="0">
                         <label class="flex items-center gap-2 text-slate-700 dark:text-gray-300"><input type="checkbox" name="creaza_procedura_interna" value="1" class="rounded border-slate-300 dark:border-gray-500 text-amber-600"> Creeaza o procedura interna noua (in tabul Proceduri interne)</label>
                     </div>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Salveaza</button>
@@ -556,6 +564,7 @@
                         </div>
                         <?php if (!$edit_procedura): ?>
                         <div>
+                            <input type="hidden" name="trimite_notificare_procedura" value="0">
                             <label class="flex items-center gap-2 text-slate-700 dark:text-gray-300"><input type="checkbox" name="trimite_notificare_procedura" value="1" class="rounded border-slate-300 dark:border-gray-500 text-amber-600"> Creeaza notificare in platforma pentru toti utilizatorii</label>
                         </div>
                         <?php endif; ?>

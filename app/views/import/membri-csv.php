@@ -124,6 +124,7 @@
 
                     <div>
                         <label class="flex items-center">
+                            <input type="hidden" name="skip_duplicates" value="0">
                             <input type="checkbox" name="skip_duplicates" value="1" checked
                                    class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                             <span class="ml-2 text-sm text-slate-800 dark:text-gray-200">

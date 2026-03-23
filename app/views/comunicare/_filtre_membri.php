@@ -80,6 +80,7 @@
         <!-- Cotizatie Neachitata -->
         <div class="flex items-end">
             <label class="flex items-center gap-2 cursor-pointer">
+                <input type="hidden" name="cotizatie_neachitata" value="0">
                 <input type="checkbox" name="cotizatie_neachitata" value="1"
                        <?php echo !empty($_POST['cotizatie_neachitata']) ? 'checked' : ''; ?>
                        class="rounded border-slate-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500 dark:bg-gray-700">

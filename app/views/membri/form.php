@@ -170,6 +170,7 @@ function render_formular_profil_membru($membru, $eroare = '', $istoric_modificar
                     </h3>
                     <div>
                         <label class="flex items-center">
+                            <input type="hidden" name="gdpr" value="0">
                             <input type="checkbox" id="gdpr" name="gdpr" value="1" <?php echo $checked('gdpr', '1'); ?>
                                    class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                             <span class="ml-2 text-sm text-slate-800 dark:text-gray-200">Acord GDPR</span>

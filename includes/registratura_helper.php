@@ -67,34 +67,51 @@ function ensure_registratura_table(PDO $pdo) {
 function registratura_inregistreaza_document(PDO $pdo, array $data) {
     try {
         ensure_registratura_table($pdo);
-        if (isset($data['nr_intern']) && is_numeric($data['nr_intern']) && (int)$data['nr_intern'] > 0) {
-            $nr_intern = (int)$data['nr_intern'];
-            $nr_inregistrare = (string) $nr_intern;
-        } else {
-            $nr_intern = registratura_urmatorul_nr($pdo);
-            $nr_inregistrare = (string) $nr_intern;
-        }
         $utilizator = $_SESSION['utilizator'] ?? 'Sistem';
         $task_deschis = !empty($data['task_deschis']) ? 1 : 0;
         $task_id = null;
 
-        $stmt = $pdo->prepare('INSERT INTO registratura (nr_intern, nr_inregistrare, utilizator, tip_act, detalii, nr_document, data_document, provine_din, continut_document, destinatar_document, task_deschis, membru_id, document_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([
-            $nr_intern,
-            $nr_inregistrare,
-            $utilizator,
-            $data['tip_act'] ?? 'Document',
-            $data['detalii'] ?? null,
-            $data['nr_document'] ?? null,
-            $data['data_document'] ?? null,
-            $data['provine_din'] ?? null,
-            $data['continut_document'] ?? $data['detalii'] ?? null,
-            $data['destinatar_document'] ?? null,
-            $task_deschis,
-            $data['membru_id'] ?? null,
-            $data['document_path'] ?? null
-        ]);
-        $id = (int) $pdo->lastInsertId();
+        // Retry în caz de conflict pe nr_intern (UNIQUE constraint)
+        $max_incercari = 3;
+        $id = null;
+        $nr_intern = null;
+        $nr_inregistrare = null;
+
+        for ($incercare = 0; $incercare < $max_incercari; $incercare++) {
+            if (isset($data['nr_intern']) && is_numeric($data['nr_intern']) && (int)$data['nr_intern'] > 0) {
+                $nr_intern = (int)$data['nr_intern'];
+            } else {
+                $nr_intern = registratura_urmatorul_nr($pdo);
+            }
+            $nr_inregistrare = (string) $nr_intern;
+
+            try {
+                $stmt = $pdo->prepare('INSERT INTO registratura (nr_intern, nr_inregistrare, utilizator, tip_act, detalii, nr_document, data_document, provine_din, continut_document, destinatar_document, task_deschis, membru_id, document_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([
+                    $nr_intern,
+                    $nr_inregistrare,
+                    $utilizator,
+                    $data['tip_act'] ?? 'Document',
+                    $data['detalii'] ?? null,
+                    $data['nr_document'] ?? null,
+                    $data['data_document'] ?? null,
+                    $data['provine_din'] ?? null,
+                    $data['continut_document'] ?? $data['detalii'] ?? null,
+                    $data['destinatar_document'] ?? null,
+                    $task_deschis,
+                    $data['membru_id'] ?? null,
+                    $data['document_path'] ?? null
+                ]);
+                $id = (int) $pdo->lastInsertId();
+                break; // Insert reușit
+            } catch (PDOException $e) {
+                // Duplicate key pe nr_intern — reîncearcă cu următorul număr
+                if ($incercare < $max_incercari - 1 && strpos($e->getMessage(), 'Duplicate') !== false) {
+                    continue;
+                }
+                throw $e;
+            }
+        }
 
         if ($task_deschis) {
             $continut = $data['continut_document'] ?? $data['detalii'] ?? '';
