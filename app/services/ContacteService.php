@@ -277,7 +277,7 @@ function contacte_creeaza_donator(PDO $pdo, string $nume, ?string $prenume = nul
 /**
  * Sincronizeaza membrii in modulul contacte.
  * Pentru fiecare membru: daca exista deja un contact cu acelasi CNP, il actualizeaza;
- * daca nu exista, il creeaza ca tip "Beneficiar".
+ * daca nu exista, il creeaza ca tip intern "Beneficiar" (afisat in UI ca "Beneficiari").
  *
  * @return array ['success'=>bool, 'created'=>int, 'updated'=>int, 'error'=>string|null]
  */
