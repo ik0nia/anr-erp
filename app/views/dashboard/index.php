@@ -12,7 +12,7 @@
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2">
-        <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Dashboard CRM</h1>
+        <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Dashboard</h1>
     </header>
 
     <div class="p-6 overflow-y-auto flex-1">
