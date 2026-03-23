@@ -16,7 +16,7 @@ require_once APP_ROOT . '/includes/log_helper.php';
 function contacte_tipuri(): array {
     return [
         'Institutie'      => 'Institutie',
-        'Beneficiar'      => 'Beneficiari',
+        'Beneficiari'     => 'Beneficiari',
         'Companie'        => 'Companie',
         'Contact politic' => 'Contact politic',
         'Voluntar'        => 'Voluntar',
@@ -28,6 +28,14 @@ function contacte_tipuri(): array {
         'Formular 230'    => 'Formular 230',
         'alte contacte'   => 'Alte contacte',
     ];
+}
+
+/**
+ * Normalizeaza valorile legacy de tip contact.
+ */
+function contacte_normalize_tip_contact(string $tip): string {
+    $tip = trim($tip);
+    return $tip === 'Beneficiar' ? 'Beneficiari' : $tip;
 }
 
 /**
@@ -45,6 +53,7 @@ function contacte_ensure_table(PDO $pdo): void {
  */
 function contacte_list(PDO $pdo, string $tab, string $cautare, int $page, int $per_page): array {
     $tipuri = contacte_tipuri();
+    $tab = contacte_normalize_tip_contact($tab);
     if ($tab !== 'toate' && !isset($tipuri[$tab])) $tab = 'toate';
 
     $where = [];
@@ -56,8 +65,14 @@ function contacte_list(PDO $pdo, string $tab, string $cautare, int $page, int $p
         for ($i = 0; $i < 9; $i++) $params[] = $term;
     }
     if ($tab !== 'toate') {
-        $where[] = 'c.tip_contact = ?';
-        $params[] = $tab;
+        if ($tab === 'Beneficiari') {
+            $where[] = '(c.tip_contact = ? OR c.tip_contact = ?)';
+            $params[] = 'Beneficiari';
+            $params[] = 'Beneficiar';
+        } else {
+            $where[] = 'c.tip_contact = ?';
+            $params[] = $tab;
+        }
     }
     $where_sql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
@@ -71,15 +86,27 @@ function contacte_list(PDO $pdo, string $tab, string $cautare, int $page, int $p
     $stmt = $pdo->prepare("SELECT * FROM contacte c" . $where_sql . " ORDER BY c.nume, c.prenume LIMIT " . (int)$per_page . " OFFSET " . (int)$offset);
     $stmt->execute($params);
     $contacte = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($contacte as &$contact) {
+        if (isset($contact['tip_contact'])) {
+            $contact['tip_contact'] = contacte_normalize_tip_contact((string)$contact['tip_contact']);
+        }
+    }
+    unset($contact);
 
     // Numar per tip (pentru taburi)
     $counts = ['toate' => 0];
     $stmt = $pdo->query('SELECT COUNT(*) as n FROM contacte');
     $counts['toate'] = (int) $stmt->fetch()['n'];
     foreach ($tipuri as $k => $v) {
-        $stmt = $pdo->prepare('SELECT COUNT(*) as n FROM contacte WHERE tip_contact = ?');
-        $stmt->execute([$k]);
-        $counts[$k] = (int) $stmt->fetch()['n'];
+        if ($k === 'Beneficiari') {
+            $stmt = $pdo->prepare('SELECT COUNT(*) as n FROM contacte WHERE tip_contact = ? OR tip_contact = ?');
+            $stmt->execute(['Beneficiari', 'Beneficiar']);
+            $counts[$k] = (int) $stmt->fetch()['n'];
+        } else {
+            $stmt = $pdo->prepare('SELECT COUNT(*) as n FROM contacte WHERE tip_contact = ?');
+            $stmt->execute([$k]);
+            $counts[$k] = (int) $stmt->fetch()['n'];
+        }
     }
 
     $total_pages = $total > 0 ? (int) ceil($total / $per_page) : 1;
@@ -100,6 +127,9 @@ function contacte_get(PDO $pdo, int $id): ?array {
     $stmt = $pdo->prepare('SELECT * FROM contacte WHERE id = ?');
     $stmt->execute([$id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row && isset($row['tip_contact'])) {
+        $row['tip_contact'] = contacte_normalize_tip_contact((string)$row['tip_contact']);
+    }
     return $row ?: null;
 }
 
@@ -115,8 +145,8 @@ function contacte_create(PDO $pdo, array $data, string $utilizator = 'Sistem'): 
     }
 
     $tipuri_valide = array_keys(contacte_tipuri());
-    $tip = $data['tip_contact'] ?? 'alte contacte';
-    if (!in_array($tip, $tipuri_valide)) $tip = 'alte contacte';
+    $tip = contacte_normalize_tip_contact($data['tip_contact'] ?? 'alte contacte');
+    if (!in_array($tip, $tipuri_valide, true)) $tip = 'alte contacte';
 
     $prenume = trim($data['prenume'] ?? '') ?: null;
     $companie = trim($data['companie'] ?? '') ?: null;
@@ -156,8 +186,8 @@ function contacte_update(PDO $pdo, int $id, array $data, string $utilizator = 'S
     }
 
     $tipuri_valide = array_keys(contacte_tipuri());
-    $tip = $data['tip_contact'] ?? 'alte contacte';
-    if (!in_array($tip, $tipuri_valide)) $tip = 'alte contacte';
+    $tip = contacte_normalize_tip_contact($data['tip_contact'] ?? 'alte contacte');
+    if (!in_array($tip, $tipuri_valide, true)) $tip = 'alte contacte';
 
     $prenume = trim($data['prenume'] ?? '') ?: null;
     $companie = trim($data['companie'] ?? '') ?: null;
@@ -277,7 +307,7 @@ function contacte_creeaza_donator(PDO $pdo, string $nume, ?string $prenume = nul
 /**
  * Sincronizeaza membrii in modulul contacte.
  * Pentru fiecare membru: daca exista deja un contact cu acelasi CNP, il actualizeaza;
- * daca nu exista, il creeaza ca tip intern "Beneficiar" (afisat in UI ca "Beneficiari").
+ * daca nu exista, il creeaza ca tip "Beneficiari".
  *
  * @return array ['success'=>bool, 'created'=>int, 'updated'=>int, 'error'=>string|null]
  */
@@ -310,11 +340,12 @@ function contacte_sync_membri(PDO $pdo, string $utilizator = 'Sistem'): array {
         $data_nasterii = $membru['datanastere'] ?? null;
 
         if ($contact_existent) {
-            $stmt = $pdo->prepare('UPDATE contacte SET nume = ?, prenume = ?, telefon = COALESCE(?, telefon), email = COALESCE(?, email), data_nasterii = COALESCE(?, data_nasterii) WHERE id = ?');
-            $stmt->execute([$nume, $prenume, $telefon, $email, $data_nasterii, $contact_existent['id']]);
+            $stmt = $pdo->prepare('UPDATE contacte SET nume = ?, prenume = ?, tip_contact = ?, telefon = COALESCE(?, telefon), email = COALESCE(?, email), data_nasterii = COALESCE(?, data_nasterii) WHERE id = ?');
+            $tip_contact = 'Beneficiari';
+            $stmt->execute([$nume, $prenume, $tip_contact, $telefon, $email, $data_nasterii, $contact_existent['id']]);
             $updated++;
         } else {
-            $stmt = $pdo->prepare("INSERT INTO contacte (nume, prenume, cnp, tip_contact, telefon, email, data_nasterii, referinta_contact) VALUES (?, ?, ?, 'Beneficiar', ?, ?, ?, 'Sincronizat din membri')");
+            $stmt = $pdo->prepare("INSERT INTO contacte (nume, prenume, cnp, tip_contact, telefon, email, data_nasterii, referinta_contact) VALUES (?, ?, ?, 'Beneficiari', ?, ?, ?, 'Sincronizat din membri')");
             $stmt->execute([$nume, $prenume ?: null, $cnp ?: null, $telefon, $email, $data_nasterii]);
             $created++;
         }
@@ -349,11 +380,12 @@ function contacte_sync_membru(PDO $pdo, array $membru, string $utilizator = 'Sis
         }
 
         if ($contact_existent) {
-            $stmt = $pdo->prepare('UPDATE contacte SET nume = ?, prenume = ?, telefon = COALESCE(?, telefon), email = COALESCE(?, email), data_nasterii = COALESCE(?, data_nasterii) WHERE id = ?');
-            $stmt->execute([$nume, $prenume, $telefon, $email, $data_nasterii, $contact_existent['id']]);
+            $stmt = $pdo->prepare('UPDATE contacte SET nume = ?, prenume = ?, tip_contact = ?, telefon = COALESCE(?, telefon), email = COALESCE(?, email), data_nasterii = COALESCE(?, data_nasterii) WHERE id = ?');
+            $tip_contact = 'Beneficiari';
+            $stmt->execute([$nume, $prenume, $tip_contact, $telefon, $email, $data_nasterii, $contact_existent['id']]);
             return (int)$contact_existent['id'];
         } else {
-            $stmt = $pdo->prepare("INSERT INTO contacte (nume, prenume, cnp, tip_contact, telefon, email, data_nasterii, referinta_contact) VALUES (?, ?, ?, 'Beneficiar', ?, ?, ?, 'Sincronizat din membri')");
+            $stmt = $pdo->prepare("INSERT INTO contacte (nume, prenume, cnp, tip_contact, telefon, email, data_nasterii, referinta_contact) VALUES (?, ?, ?, 'Beneficiari', ?, ?, ?, 'Sincronizat din membri')");
             $stmt->execute([$nume, $prenume ?: null, $cnp ?: null, $telefon, $email, $data_nasterii]);
             return (int)$pdo->lastInsertId();
         }
