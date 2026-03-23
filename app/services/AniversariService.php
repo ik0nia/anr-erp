@@ -36,7 +36,7 @@ function aniversari_membri_azi(PDO $pdo): array {
 }
 
 /**
- * Obtine contactele cu ziua de nastere azi (exclus Beneficiar)
+ * Obtine contactele cu ziua de nastere azi (exclus Beneficiari)
  */
 function aniversari_contacte_azi(PDO $pdo): array {
     try {
@@ -46,7 +46,10 @@ function aniversari_contacte_azi(PDO $pdo): array {
             WHERE data_nasterii IS NOT NULL
               AND MONTH(data_nasterii) = MONTH(CURDATE())
               AND DAY(data_nasterii) = DAY(CURDATE())
-              AND (tip_contact IS NULL OR tip_contact != 'Beneficiar')
+              AND (
+                    tip_contact IS NULL
+                    OR (tip_contact != 'Beneficiar' AND tip_contact != 'Beneficiari')
+                  )
             ORDER BY nume, prenume
         ");
         $stmt->execute();
@@ -79,7 +82,10 @@ function aniversari_per_zi_luna(PDO $pdo): array {
         $stmt = $pdo->prepare("
             SELECT DAY(data_nasterii) as zi, COUNT(*) as n FROM contacte
             WHERE data_nasterii IS NOT NULL AND MONTH(data_nasterii) = MONTH(CURDATE())
-              AND (tip_contact IS NULL OR tip_contact != 'Beneficiar')
+              AND (
+                    tip_contact IS NULL
+                    OR (tip_contact != 'Beneficiar' AND tip_contact != 'Beneficiari')
+                  )
             GROUP BY zi
         ");
         $stmt->execute();
@@ -131,7 +137,7 @@ function aniversari_membri_la_data(PDO $pdo, string $data): array {
 }
 
 /**
- * Obtine contactele cu ziua de nastere la o data specificata (exclus Beneficiar)
+ * Obtine contactele cu ziua de nastere la o data specificata (exclus Beneficiari)
  */
 function aniversari_contacte_la_data(PDO $pdo, string $data): array {
     try {
@@ -141,7 +147,10 @@ function aniversari_contacte_la_data(PDO $pdo, string $data): array {
             WHERE data_nasterii IS NOT NULL
               AND MONTH(data_nasterii) = MONTH(?)
               AND DAY(data_nasterii) = DAY(?)
-              AND (tip_contact IS NULL OR tip_contact != 'Beneficiar')
+              AND (
+                    tip_contact IS NULL
+                    OR (tip_contact != 'Beneficiar' AND tip_contact != 'Beneficiari')
+                  )
             ORDER BY nume, prenume
         ");
         $stmt->execute([$data, $data]);

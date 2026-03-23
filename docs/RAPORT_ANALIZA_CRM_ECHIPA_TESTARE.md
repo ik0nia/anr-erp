@@ -41,7 +41,7 @@ Platforma **nu folosește Next.js** în acest proiect; este o aplicație PHP cla
 |-------|------------------|---------------------|
 | **Dashboard** | Pagina principală: taskuri active, interacțiuni rapide, căutare membru, librărie, aniversări zilei | `index.php` |
 | **Membri** | CRUD membri, profil membru, avertizări GDPR/CI/certificat, export, import Excel | `membri.php`, `membru-profil.php`, `membri_form.php`, `membri_processing.php`, `export_membri.php`, `contacte-import.php` (Excel) |
-| **Contacte** | CRUD contacte, tipuri (Partener, Furnizor, Beneficiar etc.), import | `contacte.php`, `contacte-adauga.php`, `contacte-edit.php`, `contacte-import.php` |
+| **Contacte** | CRUD contacte, tipuri (Partener, Furnizor, Beneficiari etc.), import | `contacte.php`, `contacte-adauga.php`, `contacte-edit.php`, `contacte-import.php` |
 | **Activități** | Planificare activități, status, legătură cu liste prezență | `activitati.php`, `activitati-istoric.php` |
 | **Liste prezență** | Creare/editare liste, legare membri, PDF/print | `lista-prezenta-create.php`, `lista-prezenta-edit.php`, `lista-prezenta-pdf.php`, `lista-prezenta-print.php` |
 | **Registratura** | Înregistrare documente (nr., tip, detalii, opțional membru, fișier) | `registratura.php`, `registratura-adauga.php`, `registratura-edit.php`, `registratura-sumar.php` |

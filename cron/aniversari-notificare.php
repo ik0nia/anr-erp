@@ -53,7 +53,7 @@ try {
     $membri = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
 
-// Încarcă aniversări contacte (fără Beneficiar)
+// Încarcă aniversări contacte (fără Beneficiari)
 $contacte = [];
 try {
     ensure_contacte_table($pdo);
@@ -61,7 +61,10 @@ try {
         SELECT nume, prenume, tip_contact
         FROM contacte
         WHERE data_nasterii IS NOT NULL AND MONTH(data_nasterii) = MONTH(CURDATE()) AND DAY(data_nasterii) = DAY(CURDATE())
-          AND (tip_contact IS NULL OR tip_contact != 'Beneficiar')
+          AND (
+                tip_contact IS NULL
+                OR (tip_contact != 'Beneficiar' AND tip_contact != 'Beneficiari')
+              )
         ORDER BY nume, prenume
     ");
     $stmt->execute();

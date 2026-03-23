@@ -213,7 +213,10 @@ function dashboard_count_aniversari_azi(PDO $pdo): int {
             WHERE data_nasterii IS NOT NULL
               AND MONTH(data_nasterii) = MONTH(CURDATE())
               AND DAY(data_nasterii) = DAY(CURDATE())
-              AND (tip_contact IS NULL OR tip_contact != 'Beneficiar')
+              AND (
+                    tip_contact IS NULL
+                    OR (tip_contact != 'Beneficiar' AND tip_contact != 'Beneficiari')
+                  )
         ");
         $total += (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}
