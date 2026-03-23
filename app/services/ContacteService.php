@@ -15,7 +15,7 @@ require_once APP_ROOT . '/includes/log_helper.php';
  */
 function contacte_tipuri(): array {
     return [
-        'Institutie'      => 'Instituție',
+        'Institutie'      => 'Institutie',
         'Beneficiar'      => 'Beneficiari',
         'Companie'        => 'Companie',
         'Contact politic' => 'Contact politic',
