@@ -59,16 +59,18 @@
 
         <!-- Cautare -->
         <div class="mb-4 flex flex-wrap items-center gap-4">
-            <form method="get" class="flex items-center gap-2 flex-1 min-w-0">
+            <form method="get" class="flex items-center gap-2 flex-1 min-w-0 relative">
                 <input type="hidden" name="tab" value="<?php echo htmlspecialchars($tab); ?>">
                 <input type="hidden" name="per_page" value="<?php echo $per_page; ?>">
                 <label for="cautare-contacte" class="sr-only">Caută contacte</label>
                 <input type="search" id="cautare-contacte" name="cautare" value="<?php echo htmlspecialchars($cautare); ?>"
                        placeholder="Caută în contacte..."
-                       class="flex-1 min-w-0 max-w-xs px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-amber-500">
+                       class="flex-1 min-w-0 max-w-xs px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-amber-500"
+                       role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="contacte-sugestii" aria-activedescendant="">
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Caută">
                     <i data-lucide="search" class="w-4 h-4 inline" aria-hidden="true"></i>
                 </button>
+                <div id="contacte-sugestii" class="hidden absolute left-0 top-full mt-1 w-full max-w-xs bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg z-30 overflow-hidden" role="listbox" aria-label="Sugestii contacte"></div>
             </form>
             <span class="text-sm text-slate-600 dark:text-gray-400">Total: <?php echo $total; ?> contacte</span>
         </div>
@@ -211,6 +213,138 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     lucide.createIcons();
+    var inputCautare = document.getElementById('cautare-contacte');
+    var sugestii = document.getElementById('contacte-sugestii');
+    var debounceSearch = null;
+    var sugestiiCurente = [];
+    var indexActiv = -1;
+    var queryCerere = '';
+
+    function inchideSugestii() {
+        if (!sugestii) return;
+        sugestii.classList.add('hidden');
+        sugestii.innerHTML = '';
+        sugestiiCurente = [];
+        indexActiv = -1;
+        if (inputCautare) {
+            inputCautare.setAttribute('aria-expanded', 'false');
+            inputCautare.setAttribute('aria-activedescendant', '');
+        }
+    }
+
+    function updateOptiuneActiva() {
+        if (!sugestii) return;
+        var options = sugestii.querySelectorAll('[role="option"]');
+        options.forEach(function(opt, idx) {
+            var esteActiv = idx === indexActiv;
+            opt.classList.toggle('bg-amber-100', esteActiv);
+            opt.classList.toggle('dark:bg-gray-700', esteActiv);
+            opt.setAttribute('aria-selected', esteActiv ? 'true' : 'false');
+            if (esteActiv && inputCautare) {
+                inputCautare.setAttribute('aria-activedescendant', opt.id);
+            }
+        });
+        if (indexActiv < 0 && inputCautare) inputCautare.setAttribute('aria-activedescendant', '');
+    }
+
+    function aplicaSugestie(s) {
+        if (!s || !inputCautare) return;
+        inputCautare.value = s.nume_complet;
+        inchideSugestii();
+        inputCautare.focus();
+    }
+
+    function afiseazaSugestii(rezultate) {
+        if (!sugestii || !inputCautare) return;
+        sugestii.innerHTML = '';
+        sugestiiCurente = rezultate || [];
+        indexActiv = -1;
+        if (!sugestiiCurente.length) {
+            sugestii.innerHTML = '<div class="px-3 py-2 text-sm text-slate-500 dark:text-gray-400">Niciun rezultat</div>';
+            sugestii.classList.remove('hidden');
+            inputCautare.setAttribute('aria-expanded', 'true');
+            return;
+        }
+
+        sugestiiCurente.forEach(function(s, idx) {
+            var btn = document.createElement('button');
+            var numeEl = document.createElement('div');
+            var metaEl = document.createElement('div');
+            var metaParts = [s.tip_contact_label || '—'];
+            btn.type = 'button';
+            btn.id = 'contacte-sugestie-' + idx;
+            btn.className = 'w-full text-left px-3 py-2 border-b last:border-b-0 border-slate-200 dark:border-gray-700 hover:bg-amber-50 dark:hover:bg-gray-700 focus:outline-none';
+            btn.setAttribute('role', 'option');
+            btn.setAttribute('aria-selected', 'false');
+
+            numeEl.className = 'text-sm text-slate-900 dark:text-white font-medium';
+            numeEl.textContent = s.nume_complet || '';
+
+            if (s.email) metaParts.push(s.email);
+            if (s.telefon) metaParts.push(s.telefon);
+            metaEl.className = 'text-xs text-slate-600 dark:text-gray-400';
+            metaEl.textContent = metaParts.join(' · ');
+
+            btn.appendChild(numeEl);
+            btn.appendChild(metaEl);
+            btn.addEventListener('click', function() { aplicaSugestie(s); });
+            sugestii.appendChild(btn);
+        });
+
+        sugestii.classList.remove('hidden');
+        inputCautare.setAttribute('aria-expanded', 'true');
+        updateOptiuneActiva();
+    }
+
+    function cautaSugestiiContacte() {
+        if (!inputCautare || !sugestii) return;
+        var q = inputCautare.value.trim();
+        queryCerere = q;
+        if (q.length < 2) {
+            inchideSugestii();
+            return;
+        }
+        fetch('/api/cauta-contacte?q=' + encodeURIComponent(q))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (inputCautare.value.trim() !== queryCerere) return;
+                afiseazaSugestii((data && data.contacte) ? data.contacte : []);
+            })
+            .catch(function() { inchideSugestii(); });
+    }
+
+    if (inputCautare && sugestii) {
+        inputCautare.addEventListener('input', function() {
+            clearTimeout(debounceSearch);
+            debounceSearch = setTimeout(cautaSugestiiContacte, 250);
+        });
+
+        inputCautare.addEventListener('keydown', function(e) {
+            if (sugestii.classList.contains('hidden')) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (!sugestiiCurente.length) return;
+                indexActiv = (indexActiv + 1) % sugestiiCurente.length;
+                updateOptiuneActiva();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!sugestiiCurente.length) return;
+                indexActiv = indexActiv <= 0 ? sugestiiCurente.length - 1 : indexActiv - 1;
+                updateOptiuneActiva();
+            } else if (e.key === 'Enter' && indexActiv >= 0 && sugestiiCurente[indexActiv]) {
+                e.preventDefault();
+                aplicaSugestie(sugestiiCurente[indexActiv]);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                inchideSugestii();
+            }
+        });
+
+        inputCautare.addEventListener('blur', function() {
+            setTimeout(inchideSugestii, 120);
+        });
+    }
+
     document.querySelectorAll('.contacte-menu-btn').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
