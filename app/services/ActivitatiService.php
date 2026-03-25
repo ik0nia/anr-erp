@@ -238,11 +238,12 @@ function activitati_delete(PDO $pdo, int $id, string $utilizator = 'Sistem'): ar
             return ['success' => false, 'error' => 'Activitatea nu a fost găsită.'];
         }
 
-        // Nu ștergem lista de prezență asociată; doar detașăm legătura.
+        // Detașăm bidirecțional orice legătură cu listele înainte de ștergere.
         if (!empty($activitate['lista_prezenta_id'])) {
+            $pdo->prepare('UPDATE liste_prezenta SET activitate_id = NULL WHERE id = ?')->execute([(int)$activitate['lista_prezenta_id']]);
             $pdo->prepare('UPDATE liste_prezenta SET activitate_id = NULL WHERE activitate_id = ?')->execute([$id]);
         }
-
+        $pdo->prepare('UPDATE activitati SET lista_prezenta_id = NULL WHERE id = ?')->execute([$id]);
         $pdo->prepare('DELETE FROM activitati WHERE id = ?')->execute([$id]);
 
         $nume = trim((string)($activitate['nume'] ?? 'Activitate'));

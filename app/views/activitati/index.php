@@ -194,7 +194,10 @@
                                             <form method="post" action="/activitati<?php echo $afiseaza_tot ? '?afiseaza_tot=1' : ''; ?>" onsubmit="return confirm('Sigur doriți să ștergeți activitatea <?php echo htmlspecialchars($a['nume']); ?>?');" class="inline">
                                                 <?php echo csrf_field(); ?>
                                                 <input type="hidden" name="sterge_activitate" value="1">
-                                                <input type="hidden" name="id" value="<?php echo (int)$id_original; ?>">
+                                                <input type="hidden" name="activitate_id" value="<?php echo (int)$id_original; ?>">
+                                                <?php if ($afiseaza_tot): ?>
+                                                <input type="hidden" name="afiseaza_tot" value="1">
+                                                <?php endif; ?>
                                                 <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-500 bg-red-600 text-white hover:bg-red-700 font-medium text-sm" aria-label="Șterge activitatea: <?php echo htmlspecialchars($a['nume']); ?>">
                                                     <i data-lucide="trash-2" class="w-4 h-4" aria-hidden="true"></i>
                                                     Șterge
@@ -262,7 +265,6 @@
                                         <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Modifică lista">Modifică</a>
                                         <a href="/util/lista-prezenta-print.php?id=<?php echo $lp['id']; ?>" target="_blank" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Printează lista">Print</a>
                                         <a href="/util/lista-prezenta-pdf.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă PDF">PDF</a>
-                                        <a href="/util/lista-prezenta-docx.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă DOCX cu antet asociație">DOCX</a>
                                         <form method="post" action="/activitati<?php echo $afiseaza_tot ? '?afiseaza_tot=1' : ''; ?>" onsubmit="return confirm('Sigur doriți să ștergeți această listă de prezență?');" class="inline">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="sterge_lista_prezenta" value="1">

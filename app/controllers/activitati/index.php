@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_status']
 // --- POST: Stergere activitate ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_activitate'])) {
     csrf_require_valid();
-    $activitate_id = (int)($_POST['activitate_id'] ?? 0);
+    $activitate_id = (int)($_POST['activitate_id'] ?? $_POST['id'] ?? 0);
     $redirect_afiseaza_tot = !empty($_POST['afiseaza_tot']) ? '?afiseaza_tot=1' : '';
     if ($activitate_id > 0) {
         $result_sterge_activitate = activitati_delete($pdo, $activitate_id, $utilizator);
