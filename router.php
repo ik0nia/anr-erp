@@ -71,6 +71,7 @@ $routes = [
     '/api/cauta-membri'            => ['type' => 'legacy', 'script' => 'api-cauta-membri.php',            'file' => 'api/cauta-membri.php'],
     '/api/cauta-voluntari'         => ['type' => 'legacy', 'script' => 'api-cauta-voluntari.php',         'file' => 'api/cauta-voluntari.php'],
     '/api/cauta-contacte'          => ['type' => 'legacy', 'script' => 'api-cauta-contacte.php',          'file' => 'api/cauta-contacte.php'],
+    '/api/cauta-participanti'      => ['type' => 'legacy', 'script' => 'api-cauta-participanti.php',      'file' => 'api/cauta-participanti.php'],
     '/api/bpa-nr-registratura'     => ['type' => 'legacy', 'script' => 'api-bpa-nr-registratura.php',    'file' => 'api/bpa-nr-registratura.php'],
     '/api/registru-v2-stats'       => ['type' => 'legacy', 'script' => 'api-registru-v2-stats.php',      'file' => 'api/registru-v2-stats.php'],
     '/api/incasari-cauta-membri'   => ['type' => 'legacy', 'script' => 'incasari-cauta-membri.php',      'file' => 'api/incasari-cauta-membri.php'],

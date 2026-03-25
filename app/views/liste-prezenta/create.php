@@ -178,96 +178,194 @@
 </main>
 
 <script>
-const membriSelectati = [];
-const LISTE_COLOANE = <?php echo json_encode(LISTE_COLOANE); ?>;
+const participantiSelectati = [];
+
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function normalizeName(row) {
+    return String(row.nume_complet || '').trim();
+}
 
 function renderLista() {
-    const c = document.getElementById('lista-participanti');
-    const j = document.getElementById('membri_ids_json');
-    const jManual = document.getElementById('participanti_manuali_json');
-    j.value = JSON.stringify(membriSelectati.filter(m => m.id).map(m => m.id));
-    jManual.value = JSON.stringify(membriSelectati.filter(m => !m.id && m.numeManual).map(m => ({ nume: m.numeManual, ordine: m.ordine })));
+    const container = document.getElementById('lista-participanti');
+    const membriHidden = document.getElementById('membri_ids_json');
+    const manualHidden = document.getElementById('participanti_manuali_json');
 
-    if (membriSelectati.length === 0) {
-        c.innerHTML = '<p class="text-slate-500 dark:text-gray-400 text-sm">Adăugați participanți folosind căutarea de mai sus sau butonul "Adaugă participant manual".</p>';
+    const membriIds = participantiSelectati
+        .filter(function(p) { return p.tip === 'membru' && p.id; })
+        .map(function(p) { return p.id; });
+
+    const manuali = participantiSelectati
+        .filter(function(p) { return p.tip !== 'membru'; })
+        .map(function(p, idx) {
+            return {
+                nume: (p.tip === 'manual' ? (p.numeManual || '') : (p.numeComplet || '')).trim(),
+                ordine: idx + 1
+            };
+        })
+        .filter(function(p) { return p.nume !== ''; });
+
+    membriHidden.value = JSON.stringify(membriIds);
+    manualHidden.value = JSON.stringify(manuali);
+
+    if (participantiSelectati.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 dark:text-gray-400 text-sm">Adăugați participanți folosind căutarea de mai sus sau butonul "Adaugă participant manual".</p>';
         return;
     }
 
-    c.innerHTML = '<table class="min-w-full text-sm border border-slate-200 dark:border-gray-600"><thead class="bg-slate-100 dark:bg-gray-600"><tr><th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Nr.</th><th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Nume</th><th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Acțiune</th></tr></thead><tbody class="bg-white dark:bg-gray-800">' +
-        membriSelectati.map((m, i) => {
-            const numeAfisat = m.id ? (m.nume + ' ' + m.prenume) : (m.numeManual || '');
-            const idUnic = m.id || ('manual_' + m.ordine);
-            return '<tr class="border-b border-slate-200 dark:border-gray-600"><td class="py-2 px-3 text-slate-900 dark:text-white">' + (i+1) + '</td><td class="py-2 px-3 text-slate-900 dark:text-white">' +
-                (m.id ? numeAfisat : '<input type="text" value="' + (m.numeManual || '') + '" onchange="actualizeazaNumeManual(' + m.ordine + ', this.value)" placeholder="Nume participant" class="w-full px-2 py-1 border border-slate-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white text-slate-900">') +
-                '</td><td class="py-2 px-3"><button type="button" onclick="stergeParticipant(' + (m.id || 0) + ', ' + (m.ordine || 0) + ')" class="text-red-600 dark:text-red-400 hover:underline text-xs">Șterge</button></td></tr>';
-        }).join('') +
-        '</tbody></table>';
+    const rows = participantiSelectati.map(function(p, i) {
+        const tipLabel = p.tip === 'contact' ? 'Contact' : (p.tip === 'manual' ? 'Manual' : 'Membru');
+        const key = p.key || ('manual:' + i);
+        const nume = p.tip === 'manual' ? (p.numeManual || '') : (p.numeComplet || '');
+        const escapedNume = escapeHtml(nume);
+        const escapedKey = escapeHtml(key).replace(/'/g, "\\'");
+        const numeCell = p.tip === 'manual'
+            ? '<input type="text" value="' + escapedNume + '" onchange="actualizeazaNumeManual(\'' + escapedKey + '\', this.value)" placeholder="Nume participant" class="w-full px-2 py-1 border border-slate-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white text-slate-900">'
+            : '<span>' + escapedNume + '</span><span class="ml-2 text-xs text-slate-500 dark:text-gray-400">(' + tipLabel + ')</span>';
+        return '' +
+            '<tr class="border-b border-slate-200 dark:border-gray-600">' +
+                '<td class="py-2 px-3 text-slate-900 dark:text-white">' + (i + 1) + '</td>' +
+                '<td class="py-2 px-3 text-slate-900 dark:text-white">' + numeCell + '</td>' +
+                '<td class="py-2 px-3"><button type="button" onclick="stergeParticipant(\'' + escapedKey + '\')" class="text-red-600 dark:text-red-400 hover:underline text-xs">Șterge</button></td>' +
+            '</tr>';
+    }).join('');
+
+    container.innerHTML =
+        '<table class="min-w-full text-sm border border-slate-200 dark:border-gray-600">' +
+            '<thead class="bg-slate-100 dark:bg-gray-600">' +
+                '<tr>' +
+                    '<th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Nr.</th>' +
+                    '<th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Nume</th>' +
+                    '<th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Acțiune</th>' +
+                '</tr>' +
+            '</thead>' +
+            '<tbody class="bg-white dark:bg-gray-800">' + rows + '</tbody>' +
+        '</table>';
 }
 
-function stergeParticipant(id, ordineManual) {
-    let i = -1;
-    if (id > 0) {
-        i = membriSelectati.findIndex(m => m.id == id);
-    } else {
-        i = membriSelectati.findIndex(m => !m.id && m.ordine == ordineManual);
+function stergeParticipant(key) {
+    const idx = participantiSelectati.findIndex(function(p) { return p.key === key; });
+    if (idx >= 0) {
+        participantiSelectati.splice(idx, 1);
+        renderLista();
     }
-    if (i >= 0) { membriSelectati.splice(i, 1); renderLista(); }
 }
 
-function adaugaParticipant(m) {
-    if (membriSelectati.some(x => x.id == m.id)) return;
-    membriSelectati.push(m);
+function adaugaParticipant(p) {
+    if (!p || !p.key) return;
+    if (participantiSelectati.some(function(x) { return x.key === p.key; })) return;
+    participantiSelectati.push(p);
     renderLista();
 }
 
-function executaCautareLista() {
-    const q = document.getElementById('cauta-membru').value.trim();
+function actualizeazaNumeManual(key, nume) {
+    const item = participantiSelectati.find(function(p) { return p.key === key; });
+    if (!item) return;
+    item.numeManual = (nume || '').trim();
+    renderLista();
+}
+
+function adaugaParticipantManual() {
+    const uniq = 'manual:' + Date.now() + ':' + Math.floor(Math.random() * 10000);
+    adaugaParticipant({ key: uniq, tip: 'manual', numeManual: '' });
+}
+
+function executaCautareParticipanti() {
+    const input = document.getElementById('cauta-membru');
     const div = document.getElementById('rezultate-cautare');
-    if (q.length < 2) { div.classList.add('hidden'); return; }
+    const q = input.value.trim();
+    if (q.length < 2) {
+        div.classList.add('hidden');
+        return;
+    }
+
     div.classList.remove('hidden');
     div.innerHTML = '<p class="text-slate-500 dark:text-gray-400 py-2">Se caută…</p>';
-    fetch('/api/cauta-membri?q=' + encodeURIComponent(q))
-        .then(r => r.json())
-        .then(d => {
-            const membri = d && d.membri ? d.membri : [];
-            div.innerHTML = membri.length ? membri.map((m) =>
-                '<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-gray-600"><span class="text-slate-900 dark:text-white">' + (m.nume || '') + ' ' + (m.prenume || '') + '</span><button type="button" data-membru-id="' + m.id + '" data-membru-nume="' + (m.nume || '') + '" data-membru-prenume="' + (m.prenume || '') + '" class="btn-adauga-membru px-2 py-1 bg-amber-600 text-white rounded text-xs">Adaugă în listă</button></div>'
-            ).join('') : '<p class="text-slate-500 dark:text-gray-400 py-2">Niciun rezultat.</p>';
-            div.querySelectorAll('.btn-adauga-membru').forEach(btn => {
-                btn.onclick = function() {
-                    adaugaParticipant({ id: parseInt(this.dataset.membruId), nume: this.dataset.membruNume || '', prenume: this.dataset.membruPrenume || '' });
-                };
+
+    fetch('/api/cauta-participanti-liste?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            const rezultate = (d && d.participanti) ? d.participanti : [];
+            if (!rezultate.length) {
+                div.innerHTML = '<p class="text-slate-500 dark:text-gray-400 py-2">Niciun rezultat.</p>';
+                return;
+            }
+
+            div.innerHTML = rezultate.map(function(r) {
+                const tip = r.tip === 'contact' ? 'Contact' : 'Membru';
+                const info = r.info ? ' · ' + r.info : '';
+                return (
+                    '<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-gray-600">' +
+                        '<span class="text-slate-900 dark:text-white">' + escapeHtml(normalizeName(r)) + '<span class="ml-2 text-xs text-slate-500 dark:text-gray-400">(' + tip + escapeHtml(info) + ')</span></span>' +
+                        '<button type="button" class="btn-adauga-participant px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs" data-tip="' + escapeHtml(r.tip || '') + '" data-id="' + (parseInt(r.id || 0, 10) || 0) + '" data-nume="' + escapeHtml(normalizeName(r)) + '">Adaugă</button>' +
+                    '</div>'
+                );
+            }).join('');
+
+            div.querySelectorAll('.btn-adauga-participant').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const tip = btn.dataset.tip === 'contact' ? 'contact' : 'membru';
+                    const id = parseInt(btn.dataset.id || '0', 10);
+                    const key = tip + ':' + id;
+                    adaugaParticipant({
+                        key: key,
+                        tip: tip,
+                        id: id,
+                        numeComplet: btn.dataset.nume || ''
+                    });
+                });
             });
         })
         .catch(function() {
             div.innerHTML = '<p class="text-red-600 dark:text-red-400 py-2">Eroare la căutare. Încercați din nou.</p>';
         });
 }
-document.getElementById('btn-cauta').onclick = executaCautareLista;
+
+document.getElementById('btn-cauta').addEventListener('click', executaCautareParticipanti);
+document.getElementById('btn-adauga-manual').addEventListener('click', adaugaParticipantManual);
+
 document.getElementById('cauta-membru').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); executaCautareLista(); }
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        executaCautareParticipanti();
+    }
 });
-// Live search cu debounce
+
 (function() {
     var debounce = null;
     document.getElementById('cauta-membru').addEventListener('input', function() {
         clearTimeout(debounce);
         var self = this;
         debounce = setTimeout(function() {
-            if (self.value.trim().length >= 2) executaCautareLista();
+            if (self.value.trim().length >= 2) executaCautareParticipanti();
             else document.getElementById('rezultate-cautare').classList.add('hidden');
         }, 300);
     });
 })();
-document.getElementById('btn-adauga-manual').onclick = function() {
-    adaugaParticipant();
-};
+
+document.getElementById('form-lista').addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    var target = e.target;
+    if (!target) return;
+    if (target.id === 'cauta-membru') return;
+    if (target.tagName === 'TEXTAREA') return;
+    if (target.tagName === 'BUTTON') return;
+    e.preventDefault();
+});
 
 document.getElementById('form-lista').onsubmit = function() {
-    document.getElementById('membri_ids_json').value = JSON.stringify(membriSelectati.filter(m => m.id).map(m => m.id));
-    document.getElementById('participanti_manuali_json').value = JSON.stringify(membriSelectati.filter(m => !m.id && m.numeManual).map(m => ({ nume: m.numeManual, ordine: m.ordine })));
+    renderLista();
     return true;
 };
+
+renderLista();
 </script>
 <script>if (typeof lucide !== 'undefined') lucide.createIcons();</script>
 </body>
