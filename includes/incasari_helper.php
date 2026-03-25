@@ -67,6 +67,89 @@ function incasari_valoare_cotizatie_anuala($pdo, $anul, $grad_handicap, $asisten
     return $row ? (float)$row['valoare_cotizatie'] : 0;
 }
 
+/**
+ * Returneaza configuratia de cotizatie (an + valoare) pentru grad/asistent.
+ * Prefera anul indicat, apoi cel mai recent an disponibil in setari.
+ */
+function incasari_cotizatie_an_valoare_configurata($pdo, $grad_handicap, $asistent_personal = 'Fara asistent personal', $an_preferat = null) {
+    require_once __DIR__ . '/cotizatii_helper.php';
+    cotizatii_ensure_tables($pdo);
+
+    $an_preferat = (int)($an_preferat ?: date('Y'));
+    $grad_handicap = trim((string)$grad_handicap);
+    $asistent_personal = trim((string)$asistent_personal);
+
+    $fetchConfig = function(array $whereParts, array $params) use ($pdo, $an_preferat) {
+        $whereSql = implode(' AND ', $whereParts);
+        $sql = "SELECT anul, valoare_cotizatie
+                FROM cotizatii_anuale
+                WHERE {$whereSql}
+                ORDER BY (anul = ?) DESC, anul DESC, id DESC
+                LIMIT 1";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(array_merge($params, [$an_preferat]));
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    };
+
+    // 1) Potrivire exacta pe grad + asistent_personal
+    $row = $fetchConfig(
+        ['grad_handicap = ?', 'asistent_personal = ?'],
+        [$grad_handicap, $asistent_personal]
+    );
+    if ($row) {
+        return ['anul' => (int)$row['anul'], 'valoare' => (float)$row['valoare_cotizatie']];
+    }
+
+    // 2) Potrivire toleranta pe asistent_personal
+    $is_cu_asistent = $asistent_personal === 'Cu asistent personal';
+    $asistent_synonyms = $is_cu_asistent
+        ? ['Cu asistent personal', 'ASISTENT PERSONAL', 'INDEMNIZATIE INSOTITOR', 'Cu asistent']
+        : ['Fara asistent personal', 'FĂRĂ asistent personal', 'FARA', 'NESPECIFICAT', '0', ''];
+    $placeholders = implode(',', array_fill(0, count($asistent_synonyms), '?'));
+    $row = $fetchConfig(
+        ["grad_handicap = ?", "asistent_personal IN ({$placeholders})"],
+        array_merge([$grad_handicap], $asistent_synonyms)
+    );
+    if ($row) {
+        return ['anul' => (int)$row['anul'], 'valoare' => (float)$row['valoare_cotizatie']];
+    }
+
+    // 3) Fallback final: orice configuratie pe gradul respectiv
+    $row = $fetchConfig(['grad_handicap = ?'], [$grad_handicap]);
+    if ($row) {
+        return ['anul' => (int)$row['anul'], 'valoare' => (float)$row['valoare_cotizatie']];
+    }
+
+    return ['anul' => $an_preferat, 'valoare' => 0.0];
+}
+
+/**
+ * Returneaza anul cotizatiei configurate pentru combinatie grad + asistent.
+ */
+function incasari_an_cotizatie_pentru_membru($pdo, $grad_handicap, $asistent_personal = 'Fara asistent personal', $an_preferat = null) {
+    $cfg = incasari_cotizatie_an_valoare_configurata($pdo, $grad_handicap, $asistent_personal, $an_preferat);
+    return (int)($cfg['anul'] ?? (int)($an_preferat ?: date('Y')));
+}
+
+/**
+ * Returneaza anul implicit de cotizatie din setari (cel mai recent disponibil).
+ */
+function incasari_an_cotizatie_implicit($pdo, $an_preferat = null) {
+    require_once __DIR__ . '/cotizatii_helper.php';
+    cotizatii_ensure_tables($pdo);
+    $an_preferat = (int)($an_preferat ?: date('Y'));
+
+    try {
+        $stmt = $pdo->query("SELECT anul FROM cotizatii_anuale ORDER BY anul DESC, id DESC LIMIT 1");
+        $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
+        if ($row && isset($row['anul'])) {
+            return (int)$row['anul'];
+        }
+    } catch (PDOException $e) {}
+
+    return $an_preferat;
+}
+
 /** Returnează seria și următorul nr pentru tip_serie (donatii / incasari). */
 function incasari_urmatorul_nr_serie($pdo, $tip_serie) {
     incasari_ensure_tables($pdo);

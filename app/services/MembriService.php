@@ -696,6 +696,7 @@ function membri_cotizatie_info(PDO $pdo, int $membru_id, ?array $membru = null):
     $scutire_cotizatie = null;
     $cotizatie_achitata_an_curent = false;
     $valoare_cotizatie_an = 0;
+    $an_cotizatie = (int)date('Y');
 
     try {
         $scutire_cotizatie = cotizatii_membru_este_scutit($pdo, $membru_id);
@@ -706,13 +707,15 @@ function membri_cotizatie_info(PDO $pdo, int $membru_id, ?array $membru = null):
         $hgrad = $membru['hgrad'] ?? 'Fara handicap';
         $insotitor = $membru['insotitor'] ?? '';
         $asistent_personal = cotizatii_map_insotitor_to_asistent($insotitor);
-        $valoare_cotizatie_an = incasari_valoare_cotizatie_anuala($pdo, (int)date('Y'), $hgrad, $asistent_personal);
+        $an_cotizatie = incasari_an_cotizatie_pentru_membru($pdo, $hgrad, $asistent_personal, (int)date('Y'));
+        $valoare_cotizatie_an = incasari_valoare_cotizatie_anuala($pdo, $an_cotizatie, $hgrad, $asistent_personal);
     } catch (Exception $e) {}
 
     return [
         'scutire_cotizatie' => $scutire_cotizatie,
         'cotizatie_achitata_an_curent' => $cotizatie_achitata_an_curent,
         'valoare_cotizatie_an' => $valoare_cotizatie_an,
+        'an_cotizatie' => $an_cotizatie,
     ];
 }
 

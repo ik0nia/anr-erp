@@ -4,7 +4,7 @@
  *
  * Variabile disponibile (setate de controller):
  *   $membru, $eroare, $succes, $membru_id, $varsta,
- *   $scutire_cotizatie, $cotizatie_achitata_an_curent, $valoare_cotizatie_an,
+ *   $scutire_cotizatie, $cotizatie_achitata_an_curent, $valoare_cotizatie_an, $an_cotizatie,
  *   $alerts, $istoric_modificari, $lista_incasari,
  *   $tipuri_afisare, $moduri_plata_afisare, $jurnal, $documente_generate
  */
@@ -159,6 +159,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                     data-membru-id="<?php echo (int)$membru['id']; ?>"
                     data-membru-nume="<?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>"
                     data-valoare-cot="<?php echo number_format($valoare_cotizatie_an, 2, '.', ''); ?>"
+                    data-cotizatie-an="<?php echo (int)$an_cotizatie_setata; ?>"
                     data-cot-achitata="<?php echo $cotizatie_achitata_an_curent ? '1' : '0'; ?>"
                     aria-label="Incaseaza <?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>">
                 <i data-lucide="dollar-sign" class="mr-2 w-4 h-4" aria-hidden="true"></i>

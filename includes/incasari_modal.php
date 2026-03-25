@@ -12,6 +12,7 @@
             <input type="hidden" name="membru_id" id="incasari-membru-id" value="">
             <input type="hidden" name="valoare_cotizatie" id="incasari-valoare-cot" value="0">
             <input type="hidden" name="cotizatie_achitata" id="incasari-cot-achitata" value="0">
+            <input type="hidden" id="incasari-an-cotizatie" value="<?php echo (int)date('Y'); ?>">
 
             <div>
                 <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Tip încasare</span>
@@ -68,6 +69,7 @@
     var mid = document.getElementById('incasari-membru-id');
     var valCot = document.getElementById('incasari-valoare-cot');
     var cotAchitata = document.getElementById('incasari-cot-achitata');
+    var anCotizatieInput = document.getElementById('incasari-an-cotizatie');
     var cotAchitataAfis = document.getElementById('incasari-cot-achitata-afis');
     var tipInput = document.getElementById('incasari-tip');
     var modInput = document.getElementById('incasari-mod');
@@ -102,6 +104,9 @@
         mid.value = btn.getAttribute('data-membru-id') || '';
         if (numeSpan) numeSpan.textContent = btn.getAttribute('data-membru-nume') || '';
         valCot.value = btn.getAttribute('data-valoare-cot') || '0';
+        if (anCotizatieInput) {
+            anCotizatieInput.value = btn.getAttribute('data-cotizatie-an') || String(new Date().getFullYear());
+        }
         var ach = btn.getAttribute('data-cot-achitata');
         cotAchitata.value = (ach === '1' || ach === 'true') ? '1' : '0';
         if (cotAchitata.value === '1') {
@@ -153,8 +158,9 @@
                 wrapReprezentand.classList.add('hidden');
                 inputReprezentand.value = '';
             } else {
-                var dataSelectata = (dataInput && dataInput.value) ? dataInput.value : '';
-                var anCotizatie = dataSelectata.length >= 4 ? dataSelectata.substring(0, 4) : String(new Date().getFullYear());
+                var anCotizatie = (anCotizatieInput && anCotizatieInput.value)
+                    ? anCotizatieInput.value
+                    : String(new Date().getFullYear());
                 wrapSuma.classList.remove('hidden');
                 labelSuma.textContent = 'Cotizație (RON)';
                 inputSuma.value = valCot.value || '0';
