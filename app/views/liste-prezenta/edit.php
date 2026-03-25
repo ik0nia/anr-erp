@@ -98,30 +98,213 @@
             </div>
             <div class="flex gap-4">
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Salvează modificările listei de prezență">Salvează</button>
-                <a href="/activitati" class="px-4 py-2 border rounded-lg">Renunță</a>
+                <a href="/activitati" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-white hover:bg-slate-100 dark:hover:bg-gray-700">Renunță</a>
             </div>
         </form>
     </div>
 </main>
 <script>
-let contorManual = <?php echo max(array_map(function($p) { return $p['ordine'] ?? 0; }, array_filter($participanti, function($p) { return empty($p['membru_id']); }))) + 1; ?>;
-const membriSelectati = <?php echo json_encode(array_map(function($p){
+const participantiSelectati = <?php echo json_encode(array_map(function($p){
     if (!empty($p['membru_id'])) {
-        return ['id'=>$p['membru_id'],'nume'=>$p['nume'],'prenume'=>$p['prenume']];
-    } else {
-        return ['id'=>null,'numeManual'=>$p['nume_manual']??'','ordine'=>$p['ordine']];
+        return [
+            'key' => 'membru:' . (int)$p['membru_id'],
+            'tip' => 'membru',
+            'id' => (int)$p['membru_id'],
+            'numeComplet' => trim((string)($p['nume'] ?? '') . ' ' . (string)($p['prenume'] ?? ''))
+        ];
     }
+    return [
+        'key' => 'manual:' . (int)($p['ordine'] ?? 0),
+        'tip' => 'manual',
+        'numeManual' => (string)($p['nume_manual'] ?? '')
+    ];
 }, $participanti)); ?>;
-function renderLista(){const c=document.getElementById('lista-participanti');const j=document.getElementById('membri_ids_json');const jManual=document.getElementById('participanti_manuali_json');j.value=JSON.stringify(membriSelectati.filter(m=>m.id).map(m=>m.id));jManual.value=JSON.stringify(membriSelectati.filter(m=>!m.id&&m.numeManual).map(m=>({nume:m.numeManual,ordine:m.ordine})));if(membriSelectati.length===0){c.innerHTML='<p class="text-slate-500 dark:text-gray-400 text-sm">Niciun participant.</p>';return;}c.innerHTML='<table class="min-w-full text-sm border border-slate-200 dark:border-gray-600"><thead class="bg-slate-100 dark:bg-gray-600"><tr><th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Nr.</th><th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Nume</th><th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Acțiune</th></tr></thead><tbody class="bg-white dark:bg-gray-800">'+membriSelectati.map((m,i)=>{const numeAfisat=m.id?(m.nume+' '+m.prenume):(m.numeManual||'');const idUnic=m.id||('manual_'+m.ordine);return '<tr class="border-b border-slate-200 dark:border-gray-600"><td class="py-2 px-3 text-slate-900 dark:text-white">'+(i+1)+'</td><td class="py-2 px-3 text-slate-900 dark:text-white">'+(m.id?numeAfisat:'<input type="text" value="'+(m.numeManual||'')+'" onchange="actualizeazaNumeManual('+m.ordine+', this.value)" placeholder="Nume participant" class="w-full px-2 py-1 border border-slate-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white text-slate-900">')+'</td><td class="py-2 px-3"><button type="button" onclick="stergeParticipant('+(m.id||0)+','+(m.ordine||0)+')" class="text-red-600 dark:text-red-400 hover:underline text-xs">Șterge</button></td></tr>';}).join('')+'</tbody></table>';}
-function stergeParticipant(id,ordineManual){let i;if(id){i=membriSelectati.findIndex(m=>m.id==id);}else if(ordineManual){i=membriSelectati.findIndex(m=>!m.id&&m.ordine==ordineManual);}else{return;}if(i>=0){membriSelectati.splice(i,1);renderLista();}}
-function adaugaParticipant(m){if(m&&m.id&&membriSelectati.some(x=>x.id==m.id))return;if(m){membriSelectati.push(m);}else{contorManual++;membriSelectati.push({id:null,numeManual:'',ordine:contorManual});}renderLista();}
-function actualizeazaNumeManual(ordine,nume){const m=membriSelectati.find(x=>!x.id&&x.ordine==ordine);if(m){m.numeManual=nume.trim();const jManual=document.getElementById('participanti_manuali_json');jManual.value=JSON.stringify(membriSelectati.filter(m=>!m.id&&m.numeManual).map(m=>({nume:m.numeManual,ordine:m.ordine})));}}
-function executaCautareEdit(){var q=document.getElementById('cauta-membru').value.trim();if(q.length<2)return;fetch('/api/cauta-membri?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{var div=document.getElementById('rezultate-cautare');div.classList.remove('hidden');var membri=d.membri||[];div.innerHTML=membri.map(m=>'<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-gray-600"><span>'+(m.nume||'')+' '+(m.prenume||'')+'</span><button type="button" class="btn-add px-2 py-1 bg-amber-600 text-white rounded text-xs" data-id="'+m.id+'" data-nume="'+(m.nume||'')+'" data-prenume="'+(m.prenume||'')+'">Adaugă</button></div>').join('')||'<p class="text-slate-500 dark:text-gray-400">Niciun rezultat.</p>';div.querySelectorAll('.btn-add').forEach(btn=>{btn.onclick=()=>adaugaParticipant({id:parseInt(btn.dataset.id),nume:btn.dataset.nume||'',prenume:btn.dataset.prenume||''});});});}
-document.getElementById('btn-cauta').onclick=executaCautareEdit;
-document.getElementById('cauta-membru').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();executaCautareEdit();}});
-(function(){var deb=null;document.getElementById('cauta-membru').addEventListener('input',function(){clearTimeout(deb);var self=this;deb=setTimeout(function(){if(self.value.trim().length>=2)executaCautareEdit();else document.getElementById('rezultate-cautare').classList.add('hidden');},300);});})();
-document.getElementById('btn-adauga-manual').onclick=function(){adaugaParticipant();};
-document.getElementById('form-lista').onsubmit=function(){document.getElementById('membri_ids_json').value=JSON.stringify(membriSelectati.filter(m=>m.id).map(m=>m.id));document.getElementById('participanti_manuali_json').value=JSON.stringify(membriSelectati.filter(m=>!m.id&&m.numeManual).map(m=>({nume:m.numeManual,ordine:m.ordine})));return true;};
+
+function escapeHtml(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function normalizeName(row) {
+    return String(row.nume_complet || '').trim();
+}
+
+function renderLista() {
+    const container = document.getElementById('lista-participanti');
+    const membriHidden = document.getElementById('membri_ids_json');
+    const manualHidden = document.getElementById('participanti_manuali_json');
+
+    const membriIds = participantiSelectati
+        .filter(function(p) { return p.tip === 'membru' && p.id; })
+        .map(function(p) { return p.id; });
+
+    const manuali = participantiSelectati
+        .filter(function(p) { return p.tip !== 'membru'; })
+        .map(function(p, idx) {
+            return {
+                nume: (p.tip === 'manual' ? (p.numeManual || '') : (p.numeComplet || '')).trim(),
+                ordine: idx + 1
+            };
+        })
+        .filter(function(p) { return p.nume !== ''; });
+
+    membriHidden.value = JSON.stringify(membriIds);
+    manualHidden.value = JSON.stringify(manuali);
+
+    if (participantiSelectati.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 dark:text-gray-400 text-sm">Niciun participant.</p>';
+        return;
+    }
+
+    const rows = participantiSelectati.map(function(p, i) {
+        const tipLabel = p.tip === 'contact' ? 'Contact' : (p.tip === 'manual' ? 'Manual' : 'Membru');
+        const key = p.key || ('manual:' + i);
+        const nume = p.tip === 'manual' ? (p.numeManual || '') : (p.numeComplet || '');
+        const escapedNume = escapeHtml(nume);
+        const escapedKey = escapeHtml(key).replace(/'/g, "\\'");
+        const numeCell = p.tip === 'manual'
+            ? '<input type="text" value="' + escapedNume + '" onchange="actualizeazaNumeManual(\'' + escapedKey + '\', this.value)" placeholder="Nume participant" class="w-full px-2 py-1 border border-slate-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white text-slate-900">'
+            : '<span>' + escapedNume + '</span><span class="ml-2 text-xs text-slate-500 dark:text-gray-400">(' + tipLabel + ')</span>';
+        return '' +
+            '<tr class="border-b border-slate-200 dark:border-gray-600">' +
+                '<td class="py-2 px-3 text-slate-900 dark:text-white">' + (i + 1) + '</td>' +
+                '<td class="py-2 px-3 text-slate-900 dark:text-white">' + numeCell + '</td>' +
+                '<td class="py-2 px-3"><button type="button" onclick="stergeParticipant(\'' + escapedKey + '\')" class="text-red-600 dark:text-red-400 hover:underline text-xs">Șterge</button></td>' +
+            '</tr>';
+    }).join('');
+
+    container.innerHTML =
+        '<table class="min-w-full text-sm border border-slate-200 dark:border-gray-600">' +
+            '<thead class="bg-slate-100 dark:bg-gray-600">' +
+                '<tr>' +
+                    '<th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Nr.</th>' +
+                    '<th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Nume</th>' +
+                    '<th class="text-left py-2 px-3 border-b border-slate-200 dark:border-gray-500 text-slate-900 dark:text-white">Acțiune</th>' +
+                '</tr>' +
+            '</thead>' +
+            '<tbody class="bg-white dark:bg-gray-800">' + rows + '</tbody>' +
+        '</table>';
+}
+
+function stergeParticipant(key) {
+    const idx = participantiSelectati.findIndex(function(p) { return p.key === key; });
+    if (idx >= 0) {
+        participantiSelectati.splice(idx, 1);
+        renderLista();
+    }
+}
+
+function adaugaParticipant(p) {
+    if (!p || !p.key) return;
+    if (participantiSelectati.some(function(x) { return x.key === p.key; })) return;
+    participantiSelectati.push(p);
+    renderLista();
+}
+
+function actualizeazaNumeManual(key, nume) {
+    const item = participantiSelectati.find(function(p) { return p.key === key; });
+    if (!item) return;
+    item.numeManual = (nume || '').trim();
+    renderLista();
+}
+
+function adaugaParticipantManual() {
+    const uniq = 'manual:' + Date.now() + ':' + Math.floor(Math.random() * 10000);
+    adaugaParticipant({ key: uniq, tip: 'manual', numeManual: '' });
+}
+
+function executaCautareParticipanti() {
+    const input = document.getElementById('cauta-membru');
+    const div = document.getElementById('rezultate-cautare');
+    const q = input.value.trim();
+    if (q.length < 2) {
+        div.classList.add('hidden');
+        return;
+    }
+
+    div.classList.remove('hidden');
+    div.innerHTML = '<p class="text-slate-500 dark:text-gray-400 py-2">Se caută…</p>';
+
+    fetch('/api/cauta-participanti-liste?q=' + encodeURIComponent(q))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            const rezultate = (d && d.participanti) ? d.participanti : [];
+            if (!rezultate.length) {
+                div.innerHTML = '<p class="text-slate-500 dark:text-gray-400 py-2">Niciun rezultat.</p>';
+                return;
+            }
+
+            div.innerHTML = rezultate.map(function(r) {
+                const tip = r.tip === 'contact' ? 'Contact' : 'Membru';
+                return (
+                    '<div class="flex items-center justify-between py-2 border-b border-slate-200 dark:border-gray-600">' +
+                        '<button type="button" class="btn-adauga-participant px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs mr-3" data-tip="' + escapeHtml(r.tip || '') + '" data-id="' + (parseInt(r.id || 0, 10) || 0) + '" data-nume="' + escapeHtml(normalizeName(r)) + '">Adaugă</button>' +
+                        '<span class="text-slate-900 dark:text-white flex-1">' + escapeHtml(normalizeName(r)) + '</span>' +
+                        '<span class="ml-2 text-xs text-slate-500 dark:text-gray-400">(' + tip + ')</span>' +
+                    '</div>'
+                );
+            }).join('');
+
+            div.querySelectorAll('.btn-adauga-participant').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const tip = btn.dataset.tip === 'contact' ? 'contact' : 'membru';
+                    const id = parseInt(btn.dataset.id || '0', 10);
+                    const key = tip + ':' + id;
+                    adaugaParticipant({
+                        key: key,
+                        tip: tip,
+                        id: id,
+                        numeComplet: btn.dataset.nume || ''
+                    });
+                });
+            });
+        })
+        .catch(function() {
+            div.innerHTML = '<p class="text-red-600 dark:text-red-400 py-2">Eroare la căutare. Încercați din nou.</p>';
+        });
+}
+
+document.getElementById('btn-cauta').addEventListener('click', executaCautareParticipanti);
+document.getElementById('btn-adauga-manual').addEventListener('click', adaugaParticipantManual);
+
+document.getElementById('cauta-membru').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        executaCautareParticipanti();
+    }
+});
+
+(function() {
+    var deb = null;
+    document.getElementById('cauta-membru').addEventListener('input', function() {
+        clearTimeout(deb);
+        var self = this;
+        deb = setTimeout(function() {
+            if (self.value.trim().length >= 2) executaCautareParticipanti();
+            else document.getElementById('rezultate-cautare').classList.add('hidden');
+        }, 300);
+    });
+})();
+
+document.getElementById('form-lista').addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    var target = e.target;
+    if (!target) return;
+    if (target.id === 'cauta-membru') return;
+    if (target.tagName === 'TEXTAREA') return;
+    if (target.tagName === 'BUTTON') return;
+    e.preventDefault();
+});
+
+document.getElementById('form-lista').onsubmit = function() {
+    renderLista();
+    return true;
+};
+
 renderLista();
 </script>
 </body>

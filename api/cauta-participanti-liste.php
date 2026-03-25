@@ -41,11 +41,15 @@ try {
     ");
     $stmt_m->execute([$term, $term, $term, $term, $term, $term, $term, $term]);
     foreach ($stmt_m->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $nume = trim((string)($row['nume'] ?? ''));
+        $prenume = trim((string)($row['prenume'] ?? ''));
+        $nume_complet = trim($nume . ' ' . $prenume);
         $participanti[] = [
             'tip' => 'membru',
             'id' => (int)$row['id'],
-            'nume' => trim((string)($row['nume'] ?? '')),
-            'prenume' => trim((string)($row['prenume'] ?? '')),
+            'nume' => $nume,
+            'prenume' => $prenume,
+            'nume_complet' => $nume_complet,
             'domloc' => trim((string)($row['domloc'] ?? '')),
         ];
     }
@@ -69,11 +73,15 @@ try {
     ");
     $stmt_c->execute([$term, $term, $term, $term, $term, $term, $term, $term, $term]);
     foreach ($stmt_c->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $nume = trim((string)($row['nume'] ?? ''));
+        $prenume = trim((string)($row['prenume'] ?? ''));
+        $nume_complet = trim($nume . ' ' . $prenume);
         $participanti[] = [
             'tip' => 'contact',
             'id' => (int)$row['id'],
-            'nume' => trim((string)($row['nume'] ?? '')),
-            'prenume' => trim((string)($row['prenume'] ?? '')),
+            'nume' => $nume,
+            'prenume' => $prenume,
+            'nume_complet' => $nume_complet,
             'domloc' => trim((string)($row['companie'] ?? '')),
             'tip_contact' => trim((string)($row['tip_contact'] ?? '')),
         ];

@@ -88,7 +88,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border p-6">
                 <h2 class="text-lg font-semibold mb-4 text-slate-900 dark:text-white">Participanți</h2>
                 <div class="mb-4">
-                    <label class="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Căutare membri</label>
+                    <label class="block text-sm font-medium mb-2 text-slate-900 dark:text-white">Căutare participanți (membri și contacte)</label>
                     <div class="relative">
                         <div class="flex gap-2">
                             <div class="relative flex-1">
@@ -171,7 +171,7 @@
                 <button type="submit" name="actiune_dupa" value="print" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium" aria-label="Salvează lista de prezență și printează">Salvează și printează</button>
                 <button type="submit" name="actiune_dupa" value="pdf" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium" aria-label="Salvează lista de prezență și descarcă PDF">Salvează și descarcă PDF</button>
                 <button type="submit" name="actiune_dupa" value="docx" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium" aria-label="Salvează lista de prezență și descarcă DOCX">Salvează și descarcă DOCX</button>
-                <a href="/activitati" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-gray-700" aria-label="Renunță la creare listă">Renunță</a>
+                <a href="/activitati" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-white hover:bg-slate-100 dark:hover:bg-gray-700" aria-label="Renunță la creare listă">Renunță</a>
             </div>
         </form>
     </div>
@@ -300,11 +300,11 @@ function executaCautareParticipanti() {
 
             div.innerHTML = rezultate.map(function(r) {
                 const tip = r.tip === 'contact' ? 'Contact' : 'Membru';
-                const info = r.info ? ' · ' + r.info : '';
                 return (
-                    '<div class="flex justify-between items-center py-2 border-b border-slate-200 dark:border-gray-600">' +
-                        '<span class="text-slate-900 dark:text-white">' + escapeHtml(normalizeName(r)) + '<span class="ml-2 text-xs text-slate-500 dark:text-gray-400">(' + tip + escapeHtml(info) + ')</span></span>' +
-                        '<button type="button" class="btn-adauga-participant px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs" data-tip="' + escapeHtml(r.tip || '') + '" data-id="' + (parseInt(r.id || 0, 10) || 0) + '" data-nume="' + escapeHtml(normalizeName(r)) + '">Adaugă</button>' +
+                    '<div class="flex items-center gap-3 py-2 border-b border-slate-200 dark:border-gray-600">' +
+                        '<button type="button" class="btn-adauga-participant px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs shrink-0" data-tip="' + escapeHtml(r.tip || '') + '" data-id="' + (parseInt(r.id || 0, 10) || 0) + '" data-nume="' + escapeHtml(normalizeName(r)) + '">Adaugă</button>' +
+                        '<span class="text-slate-900 dark:text-white">' + escapeHtml(normalizeName(r)) + '</span>' +
+                        '<span class="text-xs text-slate-500 dark:text-gray-400">(' + tip + ')</span>' +
                     '</div>'
                 );
             }).join('');
