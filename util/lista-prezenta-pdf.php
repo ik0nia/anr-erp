@@ -10,6 +10,7 @@ $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) { header('Location: /activitati'); exit; }
 
 $temp_docx = null;
+$temp_pdf = null;
 try {
     $stmt = $pdo->prepare('SELECT tip_titlu, data_lista FROM liste_prezenta WHERE id = ?');
     $stmt->execute([$id]);
@@ -20,11 +21,9 @@ try {
     }
 
     // Genereaza temporar DOCX-ul care deja include antetul asociației.
-    ob_start();
-    $_GET['id'] = $id;
-    include __DIR__ . '/lista-prezenta-docx.php';
-    $docx_bytes = ob_get_clean();
-    if ($docx_bytes === false || $docx_bytes === '') {
+    $cmd = PHP_BINARY . ' ' . escapeshellarg(__DIR__ . '/lista-prezenta-docx.php') . ' id=' . (int)$id;
+    $docx_bytes = shell_exec($cmd);
+    if (!is_string($docx_bytes) || $docx_bytes === '') {
         header('Location: /activitati');
         exit;
     }
@@ -41,6 +40,7 @@ try {
     }
 
     $pdf_path = $pdf_result['path'];
+    $temp_pdf = $pdf_path;
     $filename = 'Lista-prezenta-' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $lista['tip_titlu']) . '-' . date('Y-m-d', strtotime($lista['data_lista'])) . '.pdf';
 
     log_activitate($pdo, "liste_prezenta: Lista de prezenta exportata PDF - {$lista['tip_titlu']} (ID: {$id})");
@@ -51,10 +51,11 @@ try {
     readfile($pdf_path);
 
     @unlink($temp_docx);
-    @unlink($pdf_path);
+    @unlink($temp_pdf);
     exit;
 } catch (Throwable $e) {
     if ($temp_docx && file_exists($temp_docx)) @unlink($temp_docx);
+    if ($temp_pdf && file_exists($temp_pdf)) @unlink($temp_pdf);
     header('Location: lista-prezenta-print.php?id=' . $id);
     exit;
 }

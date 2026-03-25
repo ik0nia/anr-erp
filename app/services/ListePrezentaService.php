@@ -232,3 +232,45 @@ function liste_prezenta_update(PDO $pdo, int $id, array $post): array {
         return ['success' => false, 'error' => 'Eroare: ' . $e->getMessage()];
     }
 }
+
+/**
+ * Șterge o listă de prezență și participanții aferenți.
+ *
+ * @return array ['success' => bool, 'error' => string]
+ */
+function liste_prezenta_delete(PDO $pdo, int $id, string $user = 'Sistem'): array {
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'ID listă invalid.'];
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT id, tip_titlu, detalii_activitate FROM liste_prezenta WHERE id = ?');
+        $stmt->execute([$id]);
+        $lista = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$lista) {
+            return ['success' => false, 'error' => 'Lista nu a fost găsită.'];
+        }
+
+        $pdo->beginTransaction();
+
+        $pdo->prepare('DELETE FROM liste_prezenta_membri WHERE lista_id = ?')->execute([$id]);
+        $pdo->prepare('UPDATE activitati SET lista_prezenta_id = NULL WHERE lista_prezenta_id = ?')->execute([$id]);
+        $pdo->prepare('DELETE FROM liste_prezenta WHERE id = ?')->execute([$id]);
+
+        $pdo->commit();
+
+        $detalii = trim((string)($lista['detalii_activitate'] ?? ''));
+        $log_label = (string)($lista['tip_titlu'] ?? 'Lista prezenta');
+        if ($detalii !== '') {
+            $log_label .= ' - ' . mb_substr($detalii, 0, 120);
+        }
+        log_activitate($pdo, 'Lista prezenta stearsa: ' . $log_label . ' (ID ' . $id . ')', $user);
+
+        return ['success' => true, 'error' => ''];
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        return ['success' => false, 'error' => 'Eroare la ștergerea listei: ' . $e->getMessage()];
+    }
+}

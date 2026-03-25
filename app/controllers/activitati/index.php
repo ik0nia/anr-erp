@@ -8,6 +8,7 @@
  */
 require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/app/services/ActivitatiService.php';
+require_once APP_ROOT . '/app/services/ListePrezentaService.php';
 
 $eroare = '';
 $succes = '';
@@ -46,6 +47,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_status']
             exit;
         }
         $eroare = $result['error'];
+    }
+}
+
+// --- POST: Stergere lista prezenta ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_lista_prezenta'])) {
+    csrf_require_valid();
+    $lista_id = (int)($_POST['lista_id'] ?? 0);
+    $redirect_afiseaza_tot = !empty($_POST['afiseaza_tot']) ? '?afiseaza_tot=1' : '';
+    if ($lista_id > 0) {
+        $result_sterge = liste_prezenta_delete($pdo, $lista_id, $utilizator);
+        if ($result_sterge['success']) {
+            $sep = $redirect_afiseaza_tot ? '&' : '?';
+            header('Location: /activitati' . $redirect_afiseaza_tot . $sep . 'succes_lista_stearsa=1');
+            exit;
+        }
+        $eroare = $result_sterge['error'] ?: 'Nu s-a putut șterge lista.';
     }
 }
 

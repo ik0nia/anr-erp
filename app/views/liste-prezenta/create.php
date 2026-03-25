@@ -204,8 +204,13 @@ function renderLista() {
         '</tbody></table>';
 }
 
-function stergeParticipant(id) {
-    const i = membriSelectati.findIndex(m => m.id == id);
+function stergeParticipant(id, ordineManual) {
+    let i = -1;
+    if (id > 0) {
+        i = membriSelectati.findIndex(m => m.id == id);
+    } else {
+        i = membriSelectati.findIndex(m => !m.id && m.ordine == ordineManual);
+    }
     if (i >= 0) { membriSelectati.splice(i, 1); renderLista(); }
 }
 

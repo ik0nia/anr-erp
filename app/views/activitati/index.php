@@ -33,6 +33,11 @@
                 Lista de prezență a fost creată cu succes.
             </div>
         <?php endif; ?>
+        <?php if (isset($_GET['succes_lista_stearsa'])): ?>
+            <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg" role="alert">
+                Lista de prezență a fost ștearsă cu succes.
+            </div>
+        <?php endif; ?>
         <?php if (!empty($eroare)): ?>
             <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-lg" role="alert">
                 <?php echo htmlspecialchars($eroare); ?>
@@ -237,11 +242,17 @@
                                     </td>
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo date(DATE_FORMAT, strtotime($lp['data_lista'])); ?></td>
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($lp['created_by'] ?? '-'); ?></td>
-                                    <td class="py-2 flex gap-1">
+                                    <td class="py-2 flex gap-1 items-center">
                                         <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Modifică lista">Modifică</a>
-                                        <a href="util/lista-prezenta-print.php?id=<?php echo $lp['id']; ?>" target="_blank" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Printează lista">Print</a>
-                                        <a href="util/lista-prezenta-pdf.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă PDF">PDF</a>
-                                        <a href="util/lista-prezenta-docx.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă DOCX cu antet asociație">DOCX</a>
+                                        <a href="/util/lista-prezenta-print.php?id=<?php echo $lp['id']; ?>" target="_blank" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Printează lista">Print</a>
+                                        <a href="/util/lista-prezenta-pdf.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă PDF">PDF</a>
+                                        <a href="/util/lista-prezenta-docx.php?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Descarcă DOCX cu antet asociație">DOCX</a>
+                                        <form method="post" action="/activitati<?php echo $afiseaza_tot ? '?afiseaza_tot=1' : ''; ?>" onsubmit="return confirm('Sigur doriți să ștergeți această listă de prezență?');" class="inline">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="sterge_lista_prezenta" value="1">
+                                            <input type="hidden" name="lista_id" value="<?php echo (int)$lp['id']; ?>">
+                                            <button type="submit" class="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs font-medium" aria-label="Șterge lista de prezență ID <?php echo (int)$lp['id']; ?>">Șterge</button>
+                                        </form>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
