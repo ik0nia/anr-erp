@@ -131,10 +131,37 @@
             tipInput.value = t;
             document.querySelectorAll('.incasari-tip-btn').forEach(function(b){ b.classList.remove('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500'); });
             this.classList.add('bg-amber-200', 'dark:bg-amber-800/50', 'border-amber-500');
-            if (t === 'donatie') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Donație (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; wrapReprezentand.classList.remove('hidden'); inputReprezentand.value = 'Donație'; }
-            else if (t === 'taxa_participare') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Taxă participare (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; wrapReprezentand.classList.add('hidden'); inputReprezentand.value = ''; }
-            else if (t === 'alte') { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Încasare (RON)'; inputSuma.value = ''; inputSuma.readOnly = false; wrapReprezentand.classList.add('hidden'); inputReprezentand.value = ''; }
-            else { wrapSuma.classList.remove('hidden'); labelSuma.textContent = 'Cotizație (RON)'; inputSuma.value = valCot.value || '0'; inputSuma.readOnly = true; wrapReprezentand.classList.add('hidden'); inputReprezentand.value = ''; }
+            if (t === 'donatie') {
+                wrapSuma.classList.remove('hidden');
+                labelSuma.textContent = 'Donație (RON)';
+                inputSuma.value = '';
+                inputSuma.readOnly = false;
+                wrapReprezentand.classList.remove('hidden');
+                inputReprezentand.value = 'Donație';
+            } else if (t === 'taxa_participare') {
+                wrapSuma.classList.remove('hidden');
+                labelSuma.textContent = 'Taxă participare (RON)';
+                inputSuma.value = '';
+                inputSuma.readOnly = false;
+                wrapReprezentand.classList.add('hidden');
+                inputReprezentand.value = '';
+            } else if (t === 'alte') {
+                wrapSuma.classList.remove('hidden');
+                labelSuma.textContent = 'Încasare (RON)';
+                inputSuma.value = '';
+                inputSuma.readOnly = false;
+                wrapReprezentand.classList.add('hidden');
+                inputReprezentand.value = '';
+            } else {
+                var dataSelectata = (dataInput && dataInput.value) ? dataInput.value : '';
+                var anCotizatie = dataSelectata.length >= 4 ? dataSelectata.substring(0, 4) : String(new Date().getFullYear());
+                wrapSuma.classList.remove('hidden');
+                labelSuma.textContent = 'Cotizație (RON)';
+                inputSuma.value = valCot.value || '0';
+                inputSuma.readOnly = true;
+                wrapReprezentand.classList.remove('hidden');
+                inputReprezentand.value = 'Cotizatie membru ' + anCotizatie;
+            }
             if (modInput.value) { if (modInput.value === 'numerar' || modInput.value === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); } else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); } }
         });
     });

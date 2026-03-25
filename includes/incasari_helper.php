@@ -38,16 +38,32 @@ function incasari_cotizatie_achitata_an($pdo, $membru_id, $anul) {
 function incasari_valoare_cotizatie_anuala($pdo, $anul, $grad_handicap, $asistent_personal = 'Fara asistent personal') {
     require_once __DIR__ . '/cotizatii_helper.php';
     cotizatii_ensure_tables($pdo);
+
+    $anul = (int)$anul;
+    $grad_handicap = trim((string)$grad_handicap);
     $asistent_personal = trim((string)$asistent_personal);
+
+    // 1) Potrivire exactă (cazul ideal)
     $stmt = $pdo->prepare("SELECT valoare_cotizatie FROM cotizatii_anuale WHERE anul = ? AND grad_handicap = ? AND asistent_personal = ? LIMIT 1");
-    $stmt->execute([(int)$anul, $grad_handicap, $asistent_personal]);
+    $stmt->execute([$anul, $grad_handicap, $asistent_personal]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($row) return (float)$row['valoare_cotizatie'];
-    if ($asistent_personal !== '') {
-        $stmt = $pdo->prepare("SELECT valoare_cotizatie FROM cotizatii_anuale WHERE anul = ? AND grad_handicap = ? AND (asistent_personal = '' OR asistent_personal IS NULL) LIMIT 1");
-        $stmt->execute([(int)$anul, $grad_handicap]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+
+    // 2) Potrivire tolerantă pe sinonime pentru asistent_personal (date vechi / etichete diferite)
+    $is_cu_asistent = $asistent_personal === 'Cu asistent personal';
+    $asistent_synonyms = $is_cu_asistent
+        ? ['Cu asistent personal', 'ASISTENT PERSONAL', 'INDEMNIZATIE INSOTITOR', 'Cu asistent']
+        : ['Fara asistent personal', 'FĂRĂ asistent personal', 'FARA', 'NESPECIFICAT', '0', ''];
+    $placeholders = implode(',', array_fill(0, count($asistent_synonyms), '?'));
+    $stmt = $pdo->prepare("SELECT valoare_cotizatie FROM cotizatii_anuale WHERE anul = ? AND grad_handicap = ? AND asistent_personal IN ($placeholders) LIMIT 1");
+    $stmt->execute(array_merge([$anul, $grad_handicap], $asistent_synonyms));
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) return (float)$row['valoare_cotizatie'];
+
+    // 3) Fallback final: orice înregistrare pentru anul + gradul membrului
+    $stmt = $pdo->prepare("SELECT valoare_cotizatie FROM cotizatii_anuale WHERE anul = ? AND grad_handicap = ? ORDER BY id DESC LIMIT 1");
+    $stmt->execute([$anul, $grad_handicap]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ? (float)$row['valoare_cotizatie'] : 0;
 }
 

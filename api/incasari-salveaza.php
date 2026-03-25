@@ -35,6 +35,9 @@ $anul = null;
 if ($tip === INCASARI_TIP_COTIZATIE) {
     $anul = (int)date('Y');
     cotizatii_ensure_tables($pdo);
+    if ($reprezentand === null || $reprezentand === '') {
+        $reprezentand = 'Cotizatie membru ' . $anul;
+    }
     if ($suma <= 0) {
         $stmt = $pdo->prepare("SELECT hgrad, insotitor FROM membri WHERE id = ?");
         $stmt->execute([$membru_id]);
