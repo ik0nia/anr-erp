@@ -70,7 +70,7 @@
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Caută">
                     <i data-lucide="search" class="w-4 h-4 inline" aria-hidden="true"></i>
                 </button>
-                <div id="contacte-sugestii" class="hidden absolute left-0 top-full mt-1 w-full max-w-xs bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg z-30 overflow-hidden" role="listbox" aria-label="Sugestii contacte"></div>
+                <div id="contacte-sugestii" class="hidden absolute left-0 top-full mt-1 w-full max-w-xs bg-slate-900 dark:bg-gray-900 border-2 border-amber-400 rounded-lg shadow-2xl z-[9999] overflow-hidden" role="listbox" aria-label="Sugestii contacte"></div>
             </form>
             <span class="text-sm text-slate-600 dark:text-gray-400">Total: <?php echo $total; ?> contacte</span>
         </div>
@@ -237,8 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var options = sugestii.querySelectorAll('[role="option"]');
         options.forEach(function(opt, idx) {
             var esteActiv = idx === indexActiv;
-            opt.classList.toggle('bg-amber-100', esteActiv);
-            opt.classList.toggle('dark:bg-gray-700', esteActiv);
+            opt.classList.toggle('bg-amber-500/20', esteActiv);
             opt.setAttribute('aria-selected', esteActiv ? 'true' : 'false');
             if (esteActiv && inputCautare) {
                 inputCautare.setAttribute('aria-activedescendant', opt.id);
@@ -260,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
         sugestiiCurente = rezultate || [];
         indexActiv = -1;
         if (!sugestiiCurente.length) {
-            sugestii.innerHTML = '<div class="px-3 py-2 text-sm text-slate-500 dark:text-gray-400">Niciun rezultat</div>';
+            sugestii.innerHTML = '<div class="px-3 py-2 text-sm text-slate-300">Niciun rezultat</div>';
             sugestii.classList.remove('hidden');
             inputCautare.setAttribute('aria-expanded', 'true');
             return;
@@ -273,16 +272,16 @@ document.addEventListener('DOMContentLoaded', function() {
             var metaParts = [s.tip_contact_label || '—'];
             btn.type = 'button';
             btn.id = 'contacte-sugestie-' + idx;
-            btn.className = 'w-full text-left px-3 py-2 border-b last:border-b-0 border-slate-200 dark:border-gray-700 hover:bg-amber-50 dark:hover:bg-gray-700 focus:outline-none';
+            btn.className = 'w-full text-left px-3 py-2 border-b last:border-b-0 border-slate-700 hover:bg-slate-800 focus:outline-none';
             btn.setAttribute('role', 'option');
             btn.setAttribute('aria-selected', 'false');
 
-            numeEl.className = 'text-sm text-slate-900 dark:text-white font-medium';
+            numeEl.className = 'text-sm text-slate-100 font-medium';
             numeEl.textContent = s.nume_complet || '';
 
             if (s.email) metaParts.push(s.email);
             if (s.telefon) metaParts.push(s.telefon);
-            metaEl.className = 'text-xs text-slate-600 dark:text-gray-400';
+            metaEl.className = 'text-xs text-slate-300';
             metaEl.textContent = metaParts.join(' · ');
 
             btn.appendChild(numeEl);
