@@ -978,6 +978,63 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                 </div>
             </section>
 
+            <!-- Card 6b: Legitimatie membru -->
+            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="badge-check" class="w-5 h-5" aria-hidden="true"></i>
+                        Legitimatie membru
+                    </h3>
+                    <button
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-600 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+                        data-legitimatie-open="1"
+                        aria-haspopup="dialog"
+                        aria-controls="modal-legitimatie-membru">
+                        <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
+                        Modificare legitimatie
+                    </button>
+                </div>
+                <div class="p-4">
+                    <?php if (empty($legitimatii_membru)): ?>
+                    <p class="text-sm text-slate-500 dark:text-gray-400">Nu exista operatiuni inregistrate pentru legitimatie.</p>
+                    <?php else: ?>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" aria-label="Istoric legitimatie membru">
+                            <thead class="bg-slate-50 dark:bg-gray-700">
+                                <tr>
+                                    <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Data</th>
+                                    <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Actiune</th>
+                                    <th scope="col" class="px-3 py-2 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Utilizator</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+                                <?php foreach ($legitimatii_membru as $leg): ?>
+                                <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
+                                    <td class="px-3 py-2 text-sm text-slate-700 dark:text-gray-300">
+                                        <?php
+                                        $dl = !empty($leg['data_actiune']) ? strtotime((string)$leg['data_actiune']) : false;
+                                        echo $dl ? htmlspecialchars(date(DATE_FORMAT, $dl)) : '<span class="text-slate-400 dark:text-gray-500">—</span>';
+                                        ?>
+                                    </td>
+                                    <td class="px-3 py-2 text-sm font-medium text-slate-900 dark:text-white">
+                                        <?php
+                                        $lblAct = membri_legitimatii_tipuri_actiune()[($leg['tip_actiune'] ?? '')] ?? ($leg['tip_actiune'] ?? '-');
+                                        echo htmlspecialchars($lblAct);
+                                        ?>
+                                    </td>
+                                    <td class="px-3 py-2 text-sm text-slate-700 dark:text-gray-300">
+                                        <?php echo htmlspecialchars((string)($leg['utilizator'] ?? 'Sistem')); ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+
             <!-- Card 7: Observatii -->
             <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
@@ -1384,6 +1441,44 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
 <?php require_once APP_ROOT . '/includes/documente_modal.php'; ?>
 <?php require_once APP_ROOT . '/includes/incasari_modal.php'; ?>
 
+<dialog id="modal-legitimatie-membru" class="w-full max-w-xl rounded-xl border border-slate-200 dark:border-gray-700 p-0 bg-white dark:bg-gray-800 text-slate-900 dark:text-white">
+    <form method="dialog" class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-gray-700">
+        <h2 class="text-base font-semibold">Modificare legitimatie</h2>
+        <button type="submit" class="inline-flex items-center justify-center w-8 h-8 rounded hover:bg-slate-100 dark:hover:bg-gray-700" aria-label="Inchide fereastra">
+            <i data-lucide="x" class="w-4 h-4" aria-hidden="true"></i>
+        </button>
+    </form>
+    <form method="post" action="/membru-profil?id=<?php echo (int)$membru_id; ?>" class="p-4 space-y-4">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="salveaza_legitimatie_membru" value="1">
+        <div>
+            <label for="legitimatie-data-actiune" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data</label>
+            <input
+                type="date"
+                id="legitimatie-data-actiune"
+                name="legitimatie_data"
+                value="<?php echo htmlspecialchars(date('Y-m-d')); ?>"
+                required
+                class="<?php echo $input_class; ?>">
+        </div>
+        <div>
+            <label for="legitimatie-tip-actiune" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Actiune</label>
+            <select id="legitimatie-tip-actiune" name="legitimatie_actiune" required class="<?php echo $input_class; ?>">
+                <?php foreach (membri_legitimatii_tipuri_actiune() as $aVal => $aLabel): ?>
+                <option value="<?php echo htmlspecialchars($aVal); ?>"><?php echo htmlspecialchars($aLabel); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-gray-700">
+            <button type="submit" class="<?php echo $btn_save_class; ?>">
+                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i>
+                Salveaza
+            </button>
+            <button type="button" id="legitimatie-renunta" class="<?php echo $btn_cancel_class; ?>">Renunta</button>
+        </div>
+    </form>
+</dialog>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') {
@@ -1433,6 +1528,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    var legitDialog = document.getElementById('modal-legitimatie-membru');
+    if (legitDialog) {
+        document.querySelectorAll('[data-legitimatie-open="1"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (typeof legitDialog.showModal === 'function') {
+                    legitDialog.showModal();
+                    var first = legitDialog.querySelector('input, select, button');
+                    if (first) first.focus();
+                }
+            });
+        });
+        var legitCancel = document.getElementById('legitimatie-renunta');
+        if (legitCancel) {
+            legitCancel.addEventListener('click', function() {
+                legitDialog.close();
+            });
+        }
+    }
 });
 </script>
 <script>

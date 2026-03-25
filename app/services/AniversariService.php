@@ -98,19 +98,22 @@ function aniversari_per_zi_luna(PDO $pdo): array {
 }
 
 /**
- * Calculeaza datele de calendar pentru luna curenta
+ * Calculeaza datele de calendar pentru luna curenta.
+ * Calendarul este aliniat cu prima zi de luni.
  */
 function aniversari_calendar_data(): array {
     $luna_curenta = (int)date('n');
     $anul_curent = (int)date('Y');
+    $prima_zi_native = (int)date('w', mktime(0, 0, 0, $luna_curenta, 1, $anul_curent)); // 0=duminica
+    $prima_zi_luni = ($prima_zi_native + 6) % 7; // 0=luni ... 6=duminica
     return [
         'luna_curenta' => $luna_curenta,
         'anul_curent' => $anul_curent,
         'zi_azi' => (int)date('j'),
         'zile_in_luna' => (int)date('t'),
-        'prima_zi_luna' => (int)date('w', mktime(0, 0, 0, $luna_curenta, 1, $anul_curent)),
+        'prima_zi_luna' => $prima_zi_luni,
         'luni_ro' => ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'],
-        'zile_sapt' => ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sam'],
+        'zile_sapt' => ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sam', 'Dum'],
     ];
 }
 

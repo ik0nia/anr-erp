@@ -6,6 +6,8 @@
  */
 require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/app/services/RapoarteService.php';
+require_once APP_ROOT . '/includes/membri_legitimatii_helper.php';
+membri_legitimatii_ensure_table($pdo);
 
 // --- Determinare tab activ ---
 $tab_rapoarte = 'membri';
@@ -14,6 +16,7 @@ if (isset($_GET['tab'])) {
     elseif ($_GET['tab'] === 'interactiuni') $tab_rapoarte = 'interactiuni';
     elseif ($_GET['tab'] === 'statistici') $tab_rapoarte = 'statistici';
     elseif ($_GET['tab'] === 'socializare') $tab_rapoarte = 'socializare';
+    elseif ($_GET['tab'] === 'borderou-legitimatii') $tab_rapoarte = 'borderou-legitimatii';
 }
 
 // --- Incarcare date din service ---
@@ -24,6 +27,11 @@ $statistici_localitati = null;
 $an_socializare_selectat = (int)($_GET['an'] ?? date('Y'));
 $raport_socializare = null;
 $ani_socializare_disponibili = [(int)date('Y')];
+$borderou_legitimatii = null;
+$borderou_legitimatii_data_de_la = date('Y-01-01');
+$borderou_legitimatii_data_pana_la = date('Y-m-d');
+$borderou_legitimatii_rows = [];
+$borderou_legitimatii_stats = ['total' => 0, 'nou' => 0, 'plina' => 0, 'pierduta' => 0];
 
 // Indicatori membri (necesari intotdeauna)
 $indicatori = rapoarte_indicatori_membri($pdo);
@@ -59,6 +67,31 @@ if ($tab_rapoarte === 'socializare') {
     $raport_socializare = rapoarte_socializare($pdo, $an_socializare_selectat);
     $an_socializare_selectat = (int)($raport_socializare['an_selectat'] ?? $an_socializare_selectat);
     $ani_socializare_disponibili = $raport_socializare['ani_disponibili'] ?? $ani_socializare_disponibili;
+}
+
+if ($tab_rapoarte === 'borderou-legitimatii') {
+    $input_de_la = trim((string)($_GET['de_la'] ?? ''));
+    $input_pana_la = trim((string)($_GET['pana_la'] ?? ''));
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input_de_la)) {
+        $borderou_legitimatii_data_de_la = $input_de_la;
+    }
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input_pana_la)) {
+        $borderou_legitimatii_data_pana_la = $input_pana_la;
+    }
+    if ($borderou_legitimatii_data_de_la > $borderou_legitimatii_data_pana_la) {
+        $tmp = $borderou_legitimatii_data_de_la;
+        $borderou_legitimatii_data_de_la = $borderou_legitimatii_data_pana_la;
+        $borderou_legitimatii_data_pana_la = $tmp;
+    }
+    $borderou_legitimatii = rapoarte_borderou_legitimatii($pdo, $borderou_legitimatii_data_de_la, $borderou_legitimatii_data_pana_la);
+    $borderou_legitimatii_rows = $borderou_legitimatii['operatiuni'] ?? [];
+    $borderou_legitimatii_stats = $borderou_legitimatii['statistici'] ?? $borderou_legitimatii_stats;
+    log_activitate(
+        $pdo,
+        'rapoarte: vizualizare Borderou legitimatii de membru, interval ' .
+        date(DATE_FORMAT, strtotime($borderou_legitimatii_data_de_la)) . ' - ' .
+        date(DATE_FORMAT, strtotime($borderou_legitimatii_data_pana_la))
+    );
 }
 
 // --- Render ---

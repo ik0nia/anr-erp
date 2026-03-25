@@ -10,6 +10,7 @@ require_once __DIR__ . '/../bootstrap.php';
 require_once APP_ROOT . '/includes/newsletter_helper.php';
 require_once APP_ROOT . '/includes/registru_interactiuni_v2_helper.php';
 require_once APP_ROOT . '/includes/liste_helper.php';
+require_once APP_ROOT . '/includes/membri_legitimatii_helper.php';
 
 /**
  * Calculeaza indicatorii pentru membri (total, grad, sex, status).
@@ -385,4 +386,61 @@ function rapoarte_socializare(PDO $pdo, int $an_selectat): array {
     } catch (PDOException $e) {
         return $empty;
     }
+}
+
+/**
+ * Raport Borderou legitimații în interval calendaristic selectat.
+ */
+function rapoarte_borderou_legitimatii(PDO $pdo, string $data_de_la, string $data_pana_la): array {
+    membri_legitimatii_ensure_table($pdo);
+
+    $azi = date('Y-m-d');
+    $prima_zi_an = date('Y-01-01');
+
+    $data_de_la = trim($data_de_la) !== '' ? trim($data_de_la) : $prima_zi_an;
+    $data_pana_la = trim($data_pana_la) !== '' ? trim($data_pana_la) : $azi;
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data_de_la)) {
+        $data_de_la = $prima_zi_an;
+    }
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data_pana_la)) {
+        $data_pana_la = $azi;
+    }
+    if ($data_de_la > $data_pana_la) {
+        $tmp = $data_de_la;
+        $data_de_la = $data_pana_la;
+        $data_pana_la = $tmp;
+    }
+
+    $raw = membri_legitimatii_borderou($pdo, $data_de_la, $data_pana_la);
+    $tipuri = membri_legitimatii_tipuri_actiune();
+    $operatiuni = [];
+    foreach ($raw as $idx => $row) {
+        $tip = membri_legitimatii_tip_normalizat((string)($row['tip_actiune'] ?? ''));
+        $operatiuni[] = [
+            'nr_crt' => $idx + 1,
+            'data_actiune' => (string)($row['data_actiune'] ?? ''),
+            'data_actiune_display' => !empty($row['data_actiune']) ? date(DATE_FORMAT, strtotime((string)$row['data_actiune'])) : '-',
+            'membru_nume' => trim((string)($row['nume'] ?? '') . ' ' . (string)($row['prenume'] ?? '')),
+            'dosarnr' => (string)($row['dosarnr'] ?? ''),
+            'actiune' => $tip,
+            'actiune_label' => $tipuri[$tip] ?? $tip,
+            'utilizator' => (string)($row['utilizator'] ?? 'Sistem'),
+        ];
+    }
+
+    $statRaw = membri_legitimatii_statistici($pdo, $data_de_la, $data_pana_la);
+    $stat = [
+        'total' => (int)($statRaw['total'] ?? 0),
+        'nou' => (int)($statRaw['legitimatie_membru_nou'] ?? 0),
+        'plina' => (int)($statRaw['inlocuire_legitimatie_plina'] ?? 0),
+        'pierduta' => (int)($statRaw['inlocuire_legitimatie_pierduta'] ?? 0),
+    ];
+
+    return [
+        'data_de_la' => $data_de_la,
+        'data_pana_la' => $data_pana_la,
+        'operatiuni' => $operatiuni,
+        'statistici' => $stat,
+    ];
 }

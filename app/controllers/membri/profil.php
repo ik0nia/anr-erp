@@ -9,6 +9,7 @@
 require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/app/services/MembriService.php';
 require_once APP_ROOT . '/includes/liste_helper.php';
+require_once APP_ROOT . '/includes/membri_legitimatii_helper.php';
 
 $eroare = '';
 $succes = '';
@@ -18,6 +19,7 @@ if ($membru_id <= 0) {
     header('Location: /membri');
     exit;
 }
+membri_legitimatii_ensure_table($pdo);
 
 // --- POST: Upload atasament ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_atasament'])) {
@@ -140,6 +142,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_membru']
     }
 }
 
+// --- POST: Salvare legitimație membru ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_legitimatie_membru'])) {
+    csrf_require_valid();
+    $data_actiune = trim((string)($_POST['data_actiune'] ?? ''));
+    $tip_actiune = trim((string)($_POST['tip_actiune'] ?? ''));
+    $utilizator_actiune = (string)($_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? 'Sistem');
+
+    $save_legitimatie = membri_legitimatie_adauga($pdo, $membru_id, $data_actiune, $tip_actiune, $utilizator_actiune);
+    if ($save_legitimatie['success']) {
+        header('Location: /membru-profil?id=' . $membru_id . '&succes_legitimatie=1');
+        exit;
+    }
+    $eroare = $save_legitimatie['error'] ?? 'Eroare la salvarea legitimației.';
+}
+
 // Daca am fost pe POST (salvare) dar nu avem nici eroare nici redirect
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_membru']) && $eroare === '' && !isset($_GET['succes'])) {
     $eroare = 'Salvarea nu a reusit. Verificati datele (nume, prenume, CNP, email) sau contactati administratorul.';
@@ -161,6 +178,9 @@ $valoare_cotizatie_an = $cot_info['valoare_cotizatie_an'];
 // Afisare mesaj succes
 if (isset($_GET['succes']) && $_GET['succes'] == '1') {
     $succes = 'Datele membrului au fost actualizate cu succes.';
+}
+if (isset($_GET['succes_legitimatie']) && $_GET['succes_legitimatie'] === '1') {
+    $succes = 'Operațiunea pentru legitimație a fost salvată.';
 }
 
 $varsta = calculeaza_varsta($membru['datanastere'] ?? null);
@@ -186,6 +206,9 @@ $documente_generate = membri_documente_generate($pdo, $membru_id, $membru);
 $atasamente_ch = membri_atasamente_lista($pdo, $membru_id, 'certificat_handicap');
 $atasamente_ci = membri_atasamente_lista($pdo, $membru_id, 'act_identitate');
 $atasamente_alt = membri_atasamente_lista($pdo, $membru_id, 'alt_document');
+
+// Legitimații membru
+$legitimatii_membru = membri_legitimatii_lista_membru($pdo, $membru_id, 50);
 
 // --- Render ---
 include APP_ROOT . '/header.php';

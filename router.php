@@ -56,6 +56,7 @@ $routes = [
     '/newsletter'              => ['type' => 'controller', 'script' => 'newsletter.php',          'file' => 'app/controllers/newsletter/index.php'],
     '/newsletter-view'         => ['type' => 'controller', 'script' => 'newsletter-view.php',    'file' => 'app/controllers/newsletter/view.php'],
     '/registratura/sumar'      => ['type' => 'controller', 'script' => 'registratura-sumar.php', 'file' => 'app/controllers/registratura/sumar.php'],
+    '/util/rapoarte-borderou-legitimatii-print.php' => ['type' => 'legacy', 'script' => 'rapoarte-borderou-legitimatii-print.php', 'file' => 'util/rapoarte-borderou-legitimatii-print.php'],
     '/actualizeaza-csv'        => ['type' => 'controller', 'script' => 'actualizezcsv.php',      'file' => 'app/controllers/import/actualizeaza-csv.php'],
     '/actualizezcsv'           => ['type' => 'controller', 'script' => 'actualizezcsv.php',      'file' => 'app/controllers/import/actualizeaza-csv.php'],
     '/import-membri-csv'       => ['type' => 'controller', 'script' => 'import-membri-csv.php',  'file' => 'app/controllers/import/membri-csv.php'],
