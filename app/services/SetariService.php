@@ -452,8 +452,31 @@ function setari_scutire_delete(PDO $pdo, int $id): array
 function setari_incasari_serii_save(PDO $pdo, array $data): array
 {
     incasari_ensure_tables($pdo);
-    incasari_salveaza_serie($pdo, 'donatii', trim($data['serie_donatii'] ?? 'D'), (int)($data['nr_start_donatii'] ?? 1), (int)($data['nr_curent_donatii'] ?? 1));
-    incasari_salveaza_serie($pdo, 'incasari', trim($data['serie_incasari'] ?? 'INC'), (int)($data['nr_start_incasari'] ?? 1), (int)($data['nr_curent_incasari'] ?? 1));
+    $nr_start_donatii = max(1, (int)($data['nr_start_donatii'] ?? 1));
+    $nr_start_incasari = max(1, (int)($data['nr_start_incasari'] ?? 1));
+
+    $nr_curent_donatii = max($nr_start_donatii, (int)($data['nr_curent_donatii'] ?? $nr_start_donatii));
+    $nr_curent_incasari = max($nr_start_incasari, (int)($data['nr_curent_incasari'] ?? $nr_start_incasari));
+
+    $nr_final_donatii = max($nr_start_donatii, (int)($data['nr_final_donatii'] ?? $nr_curent_donatii));
+    $nr_final_incasari = max($nr_start_incasari, (int)($data['nr_final_incasari'] ?? $nr_curent_incasari));
+
+    incasari_salveaza_serie(
+        $pdo,
+        'donatii',
+        trim($data['serie_donatii'] ?? 'D'),
+        $nr_start_donatii,
+        $nr_curent_donatii,
+        $nr_final_donatii
+    );
+    incasari_salveaza_serie(
+        $pdo,
+        'incasari',
+        trim($data['serie_incasari'] ?? 'INC'),
+        $nr_start_incasari,
+        $nr_curent_incasari,
+        $nr_final_incasari
+    );
     log_activitate($pdo, 'Setări: serii chitanțe Încasări actualizate.');
     return ['success' => true, 'error' => null];
 }
@@ -465,6 +488,8 @@ function setari_incasari_design_save(PDO $pdo, array $data): array
 {
     incasari_set_setare($pdo, 'logo_chitanta', trim($data['logo_chitanta'] ?? ''));
     incasari_set_setare($pdo, 'date_asociatie', trim($data['date_asociatie'] ?? ''));
+    incasari_set_setare($pdo, 'dimensiune_chitanta', in_array(($data['dimensiune_chitanta'] ?? 'a5'), ['a5', 'a4'], true) ? $data['dimensiune_chitanta'] : 'a5');
+    incasari_set_setare($pdo, 'template_chitanta', trim($data['template_chitanta'] ?? 'standard'));
     log_activitate($pdo, 'Setări: design chitanțe Încasări actualizat.');
     return ['success' => true, 'error' => null];
 }
@@ -489,13 +514,28 @@ function setari_incasari_fgo_save(PDO $pdo, array $data): array
 function setari_incasari_load(PDO $pdo): array
 {
     incasari_ensure_tables($pdo);
+    $serie_donatii = incasari_get_serie($pdo, 'donatii') ?: [];
+    $serie_incasari = incasari_get_serie($pdo, 'incasari') ?: [];
+
+    $nr_final_donatii = incasari_get_serie_nr_final($pdo, 'donatii');
+    if ($nr_final_donatii <= 0) {
+        $nr_final_donatii = max((int)($serie_donatii['nr_curent'] ?? 1), (int)($serie_donatii['nr_start'] ?? 1));
+    }
+
+    $nr_final_incasari = incasari_get_serie_nr_final($pdo, 'incasari');
+    if ($nr_final_incasari <= 0) {
+        $nr_final_incasari = max((int)($serie_incasari['nr_curent'] ?? 1), (int)($serie_incasari['nr_start'] ?? 1));
+    }
+
     return [
-        'serie_donatii' => incasari_get_serie($pdo, 'donatii'),
-        'serie_incasari' => incasari_get_serie($pdo, 'incasari'),
+        'serie_donatii' => array_merge($serie_donatii, ['nr_final' => $nr_final_donatii]),
+        'serie_incasari' => array_merge($serie_incasari, ['nr_final' => $nr_final_incasari]),
         'donatii' => incasari_lista_donatii($pdo, 500),
         'design' => [
             'logo_chitanta' => incasari_get_setare($pdo, 'logo_chitanta') ?: (defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : ''),
             'date_asociatie' => incasari_get_setare($pdo, 'date_asociatie') ?: '',
+            'dimensiune_chitanta' => incasari_get_setare($pdo, 'dimensiune_chitanta') ?: 'a5',
+            'template_chitanta' => incasari_get_setare($pdo, 'template_chitanta') ?: 'standard',
             'fgo_api_key' => incasari_get_setare($pdo, 'fgo_api_key') ?: '',
             'fgo_merchant_name' => incasari_get_setare($pdo, 'fgo_merchant_name') ?: '',
             'fgo_merchant_tax_id' => incasari_get_setare($pdo, 'fgo_merchant_tax_id') ?: '',

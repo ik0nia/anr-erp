@@ -24,6 +24,9 @@ incasari_trimite_fgo($pdo, $inc);
 $logo_url = incasari_get_setare($pdo, 'logo_chitanta') ?: (defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : '');
 $date_asociatie = incasari_get_setare($pdo, 'date_asociatie') ?: '';
 $incasat_de = $inc['created_by'] ?? 'Utilizator';
+$dimensiune_chitanta = incasari_get_setare($pdo, 'dimensiune_chitanta') ?: 'a5';
+$format_pdf_link = $dimensiune_chitanta === 'a4' ? '' : '&format=a5';
+$format_pdf_label = $dimensiune_chitanta === 'a4' ? 'PDF A4' : 'PDF A5';
 
 $reprezentant = !empty($inc['reprezentand']) ? $inc['reprezentand'] : '';
 if ($reprezentant === '') {
@@ -93,9 +96,9 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
 <body>
     <div class="no-print">
         <button type="button" onclick="window.print();">Tipărește</button>
-        <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?>">PDF A4</a>
+        <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?><?php echo $format_pdf_link; ?>"><?php echo htmlspecialchars($format_pdf_label); ?></a>
         <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?>&format=a5">PDF A5</a>
-        <?php $pdf_a5_url = (isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . '/util/incasari-chitanta-pdf.php?id=' . $id . '&format=a5'; ?>
+        <?php $pdf_a5_url = (isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . '/util/incasari-chitanta-pdf.php?id=' . $id . $format_pdf_link; ?>
         <a href="https://wa.me/?text=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON - ' . $pdf_a5_url); ?>" target="_blank" rel="noopener noreferrer">Distribuie WhatsApp</a>
         <a href="mailto:?subject=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr); ?>&body=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON' . "\n" . $pdf_a5_url); ?>">Distribuie Email</a>
     </div>

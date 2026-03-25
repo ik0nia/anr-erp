@@ -78,10 +78,11 @@
                         <div class="space-y-2">
                             <label class="block text-sm text-slate-700 dark:text-gray-300">Serie</label>
                             <input type="text" name="serie_donatii" value="<?php echo htmlspecialchars($incasari_serie_donatii['serie'] ?? 'CEDON'); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" maxlength="20">
-                            <label class="block text-sm text-slate-700 dark:text-gray-300">Nr. start / Nr. curent</label>
-                            <div class="flex gap-2">
+                            <label class="block text-sm text-slate-700 dark:text-gray-300">Nr. start / Nr. curent / Nr. final</label>
+                            <div class="flex gap-2 flex-wrap">
                                 <input type="number" name="nr_start_donatii" value="<?php echo (int)($incasari_serie_donatii['nr_start'] ?? 1); ?>" min="1" class="w-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
                                 <input type="number" name="nr_curent_donatii" value="<?php echo (int)($incasari_serie_donatii['nr_curent'] ?? 1); ?>" min="0" class="w-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                                <input type="number" name="nr_final_donatii" value="<?php echo (int)($incasari_serie_donatii['nr_final'] ?? 0); ?>" min="1" class="w-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
                             </div>
                         </div>
                     </div>
@@ -91,10 +92,11 @@
                         <div class="space-y-2">
                             <label class="block text-sm text-slate-700 dark:text-gray-300">Serie</label>
                             <input type="text" name="serie_incasari" value="<?php echo htmlspecialchars($incasari_serie_incasari['serie'] ?? 'CECOT'); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" maxlength="20">
-                            <label class="block text-sm text-slate-700 dark:text-gray-300">Nr. start / Nr. curent</label>
-                            <div class="flex gap-2">
+                            <label class="block text-sm text-slate-700 dark:text-gray-300">Nr. start / Nr. curent / Nr. final</label>
+                            <div class="flex gap-2 flex-wrap">
                                 <input type="number" name="nr_start_incasari" value="<?php echo (int)($incasari_serie_incasari['nr_start'] ?? 1); ?>" min="1" class="w-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
                                 <input type="number" name="nr_curent_incasari" value="<?php echo (int)($incasari_serie_incasari['nr_curent'] ?? 1); ?>" min="0" class="w-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
+                                <input type="number" name="nr_final_incasari" value="<?php echo (int)($incasari_serie_incasari['nr_final'] ?? 0); ?>" min="1" class="w-24 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700">
                             </div>
                         </div>
                     </div>
@@ -104,11 +106,27 @@
         </section>
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 mb-6" aria-labelledby="incasari-design-heading">
             <h2 id="incasari-design-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Design chitanțe</h2>
-            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Logo-ul se afișează în dreapta sus pe chitanță (format A5). Datele asociației în stânga sus.</p>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Configurați template-ul chitanței, dimensiunea tipăririi, logo-ul și datele asociației.</p>
             <form method="post" action="/setari?tab=incasari">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_design_chitante" value="1">
                 <div class="space-y-3 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Template chitanță</label>
+                            <select name="template_chitanta" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                                <option value="standard" <?php echo ($incasari_setari_design['template_chitanta'] ?? 'standard') === 'standard' ? 'selected' : ''; ?>>Standard</option>
+                                <option value="minimal" <?php echo ($incasari_setari_design['template_chitanta'] ?? '') === 'minimal' ? 'selected' : ''; ?>>Minimal</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Dimensiune chitanță</label>
+                            <select name="dimensiune_chitanta" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                                <option value="a5" <?php echo ($incasari_setari_design['dimensiune_chitanta'] ?? 'a5') === 'a5' ? 'selected' : ''; ?>>A5 (recomandat)</option>
+                                <option value="a4" <?php echo ($incasari_setari_design['dimensiune_chitanta'] ?? '') === 'a4' ? 'selected' : ''; ?>>A4</option>
+                            </select>
+                        </div>
+                    </div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-gray-300">URL logo (chitanță)</label>
                     <input type="url" name="logo_chitanta" value="<?php echo htmlspecialchars($incasari_setari_design['logo_chitanta'] ?? ''); ?>" placeholder="https://..." class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                     <label class="block text-sm font-medium text-slate-700 dark:text-gray-300">Date asociație (stânga sus pe chitanță)</label>

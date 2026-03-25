@@ -14,10 +14,21 @@ $tip_filtru = trim($_GET['tip'] ?? '');
 $data_de_la = trim($_GET['data_de_la'] ?? '');
 $data_pana_la = trim($_GET['data_pana_la'] ?? '');
 $cautare = trim($_GET['q'] ?? '');
+$azi = date('Y-m-d');
+$prima_zi_luna = date('Y-m-01');
+if ($data_de_la === '') {
+    $data_de_la = $prima_zi_luna;
+}
+if ($data_pana_la === '') {
+    $data_pana_la = $azi;
+}
 
 $incasari = [];
 $total = 0;
 $total_pages = 1;
+$total_suma_afisata = 0.0;
+$total_chitante_afisate = 0;
+$afiseaza_resetare_filtre = isset($_GET['tip']) || isset($_GET['data_de_la']) || isset($_GET['data_pana_la']) || isset($_GET['q']) || isset($_GET['per_page']) || isset($_GET['page']);
 
 try {
     incasari_ensure_tables($pdo);
@@ -70,6 +81,12 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $incasari = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($incasari as $incasare) {
+        $total_suma_afisata += (float)($incasare['suma'] ?? 0);
+        if (!empty($incasare['seria_chitanta'])) {
+            $total_chitante_afisate++;
+        }
+    }
 } catch (PDOException $e) {
     error_log('Eroare încasări: ' . $e->getMessage());
 }

@@ -57,10 +57,22 @@ function incasari_urmatorul_nr_serie($pdo, $tip_serie) {
     $stmt = $pdo->prepare("SELECT serie, nr_curent, nr_start FROM incasari_serii WHERE tip_serie = ? FOR UPDATE");
     $stmt->execute([$tip_serie]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$row) return ['serie' => '', 'nr' => 1];
-    $nr = (int)$row['nr_curent'];
+    if (!$row) return ['serie' => '', 'nr' => 1, 'error' => null];
+    $nr_start = max(1, (int)($row['nr_start'] ?? 1));
+    $nr = (int)($row['nr_curent'] ?? $nr_start);
+    if ($nr < $nr_start) {
+        $nr = $nr_start;
+    }
+    $nr_final = incasari_get_serie_nr_final($pdo, $tip_serie);
+    if ($nr_final > 0 && $nr > $nr_final) {
+        return [
+            'serie' => (string)$row['serie'],
+            'nr' => null,
+            'error' => 'Intervalul de numerotare pentru seria ' . (string)$row['serie'] . ' a fost epuizat.',
+        ];
+    }
     $pdo->prepare("UPDATE incasari_serii SET nr_curent = nr_curent + 1 WHERE tip_serie = ?")->execute([$tip_serie]);
-    return ['serie' => $row['serie'], 'nr' => $nr];
+    return ['serie' => $row['serie'], 'nr' => $nr, 'error' => null];
 }
 
 /** Tip serie chitanță în funcție de tip încasare: donatie -> donatii, restul -> incasari */
@@ -87,6 +99,9 @@ function incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data
     if (in_array($mod_plata, $metode_cu_chitanta)) {
         $tip_serie = incasari_tip_serie_pentru_tip($tip);
         $next = incasari_urmatorul_nr_serie($pdo, $tip_serie);
+        if (empty($next['nr'])) {
+            return false;
+        }
         $seria = $next['serie'];
         $nr_chitanta = $next['nr'];
     }
@@ -194,10 +209,32 @@ function incasari_get_serie($pdo, $tip_serie) {
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
-function incasari_salveaza_serie($pdo, $tip_serie, $serie, $nr_start, $nr_curent) {
+function incasari_setare_cheie_serie_nr_final($tip_serie) {
+    return 'incasari_serie_nr_final_' . preg_replace('/[^a-z0-9_]/i', '', (string)$tip_serie);
+}
+
+function incasari_get_serie_nr_final($pdo, $tip_serie) {
+    $raw = incasari_get_setare($pdo, incasari_setare_cheie_serie_nr_final($tip_serie));
+    if ($raw === null || $raw === '') return 0;
+    return max(0, (int)$raw);
+}
+
+function incasari_set_serie_nr_final($pdo, $tip_serie, $nr_final) {
+    $nr_final = max(0, (int)$nr_final);
+    return incasari_set_setare($pdo, incasari_setare_cheie_serie_nr_final($tip_serie), (string)$nr_final);
+}
+
+function incasari_salveaza_serie($pdo, $tip_serie, $serie, $nr_start, $nr_curent, $nr_final = null) {
     incasari_ensure_tables($pdo);
     $nr_start = max(1, (int)$nr_start);
-    $nr_curent = max(0, (int)$nr_curent);
+    $nr_curent = max($nr_start, (int)$nr_curent);
+    if ($nr_final !== null) {
+        $nr_final = max($nr_start, (int)$nr_final);
+        if ($nr_curent > ($nr_final + 1)) {
+            $nr_curent = $nr_final + 1;
+        }
+        incasari_set_serie_nr_final($pdo, $tip_serie, $nr_final);
+    }
     $stmt = $pdo->prepare("INSERT INTO incasari_serii (tip_serie, serie, nr_start, nr_curent) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE serie = VALUES(serie), nr_start = VALUES(nr_start), nr_curent = VALUES(nr_curent)");
     $stmt->execute([$tip_serie, $serie, $nr_start, $nr_curent]);
     return true;

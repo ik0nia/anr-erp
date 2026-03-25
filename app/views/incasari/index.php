@@ -15,7 +15,21 @@
             <i data-lucide="receipt" class="w-6 h-6" aria-hidden="true"></i>
             Încasări
         </h1>
-        <span class="text-sm text-slate-500 dark:text-gray-400"><?php echo number_format($total); ?> încasări</span>
+        <div class="flex flex-wrap items-center justify-end gap-2">
+            <a href="/setari?tab=incasari" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-sm font-medium rounded-lg focus:ring-2 focus:ring-slate-500"
+               aria-label="Deschide setările încasărilor într-o fereastră nouă">
+                <i data-lucide="settings" class="w-4 h-4" aria-hidden="true"></i>
+                Setări
+            </a>
+            <a href="/util/incasari-borderou-print.php?<?php echo htmlspecialchars(http_build_query(['tip' => $tip_filtru, 'data_de_la' => $data_de_la, 'data_pana_la' => $data_pana_la, 'q' => $cautare, 'per_page' => $per_page, 'page' => $page])); ?>" target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg focus:ring-2 focus:ring-amber-500"
+               aria-label="Tipărește borderoul de chitanțe pentru tabelul afișat">
+                <i data-lucide="printer" class="w-4 h-4" aria-hidden="true"></i>
+                Print
+            </a>
+            <span class="text-sm text-slate-500 dark:text-gray-400"><?php echo number_format($total); ?> încasări</span>
+        </div>
     </header>
 
     <div class="p-6 overflow-y-auto flex-1">
@@ -56,7 +70,7 @@
             <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
                 Filtrează
             </button>
-            <?php if ($tip_filtru !== '' || $data_de_la !== '' || $data_pana_la !== '' || $cautare !== ''): ?>
+            <?php if (!empty($afiseaza_resetare_filtre)): ?>
             <a href="/incasari" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 text-sm rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">
                 Resetează
             </a>
@@ -160,6 +174,17 @@
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
+                    <tfoot class="bg-slate-100 dark:bg-gray-700">
+                        <tr>
+                            <th scope="row" colspan="3" class="px-4 py-3 text-left text-sm font-semibold text-slate-900 dark:text-white">Total chitanțe (tabel afișat)</th>
+                            <td class="px-4 py-3 text-right text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                                <?php echo number_format((float)$total_suma_afisata, 2, ',', '.'); ?> RON
+                            </td>
+                            <td colspan="5" class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300">
+                                <?php echo (int)$total_chitante_afisate; ?> chitanțe numerotate
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 

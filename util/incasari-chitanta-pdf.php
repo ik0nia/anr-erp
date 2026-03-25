@@ -56,11 +56,22 @@ if (!file_exists($autoload)) {
 }
 require_once $autoload;
 
-$format = strtolower(trim($_GET['format'] ?? 'a4'));
+$dimensiune_setata = strtolower(trim((string)(incasari_get_setare($pdo, 'dimensiune_chitanta') ?: 'a5')));
+if (!in_array($dimensiune_setata, ['a4', 'a5'], true)) {
+    $dimensiune_setata = 'a5';
+}
+$format = strtolower(trim((string)($_GET['format'] ?? $dimensiune_setata)));
+if (!in_array($format, ['a4', 'a5'], true)) {
+    $format = $dimensiune_setata;
+}
+$template = strtolower(trim((string)(incasari_get_setare($pdo, 'template_chitanta') ?: 'standard')));
+if (!in_array($template, ['standard', 'minimal'], true)) {
+    $template = 'standard';
+}
 
 // Construim conținutul unei chitanțe
 $one = '';
-if ($date_asoc_esc !== '' || $logo_img !== '') {
+if ($template === 'standard' && ($date_asoc_esc !== '' || $logo_img !== '')) {
     $one .= '<table width="100%"><tr>';
     $one .= '<td width="70%" style="vertical-align:top; white-space:pre-wrap; font-size:9px; line-height:1.1;">' . $date_asoc_esc . '</td>';
     $one .= '<td width="30%" style="vertical-align:top; text-align:right;">' . $logo_img . '</td>';
@@ -69,9 +80,9 @@ if ($date_asoc_esc !== '' || $logo_img !== '') {
 $one .= '<div style="text-align:center; font-size:15px; font-weight:bold; margin-top:2mm;">CHITANȚA</div>';
 $data_chitanta = date('d.m.Y', strtotime($inc['data_incasare']));
 $one .= '<div style="text-align:center; font-weight:bold; font-size:11px; margin-bottom:0;">Seria: ' . htmlspecialchars($seria) . ' &nbsp;&nbsp; Nr. ' . htmlspecialchars($nr) . ' &nbsp;&nbsp; Data: ' . htmlspecialchars($data_chitanta) . '</div>';
-$one .= '<br><br>';
+$one .= $template === 'minimal' ? '<br>' : '<br><br>';
 $one .= '<div style="font-size:11px; line-height:1.4;">' . $text_chitanta . '</div>';
-$one .= '<div style="text-align:right; font-size:11px; margin-top:12mm;">';
+$one .= '<div style="text-align:right; font-size:11px; margin-top:' . ($template === 'minimal' ? '8mm' : '12mm') . ';">';
 $one .= 'Încasat de: ' . htmlspecialchars($incasat_de) . '<br>';
 $one .= 'Semnătura: ___________________';
 $one .= '</div>';
