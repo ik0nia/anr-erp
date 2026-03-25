@@ -56,21 +56,55 @@
                         </select>
                         <label for="achizitie-furnizor" class="text-sm text-slate-700 dark:text-gray-300">Furnizor</label>
                         <input type="text" id="achizitie-furnizor" name="furnizor" placeholder="Furnizor" class="w-40 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-3 py-2">
+                        <label for="achizitie-status" class="text-sm text-slate-700 dark:text-gray-300">Status</label>
+                        <select id="achizitie-status" name="status_achizitie" class="rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-3 py-2" aria-label="Status produs nou">
+                            <?php foreach (administrativ_statusuri_achizitie() as $statusKey => $statusLabel): ?>
+                                <option value="<?php echo htmlspecialchars($statusKey); ?>" <?php echo $statusKey === 'achizitie_aprobata' ? 'selected' : ''; ?>><?php echo htmlspecialchars($statusLabel); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                         <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">Adauga</button>
                     </div>
                 </form>
+                <?php $statusuri_achizitie = administrativ_statusuri_achizitie(); ?>
                 <ul class="space-y-1 text-slate-900 dark:text-gray-100 border-t border-slate-200 dark:border-gray-600 pt-3">
                     <?php foreach ($lista_achizitii as $a): ?>
                     <li class="flex items-center gap-3 py-1.5 border-b border-slate-100 dark:border-gray-600 last:border-0 flex-wrap">
-                        <form method="post" action="/administrativ?tab=achizitii" class="flex items-center gap-2 flex-1 min-w-0">
+                        <form method="post" action="/administrativ?tab=achizitii" class="inline-flex items-center">
                             <?php echo csrf_field(); ?>
-                            <input type="hidden" name="marcheaza_cumparat" value="1">
                             <input type="hidden" name="id" value="<?php echo (int)$a['id']; ?>">
-                            <input type="checkbox" <?php echo $a['cumparat'] ? 'checked disabled' : ''; ?> onchange="this.form.submit()" class="rounded border-slate-300 dark:border-gray-500 text-amber-600 focus:ring-amber-500" aria-label="Marcheaza cumparat: <?php echo htmlspecialchars($a['denumire']); ?>">
+                            <input type="checkbox" name="marcheaza_cumparat" value="1" <?php echo $a['cumparat'] ? 'checked disabled' : ''; ?> onchange="this.form.submit()" class="rounded border-slate-300 dark:border-gray-500 text-amber-600 focus:ring-amber-500" aria-label="Marcheaza cumparat: <?php echo htmlspecialchars($a['denumire']); ?>">
+                        </form>
+                        <form method="post" action="/administrativ?tab=achizitii" class="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="id" value="<?php echo (int)$a['id']; ?>">
+                            <input type="hidden" name="actualizeaza_status_achizitie" value="1">
                             <span class="<?php echo $a['cumparat'] ? 'line-through text-slate-500 dark:text-gray-400' : ''; ?>"><?php echo htmlspecialchars($a['denumire']); ?></span>
+                            <label for="status-achizitie-<?php echo (int)$a['id']; ?>" class="sr-only">Status achizitie <?php echo htmlspecialchars($a['denumire']); ?></label>
+                            <select
+                                id="status-achizitie-<?php echo (int)$a['id']; ?>"
+                                name="status_achizitie"
+                                onchange="if(!this.disabled){ this.form.submit(); }"
+                                <?php echo $a['cumparat'] ? 'disabled' : ''; ?>
+                                class="rounded-lg border border-slate-300 dark:border-gray-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-2 py-1 text-xs focus:ring-2 focus:ring-amber-500"
+                                aria-label="Status produs <?php echo htmlspecialchars($a['denumire']); ?>">
+                                <?php
+                                    $statusCurent = administrativ_normalize_status_achizitie($a['status_achizitie'] ?? '');
+                                    foreach ($statusuri_achizitie as $statusKey => $statusLabel):
+                                ?>
+                                    <option value="<?php echo htmlspecialchars($statusKey); ?>" <?php echo $statusCurent === $statusKey ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($statusLabel); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                             <?php if (!empty($a['locatie'])): ?><span class="text-xs text-slate-500 dark:text-gray-400">(<?php echo htmlspecialchars($a['locatie']); ?>)</span><?php endif; ?>
                             <?php if (!empty($a['urgenta']) && $a['urgenta'] !== 'normal'): ?><span class="text-xs <?php echo $a['urgenta'] === 'urgent' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-slate-500 dark:text-gray-400'; ?>"><?php echo $a['urgenta'] === 'urgent' ? 'Urgent' : 'Optional'; ?></span><?php endif; ?>
                             <?php if (!empty($a['furnizor'])): ?><span class="text-xs text-slate-500 dark:text-gray-400">Furnizor: <?php echo htmlspecialchars($a['furnizor']); ?></span><?php endif; ?>
+                            <?php
+                                $metaDataAdaugare = !empty($a['data_adaugare']) ? date(DATE_FORMAT, strtotime((string)$a['data_adaugare'])) : 'Nespecificata';
+                                $metaUtilizatorAdaugare = trim((string)($a['added_by'] ?? ''));
+                            ?>
+                            <span class="text-xs text-slate-500 dark:text-gray-400">Data adaugarii: <?php echo htmlspecialchars($metaDataAdaugare); ?></span>
+                            <span class="text-xs text-slate-500 dark:text-gray-400">Utilizator: <?php echo htmlspecialchars($metaUtilizatorAdaugare !== '' ? $metaUtilizatorAdaugare : 'Necunoscut'); ?></span>
                             <?php if ($a['cumparat'] && !empty($a['data_cumparare'])): ?>
                             <span class="text-xs text-slate-500 dark:text-gray-400">(<?php echo date(DATE_FORMAT, strtotime($a['data_cumparare'])); ?>)</span>
                             <?php endif; ?>
@@ -92,7 +126,19 @@
                 <h2 id="titlu-istoric-achizitii" class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Istoric cumparari</h2>
                 <ul class="space-y-1 text-sm text-slate-700 dark:text-gray-300">
                     <?php foreach (array_slice($lista_istoric, 0, 30) as $i): ?>
-                    <li><?php echo htmlspecialchars($i['denumire']); ?> – <?php echo date(DATE_FORMAT, strtotime($i['data_cumparare'])); ?></li>
+                    <li>
+                        <?php echo htmlspecialchars($i['denumire']); ?> –
+                        <?php echo date(DATE_FORMAT, strtotime($i['data_cumparare'])); ?>
+                        <?php
+                            $statusIstoric = administrativ_normalize_status_achizitie($i['status_achizitie'] ?? '');
+                            $statusIstoricLabel = $statusuri_achizitie[$statusIstoric] ?? $statusIstoric;
+                            $istoricDataAdaugare = !empty($i['data_adaugare']) ? date(DATE_FORMAT, strtotime((string)$i['data_adaugare'])) : 'Nespecificata';
+                            $istoricUtilizator = trim((string)($i['added_by'] ?? ''));
+                        ?>
+                        <span class="text-xs text-slate-500 dark:text-gray-400">| Status: <?php echo htmlspecialchars($statusIstoricLabel); ?></span>
+                        <span class="text-xs text-slate-500 dark:text-gray-400">| Data adaugarii: <?php echo htmlspecialchars($istoricDataAdaugare); ?></span>
+                        <span class="text-xs text-slate-500 dark:text-gray-400">| Utilizator: <?php echo htmlspecialchars($istoricUtilizator !== '' ? $istoricUtilizator : 'Necunoscut'); ?></span>
+                    </li>
                     <?php endforeach; ?>
                     <?php if (empty($lista_istoric)): ?>
                     <li class="text-slate-500 dark:text-gray-400">Niciun istoric.</li>

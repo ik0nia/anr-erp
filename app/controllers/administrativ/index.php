@@ -23,9 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Achizitii
     if (isset($_POST['adauga_achizitie'])) {
-        $result = administrativ_service_adauga_achizitie($pdo, $_POST, $user_id);
+        $result = administrativ_service_adauga_achizitie($pdo, $_POST, $user_id, $utilizator);
     } elseif (isset($_POST['marcheaza_cumparat'])) {
         $result = administrativ_service_marcheaza_cumparat($pdo, (int)($_POST['id'] ?? 0));
+    } elseif (isset($_POST['actualizeaza_status_achizitie'])) {
+        $result = administrativ_service_status_achizitie($pdo, (int)($_POST['id'] ?? 0), (string)($_POST['status_achizitie'] ?? ''));
     } elseif (isset($_POST['sterge_achizitie'])) {
         $result = administrativ_service_sterge_achizitie($pdo, (int)($_POST['id'] ?? 0));
     }

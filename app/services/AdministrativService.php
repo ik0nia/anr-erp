@@ -23,6 +23,7 @@ function administrativ_success_messages(): array {
     return [
         'achizitie'       => 'Achizitia a fost adaugata.',
         'cumparat'        => 'Achizitia a fost marcata ca cumparata.',
+        'status'          => 'Statusul achizitiei a fost actualizat.',
         'sterge'          => 'Achizitia a fost stearsa.',
         'angajat'         => 'Angajatul a fost salvat.',
         'sterge_angajat'  => 'Angajatul a fost sters.',
@@ -47,7 +48,9 @@ function administrativ_success_messages(): array {
 function administrativ_service_load_page_data(PDO $pdo): array {
     administrativ_ensure_tables($pdo);
 
-    $lista_achizitii   = administrativ_achizitii_lista($pdo, false);
+    // In lista activa afisam doar achizitiile nefinalizate;
+    // cele bifate se muta in istoric.
+    $lista_achizitii   = administrativ_achizitii_lista($pdo, true);
     $lista_istoric     = administrativ_achizitii_istoric($pdo, 50);
     $lista_angajati    = administrativ_angajati_lista($pdo);
     $lista_cd          = administrativ_cd_lista($pdo);
@@ -97,16 +100,26 @@ function administrativ_service_load_page_data(PDO $pdo): array {
  * Adauga achizitie.
  * @return array ['success'=>bool, 'redirect'=>string]
  */
-function administrativ_service_adauga_achizitie(PDO $pdo, array $post, ?int $user_id): array {
+function administrativ_service_adauga_achizitie(PDO $pdo, array $post, ?int $user_id, ?string $utilizator = null): array {
     $denumire = trim($post['denumire'] ?? '');
     $locatie  = in_array($post['locatie'] ?? '', ['Sediu', 'Centru', 'Alta']) ? $post['locatie'] : null;
     $urgenta  = in_array($post['urgenta'] ?? '', ['normal', 'urgent', 'optional']) ? $post['urgenta'] : 'normal';
     $furnizor = trim($post['furnizor'] ?? '');
+    $status_achizitie = administrativ_normalize_status_achizitie($post['status_achizitie'] ?? '');
+    $utilizator_adaugare = trim((string)($utilizator ?? ''));
     if ($denumire === '') {
         return ['success' => false, 'redirect' => '/administrativ?tab=achizitii'];
     }
-    administrativ_achizitie_adauga($pdo, $denumire, $locatie, $urgenta, $furnizor ?: null);
-    log_activitate($pdo, 'Administrativ: achizitie adaugata ' . $denumire . ($locatie ? ' (Loc: ' . $locatie . ')' : '') . ' Urgenta: ' . $urgenta);
+    administrativ_achizitie_adauga($pdo, $denumire, $locatie, $urgenta, $furnizor ?: null, $utilizator_adaugare ?: null, $status_achizitie);
+    $statusuri = administrativ_statusuri_achizitie();
+    log_activitate(
+        $pdo,
+        'Administrativ: achizitie adaugata ' . $denumire .
+        ($locatie ? ' (Loc: ' . $locatie . ')' : '') .
+        ' Urgenta: ' . $urgenta .
+        ' Status: ' . ($statusuri[$status_achizitie] ?? $status_achizitie) .
+        ($utilizator_adaugare ? ' Utilizator: ' . $utilizator_adaugare : '')
+    );
     if ($urgenta === 'urgent') {
         require_once APP_ROOT . '/includes/notificari_helper.php';
         notificari_adauga($pdo, [
@@ -120,17 +133,46 @@ function administrativ_service_adauga_achizitie(PDO $pdo, array $post, ?int $use
 }
 
 function administrativ_service_marcheaza_cumparat(PDO $pdo, int $id): array {
-    if ($id > 0 && administrativ_achizitie_marcheaza_cumparat($pdo, $id)) {
-        log_activitate($pdo, 'Administrativ: achizitie marcata cumparata ID ' . $id);
+    $row = $id > 0 ? administrativ_achizitie_marcheaza_cumparat($pdo, $id) : false;
+    if ($row) {
+        $statusuri = administrativ_statusuri_achizitie();
+        log_activitate(
+            $pdo,
+            'Administrativ: achizitie marcata cumparata ID ' . $id .
+            ' Denumire: ' . ($row['denumire'] ?? '-') .
+            ' Status anterior: ' . ($statusuri[administrativ_normalize_status_achizitie($row['status_achizitie'] ?? '')] ?? '-')
+        );
         return ['success' => true, 'redirect' => '/administrativ?tab=achizitii&succes=cumparat'];
     }
     return ['success' => false, 'redirect' => '/administrativ?tab=achizitii'];
 }
 
+function administrativ_service_status_achizitie(PDO $pdo, int $id, string $status): array {
+    if ($id <= 0) {
+        return ['success' => false, 'redirect' => '/administrativ?tab=achizitii'];
+    }
+
+    $status_normalizat = administrativ_normalize_status_achizitie($status);
+    $updated = administrativ_achizitie_set_status($pdo, $id, $status_normalizat);
+    if (!$updated) {
+        return ['success' => false, 'redirect' => '/administrativ?tab=achizitii'];
+    }
+
+    $statusuri = administrativ_statusuri_achizitie();
+    log_activitate(
+        $pdo,
+        'Administrativ: status achizitie actualizat ID ' . $id .
+        ' -> ' . ($statusuri[$status_normalizat] ?? $status_normalizat) .
+        ' Denumire: ' . ($updated['denumire'] ?? '-')
+    );
+    return ['success' => true, 'redirect' => '/administrativ?tab=achizitii&succes=status'];
+}
+
 function administrativ_service_sterge_achizitie(PDO $pdo, int $id): array {
     if ($id > 0) {
+        $achizitie = administrativ_achizitie_get($pdo, $id);
         administrativ_achizitie_sterge($pdo, $id);
-        log_activitate($pdo, 'Administrativ: achizitie stearsa ID ' . $id);
+        log_activitate($pdo, 'Administrativ: achizitie stearsa ID ' . $id . ' Denumire: ' . ($achizitie['denumire'] ?? '-'));
         return ['success' => true, 'redirect' => '/administrativ?tab=achizitii&succes=sterge'];
     }
     return ['success' => false, 'redirect' => '/administrativ?tab=achizitii'];

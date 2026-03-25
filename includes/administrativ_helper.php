@@ -5,8 +5,67 @@
  */
 
 function administrativ_ensure_tables(PDO $pdo) {
-    // No-op: schema is managed by install/schema/migration.php
-    return;
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    $ensured = true;
+
+    // Compatibilitate pentru baze existente unde migrarile nu au rulat inca.
+    try {
+        $cols = $pdo->query("SHOW COLUMNS FROM administrativ_achizitii")->fetchAll(PDO::FETCH_COLUMN);
+        if (!empty($cols)) {
+            if (!in_array('status_achizitie', $cols, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii ADD COLUMN status_achizitie VARCHAR(32) NOT NULL DEFAULT 'achizitie_aprobata'");
+            }
+            if (!in_array('data_adaugare', $cols, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii ADD COLUMN data_adaugare DATETIME NULL");
+                $pdo->exec("UPDATE administrativ_achizitii SET data_adaugare = COALESCE(data_adaugare, NOW())");
+            }
+            if (!in_array('added_by', $cols, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii ADD COLUMN added_by VARCHAR(191) DEFAULT NULL");
+            }
+        }
+    } catch (PDOException $e) {}
+
+    try {
+        $cols_istoric = $pdo->query("SHOW COLUMNS FROM administrativ_achizitii_istoric")->fetchAll(PDO::FETCH_COLUMN);
+        if (!empty($cols_istoric)) {
+            if (!in_array('status_achizitie', $cols_istoric, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN status_achizitie VARCHAR(32) NOT NULL DEFAULT 'achizitie_aprobata'");
+            }
+            if (!in_array('locatie', $cols_istoric, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN locatie VARCHAR(100) DEFAULT NULL");
+            }
+            if (!in_array('urgenta', $cols_istoric, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN urgenta VARCHAR(20) DEFAULT NULL");
+            }
+            if (!in_array('furnizor', $cols_istoric, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN furnizor VARCHAR(191) DEFAULT NULL");
+            }
+            if (!in_array('data_adaugare', $cols_istoric, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN data_adaugare DATETIME NULL");
+            }
+            if (!in_array('added_by', $cols_istoric, true)) {
+                $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN added_by VARCHAR(191) DEFAULT NULL");
+            }
+        }
+    } catch (PDOException $e) {}
+}
+
+function administrativ_statusuri_achizitie() {
+    return [
+        'achizitie_aprobata' => 'Achizitie Aprobata',
+        'comandat' => 'Comandat',
+        'pe_viitor' => 'Pe viitor',
+        'achizitie_neaprobata' => 'Achizitie neaprobata',
+    ];
+}
+
+function administrativ_normalize_status_achizitie($status) {
+    $status = is_string($status) ? trim($status) : '';
+    $statusuri = administrativ_statusuri_achizitie();
+    return isset($statusuri[$status]) ? $status : 'achizitie_aprobata';
 }
 
 // ---- Necesar achiziții ----
@@ -20,24 +79,69 @@ function administrativ_achizitii_lista(PDO $pdo, $doar_necumparate = false) {
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function administrativ_achizitie_adauga(PDO $pdo, $denumire, $locatie = null, $urgenta = 'normal', $furnizor = null) {
+function administrativ_achizitie_adauga(PDO $pdo, $denumire, $locatie = null, $urgenta = 'normal', $furnizor = null, $added_by = null, $status_achizitie = 'achizitie_aprobata') {
     administrativ_ensure_tables($pdo);
     $locatie = in_array($locatie, ['Sediu', 'Centru', 'Alta']) ? $locatie : null;
     $urgenta = in_array($urgenta, ['normal', 'urgent', 'optional']) ? $urgenta : 'normal';
-    $stmt = $pdo->prepare("INSERT INTO administrativ_achizitii (denumire, locatie, urgenta, furnizor, ordine) SELECT ?, ?, ?, ?, COALESCE(MAX(ordine),0)+1 FROM administrativ_achizitii");
-    $stmt->execute([trim($denumire), $locatie, $urgenta, $furnizor ? trim($furnizor) : null]);
+    $status_achizitie = administrativ_normalize_status_achizitie($status_achizitie);
+    $denumire = trim((string)$denumire);
+    $furnizor = $furnizor ? trim((string)$furnizor) : null;
+    $added_by = $added_by ? trim((string)$added_by) : null;
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO administrativ_achizitii (denumire, locatie, urgenta, furnizor, ordine, status_achizitie, data_adaugare, added_by) SELECT ?, ?, ?, ?, COALESCE(MAX(ordine),0)+1, ?, NOW(), ? FROM administrativ_achizitii");
+        $stmt->execute([$denumire, $locatie, $urgenta, $furnizor, $status_achizitie, $added_by]);
+    } catch (PDOException $e) {
+        // Compatibilitate: varianta veche de schema fara coloanele noi.
+        $stmt = $pdo->prepare("INSERT INTO administrativ_achizitii (denumire, locatie, urgenta, furnizor, ordine) SELECT ?, ?, ?, ?, COALESCE(MAX(ordine),0)+1 FROM administrativ_achizitii");
+        $stmt->execute([$denumire, $locatie, $urgenta, $furnizor]);
+    }
     return (int)$pdo->lastInsertId();
 }
 
 function administrativ_achizitie_marcheaza_cumparat(PDO $pdo, $id) {
     administrativ_ensure_tables($pdo);
-    $stmt = $pdo->prepare("SELECT id, denumire FROM administrativ_achizitii WHERE id = ? AND cumparat = 0");
-    $stmt->execute([(int)$id]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("SELECT id, denumire, locatie, urgenta, furnizor, status_achizitie, data_adaugare, added_by FROM administrativ_achizitii WHERE id = ? AND cumparat = 0");
+        $stmt->execute([(int)$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $stmt = $pdo->prepare("SELECT id, denumire FROM administrativ_achizitii WHERE id = ? AND cumparat = 0");
+        $stmt->execute([(int)$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     if (!$row) return false;
-    $pdo->prepare("INSERT INTO administrativ_achizitii_istoric (achizitie_id, denumire, data_cumparare) VALUES (?, ?, CURDATE())")->execute([$id, $row['denumire']]);
+    try {
+        $pdo->prepare("INSERT INTO administrativ_achizitii_istoric (achizitie_id, denumire, data_cumparare, status_achizitie, locatie, urgenta, furnizor, data_adaugare, added_by) VALUES (?, ?, CURDATE(), ?, ?, ?, ?, ?, ?)")
+            ->execute([$id, $row['denumire'], administrativ_normalize_status_achizitie($row['status_achizitie'] ?? ''), $row['locatie'] ?? null, $row['urgenta'] ?? null, $row['furnizor'] ?? null, $row['data_adaugare'] ?? null, $row['added_by'] ?? null]);
+    } catch (PDOException $e) {
+        $pdo->prepare("INSERT INTO administrativ_achizitii_istoric (achizitie_id, denumire, data_cumparare) VALUES (?, ?, CURDATE())")
+            ->execute([$id, $row['denumire']]);
+    }
     $pdo->prepare("UPDATE administrativ_achizitii SET cumparat = 1, data_cumparare = CURDATE() WHERE id = ?")->execute([$id]);
-    return true;
+    return $row;
+}
+
+function administrativ_achizitie_set_status(PDO $pdo, $id, $status_achizitie) {
+    administrativ_ensure_tables($pdo);
+    $status_achizitie = administrativ_normalize_status_achizitie($status_achizitie);
+    try {
+        $stmt = $pdo->prepare("UPDATE administrativ_achizitii SET status_achizitie = ? WHERE id = ? AND cumparat = 0");
+        $stmt->execute([$status_achizitie, (int)$id]);
+    } catch (PDOException $e) {
+        return false;
+    }
+    if ($stmt->rowCount() <= 0) {
+        return false;
+    }
+    return administrativ_achizitie_get($pdo, $id);
+}
+
+function administrativ_achizitie_get(PDO $pdo, $id) {
+    administrativ_ensure_tables($pdo);
+    $stmt = $pdo->prepare("SELECT * FROM administrativ_achizitii WHERE id = ?");
+    $stmt->execute([(int)$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
 function administrativ_achizitie_sterge(PDO $pdo, $id) {
