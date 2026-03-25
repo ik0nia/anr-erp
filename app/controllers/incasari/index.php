@@ -11,6 +11,7 @@ $per_page = (int)($_GET['per_page'] ?? 50);
 if (!in_array($per_page, [25, 50, 100])) $per_page = 50;
 $page = max(1, (int)($_GET['page'] ?? 1));
 $tip_filtru = trim($_GET['tip'] ?? '');
+$serie_filtru = trim($_GET['serie'] ?? '');
 $data_de_la = trim($_GET['data_de_la'] ?? '');
 $data_pana_la = trim($_GET['data_pana_la'] ?? '');
 $cautare = trim($_GET['q'] ?? '');
@@ -28,11 +29,22 @@ $total = 0;
 $total_pages = 1;
 $total_suma_afisata = 0.0;
 $total_chitante_afisate = 0;
-$afiseaza_resetare_filtre = isset($_GET['tip']) || isset($_GET['data_de_la']) || isset($_GET['data_pana_la']) || isset($_GET['q']) || isset($_GET['per_page']) || isset($_GET['page']);
+$afiseaza_resetare_filtre = isset($_GET['tip']) || isset($_GET['serie']) || isset($_GET['data_de_la']) || isset($_GET['data_pana_la']) || isset($_GET['q']) || isset($_GET['per_page']) || isset($_GET['page']);
+$serie_options = [];
 
 try {
     incasari_ensure_tables($pdo);
     ensure_contacte_table($pdo);
+    $serie_donatii = trim((string)((incasari_get_serie($pdo, 'donatii')['serie'] ?? '')));
+    $serie_incasari = trim((string)((incasari_get_serie($pdo, 'incasari')['serie'] ?? '')));
+    foreach ([$serie_donatii, $serie_incasari] as $serie_cfg) {
+        if ($serie_cfg !== '' && !in_array($serie_cfg, $serie_options, true)) {
+            $serie_options[] = $serie_cfg;
+        }
+    }
+    if ($serie_filtru !== '' && !in_array($serie_filtru, $serie_options, true)) {
+        $serie_filtru = '';
+    }
 
     $where = [];
     $params = [];
@@ -40,6 +52,10 @@ try {
     if ($tip_filtru !== '' && in_array($tip_filtru, [INCASARI_TIP_COTIZATIE, INCASARI_TIP_DONATIE, INCASARI_TIP_TAXA_PARTICIPARE, INCASARI_TIP_ALTE])) {
         $where[] = 'i.tip = ?';
         $params[] = $tip_filtru;
+    }
+    if ($serie_filtru !== '') {
+        $where[] = 'i.seria_chitanta = ?';
+        $params[] = $serie_filtru;
     }
     if ($data_de_la !== '') {
         $where[] = 'i.data_incasare >= ?';

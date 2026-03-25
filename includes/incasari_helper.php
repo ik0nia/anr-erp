@@ -75,9 +75,9 @@ function incasari_urmatorul_nr_serie($pdo, $tip_serie) {
     return ['serie' => $row['serie'], 'nr' => $nr, 'error' => null];
 }
 
-/** Tip serie chitanță în funcție de tip încasare: donatie -> donatii, restul -> incasari */
+/** Tip serie chitanță în funcție de tip încasare: cotizație -> incasari, restul -> donatii */
 function incasari_tip_serie_pentru_tip($tip) {
-    return $tip === INCASARI_TIP_DONATIE ? 'donatii' : 'incasari';
+    return $tip === INCASARI_TIP_COTIZATIE ? 'incasari' : 'donatii';
 }
 
 /**

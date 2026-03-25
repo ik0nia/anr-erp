@@ -15,6 +15,7 @@ if (!in_array($per_page, [25, 50, 100], true)) {
 }
 $page = max(1, (int)($_GET['page'] ?? 1));
 $tip_filtru = trim((string)($_GET['tip'] ?? ''));
+$serie_filtru = trim((string)($_GET['serie'] ?? ''));
 $data_de_la = trim((string)($_GET['data_de_la'] ?? ''));
 $data_pana_la = trim((string)($_GET['data_pana_la'] ?? ''));
 $cautare = trim((string)($_GET['q'] ?? ''));
@@ -31,6 +32,10 @@ $params = [];
 if ($tip_filtru !== '' && in_array($tip_filtru, [INCASARI_TIP_COTIZATIE, INCASARI_TIP_DONATIE, INCASARI_TIP_TAXA_PARTICIPARE, INCASARI_TIP_ALTE], true)) {
     $where[] = 'i.tip = ?';
     $params[] = $tip_filtru;
+}
+if ($serie_filtru !== '') {
+    $where[] = 'i.seria_chitanta = ?';
+    $params[] = $serie_filtru;
 }
 if ($data_de_la !== '') {
     $where[] = 'i.data_incasare >= ?';
@@ -89,7 +94,9 @@ foreach ($incasari as $inc) {
     }
 }
 
-if ($tip_filtru === INCASARI_TIP_DONATIE) {
+if ($serie_filtru !== '') {
+    $serie_selectata = $serie_filtru;
+} elseif ($tip_filtru === INCASARI_TIP_DONATIE) {
     $serie_selectata = (string)((incasari_get_serie($pdo, 'donatii')['serie'] ?? '') ?: 'D');
 } elseif ($tip_filtru !== '') {
     $serie_selectata = (string)((incasari_get_serie($pdo, 'incasari')['serie'] ?? '') ?: 'INC');

@@ -39,7 +39,7 @@
                 Manager date chitanțe
             </h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
-                Gestionați seria și intervalul de numere alocat pentru chitanțele de donații și pentru chitanțele de cotizații/alte încasări.
+                Gestionați seria și intervalul de numere alocat pentru chitanțele de donații (inclusiv taxe și alte încasări) și pentru chitanțele de cotizații.
             </p>
 
             <form method="post" action="/incasari/setari" class="space-y-6">
@@ -79,7 +79,7 @@
                     </div>
 
                     <div class="p-4 border border-slate-200 dark:border-gray-600 rounded-lg">
-                        <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3">Tip chitanță: Cotizație / Taxe / Alte încasări</h3>
+                        <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3">Tip chitanță: Cotizație</h3>
                         <div class="space-y-2">
                             <label class="block text-sm text-slate-700 dark:text-gray-300">Serie chitanță</label>
                             <input type="text"
@@ -119,6 +119,55 @@
                        class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700">
                         Setări avansate chitanțe
                     </a>
+                </div>
+            </form>
+        </section>
+
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 mt-6" aria-labelledby="incasari-design-heading-local">
+            <h2 id="incasari-design-heading-local" class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                Design chitanțe și notificări
+            </h2>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
+                Configurați datele vizuale ale chitanței și adresa de email pentru notificarea ștergerii unei chitanțe.
+            </p>
+            <form method="post" action="/incasari/setari" class="space-y-4">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="salveaza_design_chitante" value="1">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Template chitanță</label>
+                        <select name="template_chitanta" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                            <option value="standard" <?php echo ($incasari_setari_design['template_chitanta'] ?? 'standard') === 'standard' ? 'selected' : ''; ?>>Standard</option>
+                            <option value="minimal" <?php echo ($incasari_setari_design['template_chitanta'] ?? '') === 'minimal' ? 'selected' : ''; ?>>Minimal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Dimensiune chitanță</label>
+                        <select name="dimensiune_chitanta" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                            <option value="a5" <?php echo ($incasari_setari_design['dimensiune_chitanta'] ?? 'a5') === 'a5' ? 'selected' : ''; ?>>A5 (recomandat)</option>
+                            <option value="a4" <?php echo ($incasari_setari_design['dimensiune_chitanta'] ?? '') === 'a4' ? 'selected' : ''; ?>>A4</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">URL logo (chitanță)</label>
+                    <input type="url" name="logo_chitanta" value="<?php echo htmlspecialchars($incasari_setari_design['logo_chitanta'] ?? ''); ?>" placeholder="https://..." class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Date asociație (stânga sus pe chitanță)</label>
+                    <textarea name="date_asociatie" rows="5" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" placeholder="Denumire, CUI, sediu, cont bancar..."><?php echo htmlspecialchars($incasari_setari_design['date_asociatie'] ?? ''); ?></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Email notificări ștergere chitanță</label>
+                    <input type="email" name="email_notificari_stergere_chitanta" value="<?php echo htmlspecialchars($incasari_setari_design['email_notificari_stergere_chitanta'] ?? ''); ?>" placeholder="ex: notificari@asociatie.ro" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                </div>
+
+                <div>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
+                        Salvează design și notificări
+                    </button>
                 </div>
             </form>
         </section>

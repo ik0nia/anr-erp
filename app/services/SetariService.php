@@ -490,6 +490,11 @@ function setari_incasari_design_save(PDO $pdo, array $data): array
     incasari_set_setare($pdo, 'date_asociatie', trim($data['date_asociatie'] ?? ''));
     incasari_set_setare($pdo, 'dimensiune_chitanta', in_array(($data['dimensiune_chitanta'] ?? 'a5'), ['a5', 'a4'], true) ? $data['dimensiune_chitanta'] : 'a5');
     incasari_set_setare($pdo, 'template_chitanta', trim($data['template_chitanta'] ?? 'standard'));
+    $email_notificari_stergere = trim((string)($data['email_notificari_stergere_chitanta'] ?? ''));
+    if ($email_notificari_stergere !== '' && !filter_var($email_notificari_stergere, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'error' => 'Adresa email pentru notificări ștergere chitanță nu este validă.'];
+    }
+    incasari_set_setare($pdo, 'email_notificari_stergere_chitanta', $email_notificari_stergere);
     log_activitate($pdo, 'Setări: design chitanțe Încasări actualizat.');
     return ['success' => true, 'error' => null];
 }
@@ -536,6 +541,7 @@ function setari_incasari_load(PDO $pdo): array
             'date_asociatie' => incasari_get_setare($pdo, 'date_asociatie') ?: '',
             'dimensiune_chitanta' => incasari_get_setare($pdo, 'dimensiune_chitanta') ?: 'a5',
             'template_chitanta' => incasari_get_setare($pdo, 'template_chitanta') ?: 'standard',
+            'email_notificari_stergere_chitanta' => incasari_get_setare($pdo, 'email_notificari_stergere_chitanta') ?: '',
             'fgo_api_key' => incasari_get_setare($pdo, 'fgo_api_key') ?: '',
             'fgo_merchant_name' => incasari_get_setare($pdo, 'fgo_merchant_name') ?: '',
             'fgo_merchant_tax_id' => incasari_get_setare($pdo, 'fgo_merchant_tax_id') ?: '',

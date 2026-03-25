@@ -67,7 +67,7 @@
         <!-- Tab Încasări: administrare modul (serii chitanțe, design, FGO.ro API) -->
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 mb-6" aria-labelledby="incasari-serii-heading">
             <h2 id="incasari-serii-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Serii chitanțe</h2>
-            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Definiți seria și intervalul de numerotare pentru chitanțe. Seria Donații (ex. CEDON) se folosește pentru donații, iar seria Cotizații (ex. CECOT) pentru cotizații, taxe participare și alte încasări.</p>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Definiți seria și intervalul de numerotare pentru chitanțe. Seria Donații (ex. CEDON) se folosește pentru donații, taxe participare și alte încasări, iar seria Cotizații (ex. CECOT) se folosește exclusiv pentru cotizații.</p>
             <form method="post" action="/setari?tab=incasari">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_serii_incasari" value="1">
@@ -87,7 +87,7 @@
                         </div>
                     </div>
                     <div class="p-4 border border-slate-200 dark:border-gray-600 rounded-lg">
-                        <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3">Chitanțe Cotizații (tip: Cotizație, taxe, alte)</h3>
+                        <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3">Chitanțe Cotizații (tip: Cotizație, fără alte asocieri)</h3>
                         <p class="text-xs text-slate-500 dark:text-gray-400 mb-2">Ex. serie: CECOT</p>
                         <div class="space-y-2">
                             <label class="block text-sm text-slate-700 dark:text-gray-300">Serie</label>
@@ -131,6 +131,8 @@
                     <input type="url" name="logo_chitanta" value="<?php echo htmlspecialchars($incasari_setari_design['logo_chitanta'] ?? ''); ?>" placeholder="https://..." class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                     <label class="block text-sm font-medium text-slate-700 dark:text-gray-300">Date asociație (stânga sus pe chitanță)</label>
                     <textarea name="date_asociatie" rows="6" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" placeholder="Denumire, CUI, sediu, cont bancar..."><?php echo htmlspecialchars($incasari_setari_design['date_asociatie'] ?? ''); ?></textarea>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-gray-300">Email notificări ștergere chitanță</label>
+                    <input type="email" name="email_notificari_stergere_chitanta" value="<?php echo htmlspecialchars($incasari_setari_design['email_notificari_stergere_chitanta'] ?? ''); ?>" placeholder="ex: contabilitate@asociatie.ro" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                 </div>
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Salvează design</button>
             </form>

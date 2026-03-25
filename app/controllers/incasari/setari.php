@@ -46,6 +46,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_serii_incasa
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_design_chitante'])) {
+    csrf_require_valid();
+
+    $email_notificari_stergere = trim((string)($_POST['email_notificari_stergere_chitanta'] ?? ''));
+    if ($email_notificari_stergere !== '' && !filter_var($email_notificari_stergere, FILTER_VALIDATE_EMAIL)) {
+        $eroare = 'Adresa email pentru notificări ștergere chitanță nu este validă.';
+    } else {
+        incasari_set_setare($pdo, 'logo_chitanta', trim((string)($_POST['logo_chitanta'] ?? '')));
+        incasari_set_setare($pdo, 'date_asociatie', trim((string)($_POST['date_asociatie'] ?? '')));
+        incasari_set_setare(
+            $pdo,
+            'dimensiune_chitanta',
+            in_array((string)($_POST['dimensiune_chitanta'] ?? 'a5'), ['a5', 'a4'], true) ? (string)$_POST['dimensiune_chitanta'] : 'a5'
+        );
+        incasari_set_setare($pdo, 'template_chitanta', trim((string)($_POST['template_chitanta'] ?? 'standard')));
+        incasari_set_setare($pdo, 'email_notificari_stergere_chitanta', $email_notificari_stergere);
+
+        log_activitate($pdo, 'Încasări: design chitanțe actualizat din pagina Încasări > Setări.');
+        header('Location: /incasari/setari?succes_incasari=1');
+        exit;
+    }
+}
+
 if (isset($_GET['succes_incasari'])) {
     $succes = 'Setările modulului Încasări au fost salvate.';
 }
@@ -58,6 +81,13 @@ $incasari_serie_incasari = array_merge(
     incasari_get_serie($pdo, 'incasari') ?: [],
     ['nr_final' => incasari_get_serie_nr_final($pdo, 'incasari') ?: 0]
 );
+$incasari_setari_design = [
+    'logo_chitanta' => incasari_get_setare($pdo, 'logo_chitanta') ?: (defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : ''),
+    'date_asociatie' => incasari_get_setare($pdo, 'date_asociatie') ?: '',
+    'dimensiune_chitanta' => incasari_get_setare($pdo, 'dimensiune_chitanta') ?: 'a5',
+    'template_chitanta' => incasari_get_setare($pdo, 'template_chitanta') ?: 'standard',
+    'email_notificari_stergere_chitanta' => incasari_get_setare($pdo, 'email_notificari_stergere_chitanta') ?: '',
+];
 
 include APP_ROOT . '/header.php';
 include APP_ROOT . '/sidebar.php';
