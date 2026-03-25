@@ -32,7 +32,7 @@
                         <label class="block text-sm font-medium mb-1 text-slate-900 dark:text-white">Titlu</label>
                         <select name="tip_titlu" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:text-white dark:border-gray-600" required aria-label="Selectează tipul titlului listei" aria-required="true">
                             <option value="Lista prezenta" <?php echo $is_socializare_preset ? 'selected' : ''; ?>>Listă prezență</option>
-                            <option value="Tabel nominal" <?php echo $is_socializare_preset ? '' : ''; ?>>Tabel nominal</option>
+                            <option value="Tabel nominal">Tabel nominal</option>
                         </select>
                     </div>
                     <div>
