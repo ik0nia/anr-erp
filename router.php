@@ -48,6 +48,7 @@ $routes = [
     '/formular-230'            => ['type' => 'controller', 'script' => 'formular-230.php',       'file' => 'app/controllers/formular-230/index.php'],
     '/fundraising'             => ['type' => 'controller', 'script' => 'fundraising.php',        'file' => 'app/controllers/fundraising/index.php'],
     '/incasari'                => ['type' => 'controller', 'script' => 'incasari.php',           'file' => 'app/controllers/incasari/index.php'],
+    '/incasari/setari'         => ['type' => 'controller', 'script' => 'incasari-setari.php',    'file' => 'app/controllers/incasari/setari.php'],
     '/membru-profil'           => ['type' => 'controller', 'script' => 'membru-profil.php',     'file' => 'app/controllers/membri/profil.php'],
     '/aniversari'              => ['type' => 'controller', 'script' => 'aniversari.php',         'file' => 'app/controllers/aniversari/index.php'],
     '/generare-documente'      => ['type' => 'controller', 'script' => 'generare-documente.php', 'file' => 'app/controllers/generare-documente/index.php'],
