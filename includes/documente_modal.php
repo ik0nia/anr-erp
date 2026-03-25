@@ -53,7 +53,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                         aria-label="Generează document cu template-ul selectat">
                     Generează
                 </button>
-                <button type="button" id="doc-btn-renunta-1" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700" aria-label="Renunță la generare document">
+                <button type="button" id="doc-btn-renunta-1" class="px-4 py-2 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500" aria-label="Renunță la generare document">
                     Renunță
                 </button>
             </div>
@@ -70,7 +70,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                 <button type="button" id="doc-btn-print" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg" aria-label="Printează documentul">
                     <i data-lucide="printer" class="w-4 h-4 mr-2" aria-hidden="true"></i> Print
                 </button>
-                <button type="button" id="doc-btn-renunta-2" class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300" aria-label="Renunță și închide fereastra">
+                <button type="button" id="doc-btn-renunta-2" class="inline-flex items-center px-4 py-2 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500" aria-label="Renunță și închide fereastra">
                     Renunță
                 </button>
             </div>
@@ -113,7 +113,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg" aria-label="Trimite email cu documentul atașat">Trimite</button>
-                    <button type="button" id="doc-btn-ascunde-email" class="px-4 py-2 border rounded-lg" aria-label="Anulează trimitere email">Anulare</button>
+                    <button type="button" id="doc-btn-ascunde-email" class="px-4 py-2 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500" aria-label="Anulează trimitere email">Anulare</button>
                 </div>
             </form>
         </div>

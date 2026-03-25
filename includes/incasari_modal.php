@@ -17,10 +17,10 @@
                 <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Tip încasare</span>
                 <div class="flex flex-wrap gap-2" role="group" aria-label="Tip încasare">
                     <span id="incasari-cot-achitata-afis" class="hidden inline-flex items-center px-3 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 font-medium">Cotizație achitată</span>
-                    <button type="button" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-tip="cotizatie">Încasează cotizație</button>
-                    <button type="button" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-tip="donatie">Încasează Donație</button>
-                    <button type="button" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-tip="taxa_participare">Încasează taxă participare</button>
-                    <button type="button" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-tip="alte">Încasează alte venituri</button>
+                    <button type="button" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-tip="cotizatie">Încasează cotizație</button>
+                    <button type="button" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-tip="donatie">Încasează Donație</button>
+                    <button type="button" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-tip="taxa_participare">Încasează taxă participare</button>
+                    <button type="button" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-tip="alte">Încasează alte venituri</button>
                 </div>
                 <input type="hidden" name="tip" id="incasari-tip" value="">
             </div>
@@ -28,12 +28,12 @@
             <div>
                 <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Mod plată</span>
                 <div class="flex flex-wrap gap-2" role="group" aria-label="Mod plată">
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="numerar">Chitanta ERP</button>
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="chitanta_veche">Chitanta veche</button>
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="card_pos">POS</button>
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="transfer_bancar">Transfer bancar</button>
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="card_online">Plata online</button>
-                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 font-medium" data-mod="mandat_postal">Mandat postal</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-mod="numerar">Chitanta ERP</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-mod="chitanta_veche">Chitanta veche</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-mod="card_pos">POS</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-mod="transfer_bancar">Transfer bancar</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-mod="card_online">Plata online</button>
+                    <button type="button" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium" data-mod="mandat_postal">Mandat postal</button>
                 </div>
                 <input type="hidden" name="mod_plata" id="incasari-mod" value="">
             </div>
@@ -56,7 +56,7 @@
             <div class="flex flex-wrap gap-2 pt-2">
                 <button type="button" id="incasari-btn-chitanta" class="hidden px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Tipărește chitanță</button>
                 <button type="button" id="incasari-btn-salveaza" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg">Salvează încasarea</button>
-                <button type="button" id="incasari-btn-inchide" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300">Închide</button>
+                <button type="button" id="incasari-btn-inchide" class="px-4 py-2 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500">Închide</button>
             </div>
         </form>
     </div>

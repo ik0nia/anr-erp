@@ -97,7 +97,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                         name="reset"
                         value="1"
                         onclick="this.form.querySelector('input[name=cautare]').value='';"
-                        class="px-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 shrink-0"
+                        class="px-3 py-2.5 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white shrink-0"
                         aria-label="Reseteaza cautarea">
                     <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
                 </button>
@@ -110,7 +110,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 $print_url = '/membri?' . http_build_query($print_params);
                 ?>
                 <a href="<?php echo htmlspecialchars($print_url); ?>" target="_blank"
-                   class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
+                   class="inline-flex items-center px-4 py-2 border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
                    aria-label="Printeaza lista membrilor">
                     <i data-lucide="printer" class="mr-2 w-5 h-5" aria-hidden="true"></i>
                     Print lista
@@ -122,7 +122,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 $export_url = '/membri?' . http_build_query($export_params);
                 ?>
                 <a href="<?php echo htmlspecialchars($export_url); ?>"
-                   class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
+                   class="inline-flex items-center px-4 py-2 border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
                    aria-label="Exporta lista membrilor in format CSV">
                     <i data-lucide="download" class="mr-2 w-5 h-5" aria-hidden="true"></i>
                     Export CSV
@@ -130,7 +130,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
 
                 <button type="button"
                         onclick="document.getElementById('modal-filtre-avansate').showModal()"
-                        class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
+                        class="inline-flex items-center px-4 py-2 border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition shrink-0"
                         aria-label="Deschide filtre avansate"
                         aria-haspopup="dialog">
                     <i data-lucide="filter" class="mr-2 w-5 h-5" aria-hidden="true"></i>
@@ -164,19 +164,19 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
         <!-- Rând 2: Filtre status -->
         <div class="mb-2 flex items-center gap-2 flex-wrap">
             <a href="<?php echo $status_base_url; ?>&status=toti"
-               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'toti' ? 'bg-slate-700 text-white dark:bg-slate-500' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
+               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'toti' ? 'bg-slate-700 text-white dark:bg-slate-500' : 'bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500'; ?>">
                 Toti
             </a>
             <a href="<?php echo $status_base_url; ?>&status=activi"
-               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'activi' ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'; ?>">
+               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'activi' ? 'bg-green-600 text-white ring-2 ring-green-400' : 'bg-green-700 dark:bg-green-700 text-white hover:bg-green-600 dark:hover:bg-green-600'; ?>">
                 Membri Activi (<?php echo $membri_activi_count; ?>)
             </a>
             <a href="<?php echo $status_base_url; ?>&status=suspendati"
-               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'suspendati' ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/50'; ?>">
+               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'suspendati' ? 'bg-yellow-600 text-white ring-2 ring-yellow-400' : 'bg-amber-700 dark:bg-amber-700 text-white hover:bg-amber-600 dark:hover:bg-amber-600'; ?>">
                 Membri Suspendati/Expirati (<?php echo $membri_suspendati_expirati_count; ?>)
             </a>
             <a href="<?php echo $status_base_url; ?>&status=arhiva"
-               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'arhiva' ? 'bg-red-600 text-white ring-2 ring-red-400' : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50'; ?>">
+               class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'arhiva' ? 'bg-red-600 text-white ring-2 ring-red-400' : 'bg-red-700 dark:bg-red-700 text-white hover:bg-red-600 dark:hover:bg-red-600'; ?>">
                 Arhiva Membri (<?php echo $membri_arhiva_count; ?>)
             </a>
         </div>
@@ -194,7 +194,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
             <span class="text-sm text-slate-500 dark:text-gray-400 mr-1">Filtre:</span>
             <?php foreach ($special_filters as $sf): ?>
             <a href="<?php echo $special_base_url . ($sf['active'] ? '' : '&' . $sf['param'] . '=1'); ?>"
-               class="px-3 py-1.5 rounded-lg font-medium transition-colors inline-flex items-center gap-2 text-sm <?php echo $sf['active'] ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'; ?>">
+               class="px-3 py-1.5 rounded-lg font-medium transition-colors inline-flex items-center gap-2 text-sm <?php echo $sf['active'] ? 'bg-amber-600 text-white' : 'bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500'; ?>">
                 <span class="inline-block w-4 h-4 rounded-full border-2 flex-shrink-0 <?php echo $sf['active'] ? 'border-white bg-white' : 'border-slate-400 dark:border-gray-500'; ?>" style="<?php echo $sf['active'] ? 'box-shadow: inset 0 0 0 3px #d97706;' : ''; ?>"></span>
                 <i data-lucide="<?php echo $sf['icon']; ?>" class="w-4 h-4" aria-hidden="true"></i>
                 <?php echo $sf['label']; ?> (<?php echo $sf['count']; ?>)
@@ -339,7 +339,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     <button type="button"
                                             data-action="generare-document"
                                             data-membru-id="<?php echo $m['id']; ?>"
-                                            class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-blue-400 dark:border-blue-500 bg-blue-100 dark:bg-blue-800/70 text-blue-900 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-700 font-medium"
+                                            class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-blue-600 dark:border-blue-500 bg-blue-700 dark:bg-blue-700 text-white hover:bg-blue-600 dark:hover:bg-blue-600 font-medium"
                                             aria-label="Genereaza document pentru <?php echo htmlspecialchars($m['nume'] . ' ' . $m['prenume']); ?>">
                                         <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
                                         <span>Genereaza Document</span>
@@ -353,14 +353,14 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     $val_cot = $valori_cotizatie_an_curent[$val_cot_key] ?? ($valori_cotizatie_an_curent[$m_hgrad] ?? 0);
                                     if (in_array($m['id'], $membri_scutiti_cotizatie_ids)): ?>
                                     <a href="/setari?tab=cotizatii"
-                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-slate-400 dark:border-gray-500 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium"
+                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-slate-600 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white font-medium"
                                        aria-label="Scutit de cotizatie - vezi detalii">
                                         <i data-lucide="shield-check" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
                                         <span>Scutit de cotizatie</span>
                                     </a>
                                     <?php else: ?>
                                     <button type="button"
-                                            class="btn-deschide-incasari inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-purple-400 dark:border-purple-500 bg-purple-100 dark:bg-purple-800/70 text-purple-900 dark:text-purple-100 hover:bg-purple-200 dark:hover:bg-purple-700 font-medium"
+                                            class="btn-deschide-incasari inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-purple-600 dark:border-purple-500 bg-purple-700 dark:bg-purple-700 text-white hover:bg-purple-600 dark:hover:bg-purple-600 font-medium"
                                             data-membru-id="<?php echo (int)$m['id']; ?>"
                                             data-membru-nume="<?php echo htmlspecialchars($nume_complet); ?>"
                                             data-valoare-cot="<?php echo number_format($val_cot, 2, '.', ''); ?>"
@@ -383,7 +383,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                         }
                                     ?>
                                     <a href="<?php echo $mailto; ?>"
-                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-emerald-400 dark:border-emerald-500 bg-emerald-100 dark:bg-emerald-800/70 text-emerald-900 dark:text-emerald-100 hover:bg-emerald-200 dark:hover:bg-emerald-700 font-medium"
+                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-emerald-600 dark:border-emerald-500 bg-emerald-700 dark:bg-emerald-700 text-white hover:bg-emerald-600 dark:hover:bg-emerald-600 font-medium"
                                        aria-label="Trimite email">
                                         <i data-lucide="mail" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
                                         <span>Email</span>
@@ -396,7 +396,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     <a href="<?php echo htmlspecialchars($wa_url); ?>"
                                        target="_blank"
                                        rel="noopener noreferrer"
-                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-green-400 dark:border-green-500 bg-green-100 dark:bg-green-800/70 text-green-900 dark:text-green-100 hover:bg-green-200 dark:hover:bg-green-700 font-medium"
+                                       class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-green-600 dark:border-green-500 bg-green-700 dark:bg-green-700 text-white hover:bg-green-600 dark:hover:bg-green-600 font-medium"
                                        aria-label="Mesaj WhatsApp">
                                         <i data-lucide="message-circle" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
                                         <span>WhatsApp</span>
@@ -448,7 +448,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                         if ($page > 1):
                         ?>
                         <a href="<?php echo $base_url . ($page - 1); ?>"
-                           class="px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300">
+                           class="px-3 py-1.5 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white">
                             <i data-lucide="chevron-left" class="w-4 h-4" aria-hidden="true"></i>
                         </a>
                         <?php endif; ?>
@@ -460,7 +460,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                         if ($start_page > 1):
                         ?>
                         <a href="<?php echo $base_url . '1'; ?>"
-                           class="px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300">1</a>
+                           class="px-3 py-1.5 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white">1</a>
                         <?php if ($start_page > 2): ?>
                         <span class="px-3 py-1.5 text-slate-500 dark:text-gray-400">...</span>
                         <?php endif; ?>
@@ -468,7 +468,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
 
                         <?php for ($i = $start_page; $i <= $end_page; $i++): ?>
                         <a href="<?php echo $base_url . $i; ?>"
-                           class="px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-lg <?php echo $i == $page ? 'bg-amber-600 text-white border-amber-600' : 'hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300'; ?>">
+                           class="px-3 py-1.5 border border-slate-700 dark:border-slate-500 rounded-lg <?php echo $i == $page ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white'; ?>">
                             <?php echo $i; ?>
                         </a>
                         <?php endfor; ?>
@@ -478,14 +478,14 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                         <span class="px-3 py-1.5 text-slate-500 dark:text-gray-400">...</span>
                         <?php endif; ?>
                         <a href="<?php echo $base_url . $total_pages; ?>"
-                           class="px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300">
+                           class="px-3 py-1.5 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white">
                             <?php echo $total_pages; ?>
                         </a>
                         <?php endif; ?>
 
                         <?php if ($page < $total_pages): ?>
                         <a href="<?php echo $base_url . ($page + 1); ?>"
-                           class="px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300">
+                           class="px-3 py-1.5 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white">
                             <i data-lucide="chevron-right" class="w-4 h-4" aria-hidden="true"></i>
                         </a>
                         <?php endif; ?>
@@ -555,7 +555,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
             <h2 id="titlu-formular" class="text-lg font-bold text-slate-900 dark:text-white">Adauga Membru Nou</h2>
             <button type="button"
                     onclick="document.getElementById('formular-membru').close()"
-                    class="text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    class="inline-flex items-center justify-center px-2 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
                     aria-label="Inchide">
                 <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
             </button>
@@ -581,7 +581,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
             <h2 id="titlu-filtre-avansate" class="text-lg font-bold text-slate-900 dark:text-white">Filtre avansate</h2>
             <button type="button"
                     onclick="document.getElementById('modal-filtre-avansate').close()"
-                    class="text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    class="inline-flex items-center justify-center px-2 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
                     aria-label="Inchide">
                 <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
             </button>
@@ -673,7 +673,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
 
             <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-gray-700">
                 <a href="/membri?status=<?php echo urlencode($status_filter); ?>&per_page=<?php echo $per_page; ?>"
-                   class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 font-medium transition">
+                   class="px-4 py-2 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 hover:bg-slate-600 dark:hover:bg-slate-500 text-white font-medium transition">
                     Reseteaza filtre
                 </a>
                 <button type="submit"
