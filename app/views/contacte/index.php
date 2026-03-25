@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var metaParts = [s.tip_contact_label || '—'];
             btn.type = 'button';
             btn.id = 'contacte-sugestie-' + idx;
-            btn.className = 'w-full text-left px-3 py-2 border-b last:border-b-0 border-slate-700 hover:bg-slate-800 focus:outline-none';
+            btn.className = 'w-full text-left px-3 py-2 border-b last:border-b-0 border-slate-700 hover:bg-slate-800 text-slate-100 focus:outline-none';
             btn.setAttribute('role', 'option');
             btn.setAttribute('aria-selected', 'false');
 

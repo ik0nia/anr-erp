@@ -44,6 +44,7 @@ if (!in_array($per_page, [10, 25, 50])) $per_page = 25;
 $page = max(1, (int)($_GET['page'] ?? 1));
 $cautare = trim($_GET['cautare'] ?? '');
 $tab = $_GET['tab'] ?? 'toate';
+if ($cautare !== '') $tab = 'toate';
 
 // --- Date pentru view ---
 $eroare_bd = '';
