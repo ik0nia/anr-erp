@@ -9,7 +9,8 @@ require_once __DIR__ . '/../config.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $q = trim((string)($_GET['q'] ?? ''));
-if (mb_strlen($q) < 2) {
+$qLen = function_exists('mb_strlen') ? mb_strlen($q) : strlen($q);
+if ($qLen < 2) {
     echo json_encode(['participanti' => []], JSON_UNESCAPED_UNICODE);
     exit;
 }
