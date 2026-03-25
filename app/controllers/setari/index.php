@@ -39,6 +39,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_email_notif'])
     exit;
 }
 
+// ---------------------------------------------------------------------------
+// POST: Edit/Delete user
+// ---------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['editeaza_utilizator']) && !empty($_SESSION['user_id']) && is_admin()) {
+    csrf_require_valid();
+    $id = (int)($_POST['id_utilizator'] ?? 0);
+    $result = setari_user_update($pdo, $id, $_POST, (int)$_SESSION['user_id']);
+    if ($result['success']) {
+        header('Location: /setari?succes_util_edit=1');
+        exit;
+    }
+    $eroare = $result['error'];
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_utilizator']) && !empty($_SESSION['user_id']) && is_admin()) {
+    csrf_require_valid();
+    $id = (int)($_POST['id_utilizator'] ?? 0);
+    $result = setari_user_delete($pdo, $id, (int)$_SESSION['user_id']);
+    if ($result['success']) {
+        header('Location: /setari?succes_util_sters=1');
+        exit;
+    }
+    $eroare = $result['error'];
+}
+
 // POST: Add user
 // ---------------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_utilizator']) && !empty($_SESSION['user_id']) && is_admin()) {
@@ -351,6 +376,8 @@ include APP_ROOT . '/app/views/layout/sidebar.php';
 // Success messages from query params
 // ---------------------------------------------------------------------------
 if (isset($_GET['succes_util'])) $succes = 'Utilizatorul a fost creat. Un email de confirmare a fost trimis.';
+if (isset($_GET['succes_util_edit'])) $succes = 'Datele utilizatorului au fost actualizate.';
+if (isset($_GET['succes_util_sters'])) $succes = 'Utilizatorul a fost șters.';
 if (isset($_GET['succes_nume'])) $succes = 'Numele platformei a fost actualizat.';
 if (isset($_GET['succes_subiect_v2'])) $succes = 'Subiectul a fost salvat.';
 if (isset($_GET['succes_cotizatii'])) $succes = 'Modificările cotizațiilor au fost salvate.';

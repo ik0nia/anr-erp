@@ -735,15 +735,17 @@
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Rol</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Status</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Email notif.</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Acțiuni utilizator</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                         <?php if (empty($lista_utilizatori)): ?>
                         <tr>
-                            <td colspan="7" class="px-4 py-6 text-center text-slate-600 dark:text-gray-400">Niciun utilizator. Adăugați un utilizator cu butonul de mai sus.</td>
+                            <td colspan="8" class="px-4 py-6 text-center text-slate-600 dark:text-gray-400">Niciun utilizator. Adăugați un utilizator cu butonul de mai sus.</td>
                         </tr>
                         <?php else: ?>
                         <?php foreach ($lista_utilizatori as $u): ?>
+                        <?php $este_utilizator_curent = ((int)$u['id'] === (int)($_SESSION['user_id'] ?? 0)); ?>
                         <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-3 text-sm text-slate-900 dark:text-white"><?php echo htmlspecialchars($u['nume_complet']); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($u['email']); ?></td>
@@ -764,6 +766,37 @@
                                         <?php echo !empty($u['primeste_notificari_email']) ? 'Da' : 'Nu'; ?>
                                     </button>
                                 </form>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button type="button"
+                                            class="btn-editeaza-utilizator inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-amber-800 dark:text-amber-200 bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-900/50 focus:ring-2 focus:ring-amber-500"
+                                            data-id="<?php echo (int)$u['id']; ?>"
+                                            data-nume="<?php echo htmlspecialchars($u['nume_complet']); ?>"
+                                            data-email="<?php echo htmlspecialchars($u['email']); ?>"
+                                            data-functie="<?php echo htmlspecialchars($u['functie'] ?? ''); ?>"
+                                            data-username="<?php echo htmlspecialchars($u['username']); ?>"
+                                            data-rol="<?php echo htmlspecialchars($u['rol']); ?>"
+                                            data-activ="<?php echo !empty($u['activ']) ? '1' : '0'; ?>"
+                                            data-notif="<?php echo !empty($u['primeste_notificari_email']) ? '1' : '0'; ?>"
+                                            aria-label="Editează utilizatorul <?php echo htmlspecialchars($u['nume_complet']); ?>">
+                                        <i data-lucide="user-cog" class="w-4 h-4 mr-1" aria-hidden="true"></i>
+                                        Editează utilizator
+                                    </button>
+                                    <form method="post" action="/setari" class="inline"
+                                          onsubmit="return confirm('Sigur doriți să ștergeți utilizatorul <?php echo htmlspecialchars($u['nume_complet']); ?>?');">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="sterge_utilizator" value="1">
+                                        <input type="hidden" name="id_utilizator" value="<?php echo (int)$u['id']; ?>">
+                                        <button type="submit"
+                                                <?php echo $este_utilizator_curent ? 'disabled' : ''; ?>
+                                                class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-red-700 dark:text-red-200 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 hover:bg-red-200 dark:hover:bg-red-900/50 focus:ring-2 focus:ring-red-500"
+                                                aria-label="Șterge utilizatorul <?php echo htmlspecialchars($u['nume_complet']); ?>">
+                                            <i data-lucide="user-x" class="w-4 h-4 mr-1" aria-hidden="true"></i>
+                                            <?php echo $este_utilizator_curent ? 'Nu poți șterge contul curent' : 'Șterge utilizatorul'; ?>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -1036,6 +1069,74 @@
     </div>
 </dialog>
 
+<!-- Modal Editare utilizator -->
+<dialog id="modal-editeaza-utilizator" role="dialog" aria-modal="true" aria-labelledby="modal-editeaza-utilizator-title" aria-describedby="modal-editeaza-utilizator-desc"
+        class="p-0 rounded-lg shadow-xl max-w-lg w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto border border-slate-200 dark:border-gray-700 dark:bg-gray-800 backdrop:bg-black/30">
+    <div class="p-6">
+        <h2 id="modal-editeaza-utilizator-title" class="text-lg font-bold text-slate-900 dark:text-white mb-2">Editează utilizator</h2>
+        <p id="modal-editeaza-utilizator-desc" class="text-sm text-slate-600 dark:text-gray-400 mb-4">Actualizați datele utilizatorului. Toate câmpurile sunt editabile.</p>
+        <form method="post" action="/setari" id="form-editeaza-utilizator">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="editeaza_utilizator" value="1">
+            <input type="hidden" name="id_utilizator" id="edit-util-id" value="">
+            <div class="space-y-4">
+                <div>
+                    <label for="edit-util-nume_complet" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Numele complet <span class="text-red-600" aria-hidden="true">*</span></label>
+                    <input type="text" id="edit-util-nume_complet" name="nume_complet" required
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                           aria-required="true">
+                </div>
+                <div>
+                    <label for="edit-util-email" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Email <span class="text-red-600" aria-hidden="true">*</span></label>
+                    <input type="email" id="edit-util-email" name="email" required
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                           aria-required="true">
+                </div>
+                <div>
+                    <label for="edit-util-functie" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Funcția din cadrul organizației</label>
+                    <input type="text" id="edit-util-functie" name="functie"
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                           placeholder="Ex: Secretar, Contabil">
+                </div>
+                <div>
+                    <label for="edit-util-username" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume utilizator <span class="text-red-600" aria-hidden="true">*</span></label>
+                    <input type="text" id="edit-util-username" name="username" required autocomplete="username"
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                           aria-required="true">
+                </div>
+                <div>
+                    <label for="edit-util-parola_noua" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Parolă nouă</label>
+                    <input type="password" id="edit-util-parola_noua" name="parola_noua" minlength="6" autocomplete="new-password"
+                           class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                           aria-describedby="edit-util-parola-desc">
+                    <p id="edit-util-parola-desc" class="text-xs text-slate-600 dark:text-gray-400 mt-1">Lăsați gol dacă nu doriți schimbarea parolei. Minim 6 caractere.</p>
+                </div>
+                <div>
+                    <label for="edit-util-rol" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Rol <span class="text-red-600" aria-hidden="true">*</span></label>
+                    <select id="edit-util-rol" name="rol" required class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700" aria-required="true">
+                        <option value="operator">Operator</option>
+                        <option value="administrator">Administrator</option>
+                    </select>
+                </div>
+                <div class="flex flex-wrap items-center gap-4">
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-gray-200">
+                        <input type="checkbox" id="edit-util-activ" name="activ" value="1" class="rounded border-slate-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500">
+                        Utilizator activ
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-gray-200">
+                        <input type="checkbox" id="edit-util-notif" name="primeste_notificari_email" value="1" class="rounded border-slate-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500">
+                        Primește notificări email
+                    </label>
+                </div>
+            </div>
+            <div class="mt-6 flex gap-3 justify-end">
+                <button type="button" id="btn-inchide-modal-edit-utilizator" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500">Anulare</button>
+                <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">Salvează modificările</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') {
@@ -1062,6 +1163,43 @@ document.addEventListener('DOMContentLoaded', function() {
             if (btnDeschide) btnDeschide.setAttribute('aria-expanded', 'false');
         });
         modalUtil.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') this.close();
+        });
+    }
+
+    var modalEditUtil = document.getElementById('modal-editeaza-utilizator');
+    var btnInchideEditUtil = document.getElementById('btn-inchide-modal-edit-utilizator');
+    var btnuriEditeazaUtil = document.querySelectorAll('.btn-editeaza-utilizator');
+
+    function populeazaFormEditUtil(btn) {
+        document.getElementById('edit-util-id').value = btn.getAttribute('data-id') || '';
+        document.getElementById('edit-util-nume_complet').value = btn.getAttribute('data-nume') || '';
+        document.getElementById('edit-util-email').value = btn.getAttribute('data-email') || '';
+        document.getElementById('edit-util-functie').value = btn.getAttribute('data-functie') || '';
+        document.getElementById('edit-util-username').value = btn.getAttribute('data-username') || '';
+        document.getElementById('edit-util-rol').value = btn.getAttribute('data-rol') || 'operator';
+        document.getElementById('edit-util-activ').checked = btn.getAttribute('data-activ') === '1';
+        document.getElementById('edit-util-notif').checked = btn.getAttribute('data-notif') === '1';
+        document.getElementById('edit-util-parola_noua').value = '';
+    }
+
+    if (modalEditUtil && btnuriEditeazaUtil.length > 0) {
+        btnuriEditeazaUtil.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                populeazaFormEditUtil(btn);
+                modalEditUtil.showModal();
+                document.getElementById('edit-util-nume_complet').focus();
+            });
+        });
+    }
+
+    if (btnInchideEditUtil && modalEditUtil) {
+        btnInchideEditUtil.addEventListener('click', function() {
+            modalEditUtil.close();
+        });
+    }
+    if (modalEditUtil) {
+        modalEditUtil.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') this.close();
         });
     }

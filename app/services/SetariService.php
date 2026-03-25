@@ -90,7 +90,7 @@ function setari_users_list(PDO $pdo): array
 {
     auth_ensure_tables($pdo);
     try {
-        $stmt = $pdo->query('SELECT id, nume_complet, email, functie, username, rol, activ, created_at FROM utilizatori ORDER BY nume_complet');
+        $stmt = $pdo->query('SELECT id, nume_complet, email, functie, username, rol, activ, primeste_notificari_email, created_at FROM utilizatori ORDER BY nume_complet');
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         return [];
@@ -139,21 +139,140 @@ function setari_user_create(PDO $pdo, array $data): array
 }
 
 /**
- * Update an existing user (placeholder for future use).
+ * Update an existing user.
  */
-function setari_user_update(PDO $pdo, int $id, array $data): array
+function setari_user_update(PDO $pdo, int $id, array $data, ?int $current_user_id = null): array
 {
-    // Reserved for future implementation
-    return ['success' => false, 'error' => 'Funcționalitate neimplementată.'];
+    auth_ensure_tables($pdo);
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'Utilizator invalid.'];
+    }
+
+    $nume_complet = trim((string)($data['nume_complet'] ?? ''));
+    $email = trim((string)($data['email'] ?? ''));
+    $functie = trim((string)($data['functie'] ?? ''));
+    $username = trim((string)($data['username'] ?? ''));
+    $rol = in_array(($data['rol'] ?? ''), ['administrator', 'operator'], true) ? (string)$data['rol'] : 'operator';
+    $activ = !empty($data['activ']) ? 1 : 0;
+    $primeste_notificari = !empty($data['primeste_notificari_email']) ? 1 : 0;
+    $parola_noua = (string)($data['parola_noua'] ?? '');
+
+    if ($nume_complet === '' || $email === '' || $username === '') {
+        return ['success' => false, 'error' => 'Numele complet, emailul și numele de utilizator sunt obligatorii.'];
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['success' => false, 'error' => 'Adresa de email nu este validă.'];
+    }
+    if ($parola_noua !== '' && strlen($parola_noua) < 6) {
+        return ['success' => false, 'error' => 'Parola nouă trebuie să aibă minim 6 caractere.'];
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM utilizatori WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $curent = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$curent) {
+            return ['success' => false, 'error' => 'Utilizatorul nu a fost găsit.'];
+        }
+
+        $stmtU = $pdo->prepare('SELECT id FROM utilizatori WHERE username = ? AND id <> ? LIMIT 1');
+        $stmtU->execute([$username, $id]);
+        if ($stmtU->fetch()) {
+            return ['success' => false, 'error' => 'Există deja un utilizator cu acest nume de utilizator.'];
+        }
+
+        $stmtE = $pdo->prepare('SELECT id FROM utilizatori WHERE email = ? AND id <> ? LIMIT 1');
+        $stmtE->execute([$email, $id]);
+        if ($stmtE->fetch()) {
+            return ['success' => false, 'error' => 'Există deja un utilizator cu această adresă de email.'];
+        }
+
+        if ($current_user_id !== null && $current_user_id === $id && $activ === 0) {
+            return ['success' => false, 'error' => 'Nu vă puteți dezactiva propriul cont.'];
+        }
+
+        // Protecție: nu permitem eliminarea ultimului administrator activ.
+        $este_admin_activ_curent = (($curent['rol'] ?? '') === 'administrator' && (int)($curent['activ'] ?? 0) === 1);
+        $va_ramane_admin_activ = ($rol === 'administrator' && $activ === 1);
+        if ($este_admin_activ_curent && !$va_ramane_admin_activ) {
+            $stmtAdmins = $pdo->query("SELECT COUNT(*) FROM utilizatori WHERE rol = 'administrator' AND activ = 1");
+            $nr_admini_activi = (int)$stmtAdmins->fetchColumn();
+            if ($nr_admini_activi <= 1) {
+                return ['success' => false, 'error' => 'Nu puteți modifica ultimul administrator activ.'];
+            }
+        }
+
+        if ($parola_noua !== '') {
+            $hash = password_hash($parola_noua, PASSWORD_DEFAULT);
+            $sql = 'UPDATE utilizatori SET nume_complet = ?, email = ?, functie = ?, username = ?, rol = ?, activ = ?, primeste_notificari_email = ?, parola_hash = ? WHERE id = ?';
+            $pdo->prepare($sql)->execute([
+                $nume_complet,
+                $email,
+                $functie !== '' ? $functie : null,
+                $username,
+                $rol,
+                $activ,
+                $primeste_notificari,
+                $hash,
+                $id
+            ]);
+        } else {
+            $sql = 'UPDATE utilizatori SET nume_complet = ?, email = ?, functie = ?, username = ?, rol = ?, activ = ?, primeste_notificari_email = ? WHERE id = ?';
+            $pdo->prepare($sql)->execute([
+                $nume_complet,
+                $email,
+                $functie !== '' ? $functie : null,
+                $username,
+                $rol,
+                $activ,
+                $primeste_notificari,
+                $id
+            ]);
+        }
+
+        log_activitate($pdo, 'Setări: utilizator actualizat ID ' . $id . ' (' . $username . ')');
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la actualizare utilizator: ' . $e->getMessage()];
+    }
 }
 
 /**
- * Delete/deactivate a user (placeholder for future use).
+ * Delete a user.
  */
-function setari_user_delete(PDO $pdo, int $id): array
+function setari_user_delete(PDO $pdo, int $id, ?int $current_user_id = null): array
 {
-    // Reserved for future implementation
-    return ['success' => false, 'error' => 'Funcționalitate neimplementată.'];
+    auth_ensure_tables($pdo);
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'Utilizator invalid.'];
+    }
+
+    try {
+        if ($current_user_id !== null && $current_user_id === $id) {
+            return ['success' => false, 'error' => 'Nu vă puteți șterge propriul cont.'];
+        }
+
+        $stmt = $pdo->prepare('SELECT id, username, rol, activ FROM utilizatori WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $utilizator = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$utilizator) {
+            return ['success' => false, 'error' => 'Utilizatorul nu a fost găsit.'];
+        }
+
+        if (($utilizator['rol'] ?? '') === 'administrator' && (int)($utilizator['activ'] ?? 0) === 1) {
+            $stmtAdmins = $pdo->query("SELECT COUNT(*) FROM utilizatori WHERE rol = 'administrator' AND activ = 1");
+            $nr_admini_activi = (int)$stmtAdmins->fetchColumn();
+            if ($nr_admini_activi <= 1) {
+                return ['success' => false, 'error' => 'Nu puteți șterge ultimul administrator activ.'];
+            }
+        }
+
+        $pdo->prepare('DELETE FROM utilizatori WHERE id = ?')->execute([$id]);
+        log_activitate($pdo, 'Setări: utilizator șters ID ' . $id . ' (' . ($utilizator['username'] ?? '-') . ')');
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la ștergere utilizator: ' . $e->getMessage()];
+    }
 }
 
 // ---------------------------------------------------------------------------
