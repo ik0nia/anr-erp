@@ -32,14 +32,15 @@ require_once $autoload;
 
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
+use PhpOffice\PhpWord\Style\Paper;
 
 $antet_path = get_antet_asociatie_docx_path($pdo);
 if ($antet_path && file_exists($antet_path)) {
     $phpWord = IOFactory::load($antet_path);
-    $section = $phpWord->addSection();
+    $section = $phpWord->addSection(['paperSize' => Paper::SIZE_A4]);
 } else {
     $phpWord = new PhpWord();
-    $section = $phpWord->addSection();
+    $section = $phpWord->addSection(['paperSize' => Paper::SIZE_A4]);
 }
 
 $section->addTitle($lista['tip_titlu'], 0);
@@ -101,6 +102,16 @@ if (!is_dir($dir)) mkdir($dir, 0755, true);
 $path = $dir . '/lista_' . $id . '_' . time() . '.docx';
 $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
 $objWriter->save($path);
+
+if (defined('LISTA_PREZENTA_DOCX_EMBED') && LISTA_PREZENTA_DOCX_EMBED === true) {
+    $GLOBALS['lista_prezenta_docx_result'] = [
+        'success' => true,
+        'path' => $path,
+        'filename' => $filename,
+        'lista' => $lista,
+    ];
+    return;
+}
 
 header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 header('Content-Disposition: attachment; filename="' . $filename . '"');

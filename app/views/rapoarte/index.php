@@ -21,6 +21,10 @@
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_rapoarte === 'statistici' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Statistici
             </a>
+            <a href="/rapoarte?tab=socializare" role="tab" aria-selected="<?php echo $tab_rapoarte === 'socializare' ? 'true' : 'false'; ?>"
+               class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_rapoarte === 'socializare' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
+                Socializare
+            </a>
         </nav>
 
         <?php if ($tab_rapoarte === 'membri'): ?>
@@ -381,6 +385,101 @@
             </div>
         </div>
         <?php endif; ?>
+
+        <?php if ($tab_rapoarte === 'socializare' && $socializare_raport !== null): ?>
+        <div class="mb-6" role="region" aria-labelledby="raport-socializare-heading">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <h2 id="raport-socializare-heading" class="text-lg font-semibold text-slate-900 dark:text-white">Raport Socializare</h2>
+                <form method="get" class="flex items-center gap-2">
+                    <input type="hidden" name="tab" value="socializare">
+                    <label for="raport-socializare-an" class="text-sm font-medium text-slate-700 dark:text-gray-300">An</label>
+                    <select id="raport-socializare-an" name="an" onchange="this.form.submit()" class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                        <?php foreach (($socializare_raport['ani_disponibili'] ?? []) as $an_opt): ?>
+                        <option value="<?php echo (int)$an_opt; ?>" <?php echo ((int)$an_opt === (int)($socializare_raport['an_selectat'] ?? 0)) ? 'selected' : ''; ?>>
+                            <?php echo (int)$an_opt; ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
+                    <p class="text-sm text-slate-600 dark:text-gray-400">Număr activități</p>
+                    <p class="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2"><?php echo (int)($socializare_raport['total_activitati'] ?? 0); ?></p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
+                    <p class="text-sm text-slate-600 dark:text-gray-400">Total participanți</p>
+                    <p class="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-2"><?php echo (int)($socializare_raport['total_participanti'] ?? 0); ?></p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
+                    <p class="text-sm text-slate-600 dark:text-gray-400">Bărbați</p>
+                    <p class="text-3xl font-bold text-blue-700 dark:text-blue-300 mt-2"><?php echo (int)($socializare_raport['total_barbati'] ?? 0); ?></p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
+                    <p class="text-sm text-slate-600 dark:text-gray-400">Femei</p>
+                    <p class="text-3xl font-bold text-pink-600 dark:text-pink-400 mt-2"><?php echo (int)($socializare_raport['total_femei'] ?? 0); ?></p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
+                    <p class="text-sm text-slate-600 dark:text-gray-400">An raport selectat</p>
+                    <p class="text-3xl font-bold text-slate-600 dark:text-gray-300 mt-2"><?php echo (int)($socializare_raport['an_selectat'] ?? date('Y')); ?></p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white mb-3">Grupe de vârstă (participanți unici)</h3>
+                    <?php if (empty($socializare_raport['grupe_varsta'])): ?>
+                    <p class="text-slate-600 dark:text-gray-400 text-sm">Nu există participanți cu data nașterii disponibilă.</p>
+                    <?php else: ?>
+                    <ul class="space-y-2">
+                        <?php foreach ($socializare_raport['grupe_varsta'] as $grupa): ?>
+                        <li class="flex justify-between items-center">
+                            <span class="text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($grupa['label'] ?? '-'); ?></span>
+                            <span class="font-semibold text-slate-900 dark:text-white"><?php echo (int)($grupa['total'] ?? 0); ?></span>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php endif; ?>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
+                    <h3 class="text-md font-semibold text-slate-900 dark:text-white mb-3">Participanți per activitate</h3>
+                    <div class="h-64">
+                        <canvas id="chart-socializare" aria-label="Grafic participanți la activități de socializare"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden">
+                <h3 class="text-md font-semibold text-slate-900 dark:text-white px-5 py-3 border-b border-slate-200 dark:border-gray-700">Liste Socializare (<?php echo (int)($socializare_raport['an_selectat'] ?? date('Y')); ?>)</h3>
+                <?php if (empty($socializare_raport['activitati'])): ?>
+                <p class="p-5 text-slate-600 dark:text-gray-400">Nu există liste de socializare în anul selectat.</p>
+                <?php else: ?>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700">
+                        <thead class="bg-slate-100 dark:bg-gray-700">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Data</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Activitate</th>
+                                <th scope="col" class="px-4 py-3 text-right text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Participanți</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
+                            <?php foreach ($socializare_raport['activitati'] as $ls): ?>
+                            <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
+                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($ls['data'] ?? ''); ?></td>
+                                <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white"><?php echo htmlspecialchars(LISTA_SOCIALIZARE_ACTIVITATE); ?></td>
+                                <td class="px-4 py-3 text-sm text-right font-semibold text-blue-600 dark:text-blue-400"><?php echo (int)($ls['participanti'] ?? 0); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 </main>
 
@@ -389,7 +488,42 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
+    <?php if ($tab_rapoarte === 'socializare' && $socializare_raport !== null): ?>
+    if (typeof Chart !== 'undefined') {
+        var socializareLabels = <?php echo json_encode(array_map(function($x){ return $x['data'] ?? ''; }, $socializare_raport['activitati'])); ?>;
+        var socializareData = <?php echo json_encode(array_map(function($x){ return (int)($x['participanti'] ?? 0); }, $socializare_raport['activitati'])); ?>;
+        var ctxSocializare = document.getElementById('chart-socializare');
+        if (ctxSocializare) {
+            new Chart(ctxSocializare, {
+                type: 'bar',
+                data: {
+                    labels: socializareLabels,
+                    datasets: [{
+                        label: 'Participanți',
+                        data: socializareData,
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#2563eb',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+    }
+    <?php endif; ?>
 });
 </script>
+<?php if ($tab_rapoarte === 'socializare'): ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<?php endif; ?>
 </body>
 </html>

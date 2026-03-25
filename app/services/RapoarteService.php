@@ -263,3 +263,126 @@ function rapoarte_statistici(PDO $pdo): array {
         ];
     }
 }
+
+/**
+ * Calculeaza raportul anual pentru listele de prezenta "Socializare".
+ */
+function rapoarte_socializare(PDO $pdo, int $an_selectat): array {
+    $an_curent = (int)date('Y');
+    if ($an_selectat < 2000 || $an_selectat > ($an_curent + 1)) {
+        $an_selectat = $an_curent;
+    }
+
+    $empty = [
+        'ani_disponibili' => [$an_curent],
+        'an_selectat' => $an_selectat,
+        'nr_activitati' => 0,
+        'total_participanti' => 0,
+        'femei' => 0,
+        'barbati' => 0,
+        'fara_sex' => 0,
+        'grupe_varsta' => [
+            '0-17 ani' => 0,
+            '18-35 ani' => 0,
+            '36-50 ani' => 0,
+            '51-65 ani' => 0,
+            '66+ ani' => 0,
+        ],
+        'liste' => [],
+    ];
+
+    try {
+        $ani_disponibili = [];
+        $stmt_ani = $pdo->prepare("
+            SELECT DISTINCT YEAR(data_lista) AS an
+            FROM liste_prezenta
+            WHERE detalii_activitate = ?
+            ORDER BY an DESC
+        ");
+        $stmt_ani->execute([LISTA_SOCIALIZARE_ACTIVITATE]);
+        foreach ($stmt_ani->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $an = (int)($row['an'] ?? 0);
+            if ($an > 0) $ani_disponibili[] = $an;
+        }
+        if (!in_array($an_curent, $ani_disponibili, true)) {
+            $ani_disponibili[] = $an_curent;
+        }
+        rsort($ani_disponibili);
+        if (!in_array($an_selectat, $ani_disponibili, true)) {
+            $an_selectat = $ani_disponibili[0] ?? $an_curent;
+        }
+
+        $stmt_activitati = $pdo->prepare("
+            SELECT l.id, l.data_lista, l.detalii_activitate, COUNT(lm.id) AS participanti
+            FROM liste_prezenta l
+            LEFT JOIN liste_prezenta_membri lm ON lm.lista_id = l.id
+            WHERE l.detalii_activitate = ?
+              AND YEAR(l.data_lista) = ?
+            GROUP BY l.id, l.data_lista, l.detalii_activitate
+            ORDER BY l.data_lista ASC, l.id ASC
+        ");
+        $stmt_activitati->execute([LISTA_SOCIALIZARE_ACTIVITATE, $an_selectat]);
+        $liste = [];
+        $total_participanti = 0;
+        foreach ($stmt_activitati->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $n = (int)($row['participanti'] ?? 0);
+            $total_participanti += $n;
+            $liste[] = [
+                'id' => (int)$row['id'],
+                'data_lista' => (string)$row['data_lista'],
+                'detalii_activitate' => (string)($row['detalii_activitate'] ?? ''),
+                'nr_participanti' => $n,
+            ];
+        }
+
+        $stmt_sex = $pdo->prepare("
+            SELECT
+                SUM(CASE WHEN m.sex = 'Feminin' THEN 1 ELSE 0 END) AS femei,
+                SUM(CASE WHEN m.sex = 'Masculin' THEN 1 ELSE 0 END) AS barbati,
+                SUM(CASE WHEN m.sex IS NULL OR m.sex NOT IN ('Feminin', 'Masculin') THEN 1 ELSE 0 END) AS fara_sex
+            FROM liste_prezenta l
+            JOIN liste_prezenta_membri lm ON lm.lista_id = l.id
+            JOIN membri m ON m.id = lm.membru_id
+            WHERE l.detalii_activitate = ?
+              AND YEAR(l.data_lista) = ?
+        ");
+        $stmt_sex->execute([LISTA_SOCIALIZARE_ACTIVITATE, $an_selectat]);
+        $sex = $stmt_sex->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $stmt_varsta = $pdo->prepare("
+            SELECT
+                SUM(CASE WHEN m.datanastere IS NOT NULL AND TIMESTAMPDIFF(YEAR, m.datanastere, l.data_lista) BETWEEN 0 AND 17 THEN 1 ELSE 0 END) AS g_0_17,
+                SUM(CASE WHEN m.datanastere IS NOT NULL AND TIMESTAMPDIFF(YEAR, m.datanastere, l.data_lista) BETWEEN 18 AND 35 THEN 1 ELSE 0 END) AS g_18_35,
+                SUM(CASE WHEN m.datanastere IS NOT NULL AND TIMESTAMPDIFF(YEAR, m.datanastere, l.data_lista) BETWEEN 36 AND 50 THEN 1 ELSE 0 END) AS g_36_50,
+                SUM(CASE WHEN m.datanastere IS NOT NULL AND TIMESTAMPDIFF(YEAR, m.datanastere, l.data_lista) BETWEEN 51 AND 65 THEN 1 ELSE 0 END) AS g_51_65,
+                SUM(CASE WHEN m.datanastere IS NOT NULL AND TIMESTAMPDIFF(YEAR, m.datanastere, l.data_lista) >= 66 THEN 1 ELSE 0 END) AS g_66_plus
+            FROM liste_prezenta l
+            JOIN liste_prezenta_membri lm ON lm.lista_id = l.id
+            JOIN membri m ON m.id = lm.membru_id
+            WHERE l.detalii_activitate = ?
+              AND YEAR(l.data_lista) = ?
+        ");
+        $stmt_varsta->execute([LISTA_SOCIALIZARE_ACTIVITATE, $an_selectat]);
+        $varste = $stmt_varsta->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'ani_disponibili' => !empty($ani_disponibili) ? $ani_disponibili : [$an_curent],
+            'an_selectat' => $an_selectat,
+            'nr_activitati' => count($liste),
+            'total_participanti' => $total_participanti,
+            'femei' => (int)($sex['femei'] ?? 0),
+            'barbati' => (int)($sex['barbati'] ?? 0),
+            'fara_sex' => (int)($sex['fara_sex'] ?? 0),
+            'grupe_varsta' => [
+                '0-17 ani' => (int)($varste['g_0_17'] ?? 0),
+                '18-35 ani' => (int)($varste['g_18_35'] ?? 0),
+                '36-50 ani' => (int)($varste['g_36_50'] ?? 0),
+                '51-65 ani' => (int)($varste['g_51_65'] ?? 0),
+                '66+ ani' => (int)($varste['g_66_plus'] ?? 0),
+            ],
+            'liste' => $liste,
+        ];
+    } catch (PDOException $e) {
+        return $empty;
+    }
+}

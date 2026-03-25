@@ -207,6 +207,13 @@
                         <i data-lucide="plus" class="w-5 h-5" aria-hidden="true"></i>
                         Creare listă nouă
                     </button>
+                    <button type="button"
+                            onclick="window.location.href='/liste-prezenta/adauga?preset=socializare'"
+                            class="w-full mb-4 inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-green-500"
+                            aria-label="Creează listă prezență socializare">
+                        <i data-lucide="users" class="w-5 h-5" aria-hidden="true"></i>
+                        Listă prezență socializare
+                    </button>
                     <?php if (!empty($liste_prezenta)): ?>
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm" role="table">

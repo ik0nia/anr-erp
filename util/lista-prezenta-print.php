@@ -1,6 +1,6 @@
 <?php
 /**
- * Afișare listă prezență pentru print. Pentru document cu antet asociație: descărcați DOCX.
+ * Afișare listă prezență pentru print (A4) cu antet asociație dacă este configurat.
  */
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/liste_helper.php';
@@ -33,8 +33,14 @@ $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','
 
     <title><?php echo htmlspecialchars($lista['tip_titlu']); ?></title>
     <style>
-        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } .no-print { display: none !important; } }
-        body { font-family: Arial, sans-serif; max-width: 210mm; margin: 0 auto; padding: 15mm; font-size: 11pt; }
+        @page { size: A4; margin: 12mm; }
+        @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; }
+            .no-print { display: none !important; }
+            thead { display: table-header-group; }
+            tr { page-break-inside: avoid; }
+        }
+        body { font-family: Arial, sans-serif; max-width: 210mm; margin: 0 auto; padding: 12mm; font-size: 11pt; color: #111; }
         .centrat { text-align: center; margin: 8px 0; }
         .titlu { font-size: 16pt; font-weight: bold; margin: 15px 0; }
         table { width: 100%; border-collapse: collapse; margin: 15px 0; }
@@ -48,9 +54,22 @@ $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','
     </style>
 </head>
 <body>
-    <?php if (get_antet_asociatie_docx_path($pdo)): ?>
+    <?php
+    $antet_text = '';
+    $antet_docx = get_antet_asociatie_docx_path($pdo);
+    if ($antet_docx && file_exists($antet_docx)) {
+        $antet_parts = docx_extrage_antet_subsol($antet_docx);
+        $antet_text = trim((string)($antet_parts['header'] ?? ''));
+    }
+    ?>
+    <?php if ($antet_text !== ''): ?>
+    <div class="centrat" style="white-space: pre-wrap; font-size: 10pt; margin-bottom: 12px;">
+        <?php echo nl2br(htmlspecialchars($antet_text)); ?>
+    </div>
+    <?php endif; ?>
+    <?php if ($antet_docx): ?>
     <p class="no-print centrat" style="margin-bottom: 12px; font-size: 10pt;">
-        <a href="lista-prezenta-docx.php?id=<?php echo (int)$id; ?>" class="text-amber-600 dark:text-amber-400 underline">Descarcă document cu antet asociație (DOCX)</a>
+        <a href="lista-prezenta-docx.php?id=<?php echo (int)$id; ?>" style="color:#b45309; text-decoration: underline;">Descarcă document cu antet asociație (DOCX)</a>
     </p>
     <?php endif; ?>
     <div class="centrat titlu"><?php echo htmlspecialchars($lista['tip_titlu']); ?></div>

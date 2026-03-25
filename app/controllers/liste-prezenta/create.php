@@ -11,11 +11,14 @@ require_once APP_ROOT . '/app/services/ListePrezentaService.php';
 $eroare = '';
 $succes = '';
 $din_activitate = isset($_GET['din_activitate']);
+$preset = trim((string)($_GET['preset'] ?? ''));
+$is_socializare_preset = $preset === 'socializare';
 $activitate_nume = trim($_GET['nume'] ?? '');
 $activitate_data = trim($_GET['data'] ?? date('Y-m-d'));
 $activitate_ora = trim($_GET['ora'] ?? '09:00');
 $activitate_locatie = trim($_GET['locatie'] ?? '');
 $activitate_responsabili = trim($_GET['responsabili'] ?? ($_SESSION['utilizator'] ?? ''));
+$socializare_defaults = lista_socializare_defaults();
 
 $activitati_select = liste_prezenta_activitati_select($pdo);
 
@@ -33,6 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_lista'])) {
         }
         if ($act === 'pdf') {
             header('Location: util/lista-prezenta-pdf.php?id=' . $lista_id);
+            exit;
+        }
+        if ($act === 'docx') {
+            header('Location: util/lista-prezenta-docx.php?id=' . $lista_id);
             exit;
         }
         header('Location: /activitati?succes_lista=1');
