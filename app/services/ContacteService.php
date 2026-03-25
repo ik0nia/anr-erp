@@ -19,7 +19,7 @@ function contacte_tipuri(): array {
         'Beneficiar'      => 'Beneficiari',
         'Companie'        => 'Companie',
         'Contact politic' => 'Contact politic',
-        'Voluntar'        => 'Voluntar',
+        'Voluntar'        => 'Voluntari',
         'Donator'         => 'Donator',
         'Sponsor'         => 'Sponsor',
         'Partener'        => 'Parteneri',
