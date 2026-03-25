@@ -50,6 +50,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_status']
     }
 }
 
+// --- POST: Stergere activitate ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_activitate'])) {
+    csrf_require_valid();
+    $activitate_id = (int)($_POST['activitate_id'] ?? 0);
+    $redirect_afiseaza_tot = !empty($_POST['afiseaza_tot']) ? '?afiseaza_tot=1' : '';
+    if ($activitate_id > 0) {
+        $result_sterge_activitate = activitati_delete($pdo, $activitate_id, $utilizator);
+        if ($result_sterge_activitate['success']) {
+            $sep = $redirect_afiseaza_tot ? '&' : '?';
+            header('Location: /activitati' . $redirect_afiseaza_tot . $sep . 'succes_activitate_stearsa=1');
+            exit;
+        }
+        $eroare = $result_sterge_activitate['error'] ?: 'Nu s-a putut șterge activitatea.';
+    }
+}
+
 // --- POST: Stergere lista prezenta ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_lista_prezenta'])) {
     csrf_require_valid();

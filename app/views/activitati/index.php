@@ -38,6 +38,11 @@
                 Lista de prezență a fost ștearsă cu succes.
             </div>
         <?php endif; ?>
+        <?php if (isset($_GET['succes_activitate_stearsa'])): ?>
+            <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg" role="alert">
+                Activitatea a fost ștearsă cu succes.
+            </div>
+        <?php endif; ?>
         <?php if (!empty($eroare)): ?>
             <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-lg" role="alert">
                 <?php echo htmlspecialchars($eroare); ?>
@@ -178,13 +183,24 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         <?php if ($id_original && $a['status'] === 'Planificata'): ?>
-                                        <button type="button"
-                                                onclick="document.getElementById('dropdown-status-<?php echo $id_original; ?>-<?php echo $dt->format('Ymd'); ?>').classList.toggle('hidden')"
-                                                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-400 dark:border-amber-500 bg-amber-100 dark:bg-amber-800/70 text-amber-900 dark:text-amber-100 hover:bg-amber-200 dark:hover:bg-amber-700 font-medium text-sm"
-                                                aria-label="Editează status activitate: <?php echo htmlspecialchars($a['nume']); ?>">
-                                            <i data-lucide="edit" class="w-4 h-4" aria-hidden="true"></i>
-                                            Editare
-                                        </button>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button"
+                                                    onclick="document.getElementById('dropdown-status-<?php echo $id_original; ?>-<?php echo $dt->format('Ymd'); ?>').classList.toggle('hidden')"
+                                                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-400 dark:border-amber-500 bg-amber-100 dark:bg-amber-800/70 text-amber-900 dark:text-amber-100 hover:bg-amber-200 dark:hover:bg-amber-700 font-medium text-sm"
+                                                    aria-label="Editează status activitate: <?php echo htmlspecialchars($a['nume']); ?>">
+                                                <i data-lucide="edit" class="w-4 h-4" aria-hidden="true"></i>
+                                                Editare
+                                            </button>
+                                            <form method="post" action="/activitati<?php echo $afiseaza_tot ? '?afiseaza_tot=1' : ''; ?>" onsubmit="return confirm('Sigur doriți să ștergeți activitatea <?php echo htmlspecialchars($a['nume']); ?>?');" class="inline">
+                                                <?php echo csrf_field(); ?>
+                                                <input type="hidden" name="sterge_activitate" value="1">
+                                                <input type="hidden" name="id" value="<?php echo (int)$id_original; ?>">
+                                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-500 bg-red-600 text-white hover:bg-red-700 font-medium text-sm" aria-label="Șterge activitatea: <?php echo htmlspecialchars($a['nume']); ?>">
+                                                    <i data-lucide="trash-2" class="w-4 h-4" aria-hidden="true"></i>
+                                                    Șterge
+                                                </button>
+                                            </form>
+                                        </div>
                                         <?php elseif (!empty($a['lista_prezenta_id'])): ?>
                                         <a href="/liste-prezenta/edit?id=<?php echo $a['lista_prezenta_id']; ?>" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-400 bg-blue-100 dark:bg-blue-800/70 text-blue-900 dark:text-blue-100 hover:bg-blue-200 text-sm">
                                             <i data-lucide="list" class="w-4 h-4" aria-hidden="true"></i> Listă

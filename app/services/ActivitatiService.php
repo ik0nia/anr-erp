@@ -221,6 +221,41 @@ function activitati_update_status(PDO $pdo, int $id, string $status, string $uti
 }
 
 /**
+ * Șterge o activitate programată.
+ *
+ * @return array ['success'=>bool, 'error'=>string|null]
+ */
+function activitati_delete(PDO $pdo, int $id, string $utilizator = 'Sistem'): array {
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'ID activitate invalid.'];
+    }
+
+    try {
+        $stmt = $pdo->prepare('SELECT id, nume, data_ora, lista_prezenta_id FROM activitati WHERE id = ?');
+        $stmt->execute([$id]);
+        $activitate = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$activitate) {
+            return ['success' => false, 'error' => 'Activitatea nu a fost găsită.'];
+        }
+
+        // Nu ștergem lista de prezență asociată; doar detașăm legătura.
+        if (!empty($activitate['lista_prezenta_id'])) {
+            $pdo->prepare('UPDATE liste_prezenta SET activitate_id = NULL WHERE activitate_id = ?')->execute([$id]);
+        }
+
+        $pdo->prepare('DELETE FROM activitati WHERE id = ?')->execute([$id]);
+
+        $nume = trim((string)($activitate['nume'] ?? 'Activitate'));
+        $data = !empty($activitate['data_ora']) ? date(DATETIME_FORMAT, strtotime($activitate['data_ora'])) : '';
+        log_activitate($pdo, 'Activitate ștearsă: ' . $nume . ($data !== '' ? ' (' . $data . ')' : ''), $utilizator);
+
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la ștergerea activității.'];
+    }
+}
+
+/**
  * Incarca lista de utilizatori activi (pentru responsabili).
  */
 function activitati_utilizatori(PDO $pdo): array {
