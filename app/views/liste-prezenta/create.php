@@ -226,9 +226,12 @@ function renderLista() {
         const nume = p.tip === 'manual' ? (p.numeManual || '') : (p.numeComplet || '');
         const escapedNume = escapeHtml(nume);
         const escapedKey = escapeHtml(key).replace(/'/g, "\\'");
+        const tipBadge = tipLabel === 'Contact'
+            ? '<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Contact</span>'
+            : '<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">Membru</span>';
         const numeCell = p.tip === 'manual'
             ? '<input type="text" value="' + escapedNume + '" onchange="actualizeazaNumeManual(\'' + escapedKey + '\', this.value)" placeholder="Nume participant" class="w-full px-2 py-1 border border-slate-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white text-slate-900">'
-            : '<span>' + escapedNume + '</span><span class="ml-2 text-xs text-slate-500 dark:text-gray-400">(' + tipLabel + ')</span>';
+            : '<span>' + escapedNume + '</span>' + tipBadge;
         return '' +
             '<tr class="border-b border-slate-200 dark:border-gray-600">' +
                 '<td class="py-2 px-3 text-slate-900 dark:text-white">' + (i + 1) + '</td>' +
@@ -300,11 +303,14 @@ function executaCautareParticipanti() {
 
             div.innerHTML = rezultate.map(function(r) {
                 const tip = r.tip === 'contact' ? 'Contact' : 'Membru';
+                const badge = tip === 'Contact'
+                    ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Contact</span>'
+                    : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">Membru</span>';
                 return (
                     '<div class="flex items-center gap-3 py-2 border-b border-slate-200 dark:border-gray-600">' +
                         '<button type="button" class="btn-adauga-participant px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs shrink-0" data-tip="' + escapeHtml(r.tip || '') + '" data-id="' + (parseInt(r.id || 0, 10) || 0) + '" data-nume="' + escapeHtml(normalizeName(r)) + '">Adaugă</button>' +
                         '<span class="text-slate-900 dark:text-white">' + escapeHtml(normalizeName(r)) + '</span>' +
-                        '<span class="text-xs text-slate-500 dark:text-gray-400">(' + tip + ')</span>' +
+                        badge +
                     '</div>'
                 );
             }).join('');

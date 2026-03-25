@@ -161,14 +161,18 @@ function renderLista() {
     }
 
     const rows = participantiSelectati.map(function(p, i) {
-        const tipLabel = p.tip === 'contact' ? 'Contact' : (p.tip === 'manual' ? 'Manual' : 'Membru');
+        const tipLabel = p.tip === 'contact'
+            ? '<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">Contact</span>'
+            : (p.tip === 'manual'
+                ? '<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-300">Manual</span>'
+                : '<span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">Membru</span>');
         const key = p.key || ('manual:' + i);
         const nume = p.tip === 'manual' ? (p.numeManual || '') : (p.numeComplet || '');
         const escapedNume = escapeHtml(nume);
         const escapedKey = escapeHtml(key).replace(/'/g, "\\'");
         const numeCell = p.tip === 'manual'
             ? '<input type="text" value="' + escapedNume + '" onchange="actualizeazaNumeManual(\'' + escapedKey + '\', this.value)" placeholder="Nume participant" class="w-full px-2 py-1 border border-slate-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white text-slate-900">'
-            : '<span>' + escapedNume + '</span><span class="ml-2 text-xs text-slate-500 dark:text-gray-400">(' + tipLabel + ')</span>';
+            : '<span>' + escapedNume + '</span>' + tipLabel;
         return '' +
             '<tr class="border-b border-slate-200 dark:border-gray-600">' +
                 '<td class="py-2 px-3 text-slate-900 dark:text-white">' + (i + 1) + '</td>' +
@@ -239,12 +243,14 @@ function executaCautareParticipanti() {
             }
 
             div.innerHTML = rezultate.map(function(r) {
-                const tip = r.tip === 'contact' ? 'Contact' : 'Membru';
+                const tipBadge = r.tip === 'contact'
+                    ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300">Contact</span>'
+                    : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">Membru</span>';
                 return (
                     '<div class="flex items-center justify-between py-2 border-b border-slate-200 dark:border-gray-600">' +
                         '<button type="button" class="btn-adauga-participant px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs mr-3" data-tip="' + escapeHtml(r.tip || '') + '" data-id="' + (parseInt(r.id || 0, 10) || 0) + '" data-nume="' + escapeHtml(normalizeName(r)) + '">Adaugă</button>' +
                         '<span class="text-slate-900 dark:text-white flex-1">' + escapeHtml(normalizeName(r)) + '</span>' +
-                        '<span class="ml-2 text-xs text-slate-500 dark:text-gray-400">(' + tip + ')</span>' +
+                        '<span class="ml-2">' + tipBadge + '</span>' +
                     '</div>'
                 );
             }).join('');
