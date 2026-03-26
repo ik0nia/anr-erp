@@ -1493,7 +1493,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (text) { alert('Salvare esuata:\n\n' + text); }
     }
 
-    // Card edit/cancel toggle (delegated + robust: works for all edit buttons/cards)
+    // Card edit/cancel toggle (scoped per section, works for every card)
+    function closeAllCardsInSection(section) {
+        if (!section) return;
+        section.querySelectorAll('.card-view').forEach(function(v) { v.classList.remove('hidden'); });
+        section.querySelectorAll('.card-edit').forEach(function(e) { e.classList.add('hidden'); });
+        section.querySelectorAll('.btn-edit-card').forEach(function(b) { b.classList.remove('hidden'); });
+    }
+
     function openEditCard(editBtn) {
         var cardName = (editBtn && editBtn.dataset && editBtn.dataset.card) ? editBtn.dataset.card : '';
         if (!cardName) return;
@@ -1506,6 +1513,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        closeAllCardsInSection(section);
         viewCard.classList.add('hidden');
         editCard.classList.remove('hidden');
         editBtn.classList.add('hidden');
@@ -1519,15 +1527,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function closeEditCard(cancelBtn) {
         var section = cancelBtn.closest('section');
         if (!section) return;
-
-        var editCard = cancelBtn.closest('.card-edit');
-        var cardName = (editCard && editCard.dataset && editCard.dataset.card) ? editCard.dataset.card : '';
-        var viewCard = cardName ? section.querySelector('.card-view[data-card="' + cardName + '"]') : section.querySelector('.card-view');
-        var editBtn = cardName ? section.querySelector('.btn-edit-card[data-card="' + cardName + '"]') : section.querySelector('.btn-edit-card');
-
-        if (viewCard) viewCard.classList.remove('hidden');
-        if (editCard) editCard.classList.add('hidden');
-        if (editBtn) editBtn.classList.remove('hidden');
+        closeAllCardsInSection(section);
     }
 
     document.addEventListener('click', function(e) {
