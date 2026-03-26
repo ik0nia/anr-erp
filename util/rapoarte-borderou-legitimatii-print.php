@@ -27,12 +27,8 @@ $raport = rapoarte_borderou_legitimatii($pdo, $data_de_la, $data_pana_la);
 $rows = $raport['operatiuni'] ?? [];
 $stats = $raport['statistici'] ?? ['total' => 0, 'legitimatie_membru_nou' => 0, 'inlocuire_legitimatie_plina' => 0, 'inlocuire_legitimatie_pierduta' => 0];
 $tipuri_actiuni = legitimatie_membru_actiuni();
-$antet_text = '';
-$antet_docx = get_antet_asociatie_docx_path($pdo);
-if ($antet_docx && file_exists($antet_docx)) {
-    $antet_parts = docx_extrage_antet_subsol($antet_docx);
-    $antet_text = trim((string)($antet_parts['header'] ?? ''));
-}
+$antet_html = documente_antet_render($pdo);
+$antet_css = documente_antet_print_css();
 
 log_activitate(
     $pdo,
@@ -63,12 +59,7 @@ log_activitate(
             color: #fff;
             cursor: pointer;
         }
-        .antet {
-            white-space: pre-wrap;
-            font-size: 10px;
-            margin-bottom: 12px;
-            text-align: center;
-        }
+        <?php echo $antet_css; ?>
         .title {
             font-size: 18px;
             font-weight: 700;
@@ -112,9 +103,7 @@ log_activitate(
         <button type="button" onclick="window.print();">Tipărește</button>
     </div>
 
-    <?php if ($antet_text !== ''): ?>
-    <div class="antet"><?php echo nl2br(htmlspecialchars($antet_text)); ?></div>
-    <?php endif; ?>
+    <?php echo $antet_html; ?>
 
     <p class="title"><strong>Borderou legitimatii de membru</strong></p>
     <p class="sub">Interval: <?php echo htmlspecialchars(date('d.m.Y', strtotime($data_de_la))); ?> - <?php echo htmlspecialchars(date('d.m.Y', strtotime($data_pana_la))); ?></p>

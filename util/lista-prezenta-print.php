@@ -54,19 +54,9 @@ $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','
     </style>
 </head>
 <body>
-    <?php
-    $antet_text = '';
-    $antet_docx = get_antet_asociatie_docx_path($pdo);
-    if ($antet_docx && file_exists($antet_docx)) {
-        $antet_parts = docx_extrage_antet_subsol($antet_docx);
-        $antet_text = trim((string)($antet_parts['header'] ?? ''));
-    }
-    ?>
-    <?php if ($antet_text !== ''): ?>
-    <div class="centrat" style="white-space: pre-wrap; font-size: 10pt; margin-bottom: 12px;">
-        <?php echo nl2br(htmlspecialchars($antet_text)); ?>
-    </div>
-    <?php endif; ?>
+    <style><?php echo documente_antet_print_css(); ?></style>
+    <?php echo documente_antet_render($pdo); ?>
+    <?php $antet_docx = get_antet_asociatie_docx_path($pdo); ?>
     <?php if ($antet_docx): ?>
     <p class="no-print centrat" style="margin-bottom: 12px; font-size: 10pt;">
         <a href="lista-prezenta-docx.php?id=<?php echo (int)$id; ?>" style="color:#b45309; text-decoration: underline;">Descarcă document cu antet asociație (DOCX)</a>

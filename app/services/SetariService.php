@@ -11,6 +11,7 @@ require_once __DIR__ . '/../bootstrap.php';
 require_once APP_ROOT . '/includes/log_helper.php';
 require_once APP_ROOT . '/includes/excel_import.php';
 require_once APP_ROOT . '/includes/file_helper.php';
+require_once APP_ROOT . '/includes/document_helper.php';
 require_once APP_ROOT . '/includes/registru_interactiuni_v2_helper.php';
 require_once APP_ROOT . '/includes/mailer_functions.php';
 require_once APP_ROOT . '/includes/cotizatii_helper.php';
@@ -486,6 +487,24 @@ function setari_documente_save(PDO $pdo, string $email_asoc, string $libreoffice
         return ['success' => true, 'error' => null];
     } catch (PDOException $e) {
         return ['success' => false, 'error' => 'Eroare la salvare: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Save custom HTML header for printable documents.
+ */
+function setari_save_documente_antet_html(PDO $pdo, string $antet_html): array
+{
+    try {
+        $old = setari_get($pdo, 'documente_antet_html') ?? '';
+        $new = documente_antet_sanitize_html($antet_html);
+        setari_set($pdo, 'documente_antet_html', $new);
+        if ($old !== $new) {
+            log_activitate($pdo, 'Setări: antet documente actualizat.');
+        }
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare antet documente: ' . $e->getMessage()];
     }
 }
 

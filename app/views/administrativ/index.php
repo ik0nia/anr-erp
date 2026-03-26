@@ -1,6 +1,15 @@
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
     <header class="bg-white dark:bg-gray-800 shadow p-4"><meta charset="utf-8">
-        <h1 class="text-xl font-semibold text-slate-900 dark:text-white mb-3">Modul Administrativ</h1>
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Modul Administrativ</h1>
+            <a href="/util/administrativ-print.php?tab=<?php echo urlencode($tab); ?><?php echo $tab === 'proceduri' && !empty($cautare_proceduri) ? '&cautare_proceduri=' . urlencode($cautare_proceduri) : ''; ?>"
+               target="_blank" rel="noopener noreferrer"
+               class="inline-flex items-center px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium focus:ring-2 focus:ring-amber-500"
+               aria-label="Tipărește tabelul din tabul curent al modulului Administrativ">
+                <i data-lucide="printer" class="w-4 h-4 mr-1.5" aria-hidden="true"></i>
+                Tipărește tabel
+            </a>
+        </div>
         <nav class="flex gap-2 flex-wrap" role="tablist" aria-label="Tab-uri modul Administrativ">
             <?php
             $tabs = [

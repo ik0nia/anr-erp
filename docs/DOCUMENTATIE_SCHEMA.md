@@ -137,6 +137,21 @@ Schema bazei de date este organizată în mai multe fișiere SQL pentru ușurin�
 
 ---
 
+### Tabel: `setari`
+**Scop:** Setări generale platformă (key-value), utilizate transversal de module.
+
+**Exemple de chei folosite:**
+- `logo_url` - URL logo principal platformă
+- `platform_name` - Nume platformă
+- `email_asociatie` - Email asociație
+- `cale_libreoffice` - Cale executabil LibreOffice pentru conversii documente
+- `registratura_nr_pornire` - Număr de pornire registratură
+- `newsletter_email` - Email expeditor newsletter
+- `antet_asociatie_docx` - Fișier DOCX antet pentru fluxurile DOCX/PDF existente
+- `documente_antet_html` - Antet HTML configurabil pentru print-uri și tabele (cu excluderile de business definite în aplicație)
+
+---
+
 ### Tabel: `administrativ_achizitii`
 **Scop:** Evidență necesar achiziții în modulul Administrativ (lista activă).
 
