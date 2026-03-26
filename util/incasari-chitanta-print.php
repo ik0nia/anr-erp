@@ -28,12 +28,15 @@ $dimensiune_chitanta = incasari_get_setare($pdo, 'dimensiune_chitanta') ?: 'a5';
 $format_pdf_link = $dimensiune_chitanta === 'a4' ? '' : '&format=a5';
 $format_pdf_label = $dimensiune_chitanta === 'a4' ? 'PDF A4' : 'PDF A5';
 
-$reprezentant = !empty($inc['reprezentand']) ? $inc['reprezentand'] : '';
+$reprezentant = !empty($inc['reprezentand']) ? trim((string)$inc['reprezentand']) : '';
+if (($inc['tip'] ?? '') === INCASARI_TIP_COTIZATIE && ($reprezentant === '' || preg_match('/^Cotizatie membru\s+0$/', $reprezentant))) {
+    $reprezentant = 'Cotizatie membru';
+}
 if ($reprezentant === '') {
-    $reprezentant = 'Cotizație anul ' . ($inc['anul'] ?? date('Y'));
     if (($inc['tip'] ?? '') === INCASARI_TIP_DONATIE) $reprezentant = 'Donație';
     elseif (($inc['tip'] ?? '') === INCASARI_TIP_TAXA_PARTICIPARE) $reprezentant = 'Taxă participare';
     elseif (($inc['tip'] ?? '') === INCASARI_TIP_ALTE) $reprezentant = 'Alte încasări';
+    else $reprezentant = 'Cotizatie membru';
 }
 
 $suma_litere = incasari_suma_in_litere($inc['suma']);
