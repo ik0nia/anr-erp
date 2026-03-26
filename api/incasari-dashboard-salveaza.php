@@ -105,7 +105,7 @@ if ($tip_form === 'donatie') {
             $asistent = cotizatii_map_insotitor_to_asistent($row['insotitor'] ?? '');
             $suma = incasari_valoare_cotizatie_anuala($pdo, $anul, $grad, $asistent);
         }
-        $reprezentand = $reprezentand ?: ('Cotizație membru anul ' . $anul);
+        $reprezentand = $reprezentand ?: 'Cotizatie membru';
         $id = incasari_adauga($pdo, $membru_id, INCASARI_TIP_COTIZATIE, $anul, $suma, $mod_plata, $data_incasare, $utilizator, null, null, $reprezentand);
     } else {
         if ($suma <= 0) {

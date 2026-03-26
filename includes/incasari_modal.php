@@ -158,15 +158,12 @@
                 wrapReprezentand.classList.add('hidden');
                 inputReprezentand.value = '';
             } else {
-                var anCotizatie = (anCotizatieInput && anCotizatieInput.value)
-                    ? anCotizatieInput.value
-                    : String(new Date().getFullYear());
                 wrapSuma.classList.remove('hidden');
                 labelSuma.textContent = 'Cotizație (RON)';
                 inputSuma.value = valCot.value || '0';
                 inputSuma.readOnly = true;
                 wrapReprezentand.classList.remove('hidden');
-                inputReprezentand.value = 'Cotizatie membru ' + anCotizatie;
+                inputReprezentand.value = 'Cotizatie membru';
             }
             if (modInput.value) { if (modInput.value === 'numerar' || modInput.value === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); } else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); } }
         });

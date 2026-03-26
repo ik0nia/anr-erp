@@ -23,6 +23,7 @@
             <?php echo csrf_field(); ?>
             <input type="hidden" name="salveaza_lista" value="1">
             <input type="hidden" name="membri_ids" id="membri_ids_json" value="[]">
+            <input type="hidden" name="contacte_ids" id="contacte_ids_json" value="[]">
             <input type="hidden" name="participanti_manuali" id="participanti_manuali_json" value="[]">
 
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border p-6">
@@ -196,23 +197,29 @@ function normalizeName(row) {
 function renderLista() {
     const container = document.getElementById('lista-participanti');
     const membriHidden = document.getElementById('membri_ids_json');
+    const contacteHidden = document.getElementById('contacte_ids_json');
     const manualHidden = document.getElementById('participanti_manuali_json');
 
     const membriIds = participantiSelectati
         .filter(function(p) { return p.tip === 'membru' && p.id; })
         .map(function(p) { return p.id; });
 
+    const contacteIds = participantiSelectati
+        .filter(function(p) { return p.tip === 'contact' && p.id; })
+        .map(function(p) { return p.id; });
+
     const manuali = participantiSelectati
-        .filter(function(p) { return p.tip !== 'membru'; })
+        .filter(function(p) { return p.tip === 'manual'; })
         .map(function(p, idx) {
             return {
-                nume: (p.tip === 'manual' ? (p.numeManual || '') : (p.numeComplet || '')).trim(),
+                nume: (p.numeManual || '').trim(),
                 ordine: idx + 1
             };
         })
         .filter(function(p) { return p.nume !== ''; });
 
     membriHidden.value = JSON.stringify(membriIds);
+    contacteHidden.value = JSON.stringify(contacteIds);
     manualHidden.value = JSON.stringify(manuali);
 
     if (participantiSelectati.length === 0) {

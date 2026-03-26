@@ -5,6 +5,7 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/incasari_helper.php';
 require_once __DIR__ . '/../includes/contacte_helper.php';
+require_once __DIR__ . '/../includes/document_helper.php';
 
 incasari_ensure_tables($pdo);
 ensure_contacte_table($pdo);
@@ -176,12 +177,15 @@ $titlu_borderou = 'Borderou Chitante, Seria ' . $serie_selectata . ', Perioada '
         @media print {
             .no-print { display: none !important; }
         }
+<?php echo documente_antet_print_css(); ?>
     </style>
 </head>
 <body>
     <div class="no-print">
         <button type="button" onclick="window.print();">Tipărește</button>
     </div>
+
+    <?php echo documente_antet_render($pdo); ?>
 
     <p class="title"><?php echo htmlspecialchars($titlu_borderou); ?></p>
     <p class="sub">Afișare: pagina <?php echo (int)$page; ?> din <?php echo (int)$total_pages; ?>, <?php echo (int)$total; ?> înregistrări filtrate</p>

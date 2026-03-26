@@ -54,6 +54,214 @@ function get_antet_asociatie_docx_path($pdo = null) {
 }
 
 /**
+ * Returnează HTML-ul implicit pentru antetul documentelor platformei.
+ * Acest antet este folosit pentru liste/tabele/print-uri (excluderi: Librărie documente, Generare documente, chitanțe).
+ */
+function documente_antet_implicit_html($pdo = null) {
+    $logo = defined('PLATFORM_LOGO_URL') ? (string)PLATFORM_LOGO_URL : '';
+    if ($pdo === null && isset($GLOBALS['pdo'])) {
+        $pdo = $GLOBALS['pdo'];
+    }
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'logo_url' LIMIT 1");
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!empty($row['valoare'])) {
+                $logo = trim((string)$row['valoare']);
+            }
+        } catch (Exception $e) {
+            // fallback pe PLATFORM_LOGO_URL
+        }
+    }
+    $logoEsc = htmlspecialchars($logo, ENT_QUOTES, 'UTF-8');
+
+    return
+        '<div class="erp-doc-antet-grid">' .
+            '<div class="erp-doc-antet-logo">' .
+                ($logoEsc !== '' ? '<img src="' . $logoEsc . '" alt="Logo Asociația Nevăzătorilor Bihor">' : '') .
+            '</div>' .
+            '<div class="erp-doc-antet-text">' .
+                '<div class="erp-doc-antet-title">ASOCIAȚIA NEVĂZĂTORILOR<br>DIN ROMÂNIA<br>FILIALA BIHOR</div>' .
+                '<div class="erp-doc-antet-subtitle">ORGANIZAȚIE DE UTILITATE PUBLICĂ</div>' .
+                '<div class="erp-doc-antet-meta">Conf. H.G. Nr. 1033/03.09.2008</div>' .
+                '<div class="erp-doc-antet-meta erp-doc-antet-meta-small">Operator de date cu caracter personal nr. 19677</div>' .
+            '</div>' .
+        '</div>';
+}
+
+/**
+ * Sanitizare HTML pentru antet documente.
+ * Permite formatare avansată (imagini/linkuri/tabele), elimină scripturi și atribute periculoase.
+ */
+function documente_antet_sanitize_html($html) {
+    $html = trim((string)$html);
+    if ($html === '') return '';
+
+    if (!class_exists('DOMDocument')) {
+        $html = preg_replace('#<script\b[^>]*>.*?</script>#is', '', $html);
+        $html = preg_replace('#\son\w+\s*=\s*([\'"]).*?\1#is', '', $html);
+        $html = preg_replace('/\s(href|src)\s*=\s*([\'"])\s*javascript:[^\'"]*\2/i', '', $html);
+        return trim($html);
+    }
+
+    $allowedTags = [
+        'div', 'p', 'span', 'strong', 'b', 'em', 'i', 'u', 'br',
+        'img', 'a', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li',
+    ];
+    $removeWithContent = ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'meta', 'link'];
+    $allowedAttrs = ['class', 'style', 'href', 'target', 'rel', 'src', 'alt', 'title', 'width', 'height', 'colspan', 'rowspan', 'align', 'cellpadding', 'cellspacing', 'border'];
+
+    $internalErrors = libxml_use_internal_errors(true);
+    $dom = new DOMDocument('1.0', 'UTF-8');
+    $wrapped = '<!DOCTYPE html><html><body><div id="__erp_doc_antet_root__">' . $html . '</div></body></html>';
+    $dom->loadHTML('<?xml encoding="UTF-8">' . $wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+    libxml_clear_errors();
+    libxml_use_internal_errors($internalErrors);
+
+    $xpath = new DOMXPath($dom);
+    $rootNode = $xpath->query('//div[@id="__erp_doc_antet_root__"]')->item(0);
+    if (!$rootNode) return '';
+
+    $nodes = [];
+    $all = $rootNode->getElementsByTagName('*');
+    foreach ($all as $node) { $nodes[] = $node; }
+
+    foreach ($nodes as $node) {
+        if (!$node instanceof DOMElement || !$node->parentNode) continue;
+        $tag = strtolower($node->tagName);
+
+        if (!in_array($tag, $allowedTags, true)) {
+            if (in_array($tag, $removeWithContent, true)) {
+                $node->parentNode->removeChild($node);
+                continue;
+            }
+            while ($node->firstChild) {
+                $node->parentNode->insertBefore($node->firstChild, $node);
+            }
+            $node->parentNode->removeChild($node);
+            continue;
+        }
+
+        $attrNames = [];
+        if ($node->hasAttributes()) {
+            for ($i = 0; $i < $node->attributes->length; $i++) {
+                $attrNames[] = $node->attributes->item($i)->nodeName;
+            }
+        }
+
+        foreach ($attrNames as $attrName) {
+            $attrValue = (string)$node->getAttribute($attrName);
+            $nameLower = strtolower($attrName);
+
+            if (strpos($nameLower, 'on') === 0 || !in_array($nameLower, $allowedAttrs, true)) {
+                $node->removeAttribute($attrName);
+                continue;
+            }
+
+            if ($nameLower === 'style' && preg_match('/expression|javascript:|vbscript:|url\s*\(\s*[\'"]?\s*javascript:/i', $attrValue)) {
+                $node->removeAttribute($attrName);
+                continue;
+            }
+
+            if ($nameLower === 'href' || $nameLower === 'src') {
+                $url = trim(html_entity_decode($attrValue, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                if ($url === '') {
+                    $node->removeAttribute($attrName);
+                    continue;
+                }
+                if (preg_match('/^\s*(javascript:|vbscript:)/i', $url)) {
+                    $node->removeAttribute($attrName);
+                    continue;
+                }
+                if (strpos($url, '#') === 0 || strpos($url, '/') === 0) {
+                    continue;
+                }
+                if (stripos($url, 'data:') === 0) {
+                    if ($nameLower !== 'src' || !preg_match('#^data:image/(png|jpe?g|gif|webp|svg\+xml);base64,#i', $url)) {
+                        $node->removeAttribute($attrName);
+                    }
+                    continue;
+                }
+                $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+                if ($scheme !== '' && !in_array($scheme, ['http', 'https', 'mailto', 'tel'], true)) {
+                    $node->removeAttribute($attrName);
+                    continue;
+                }
+            }
+        }
+
+        if ($tag === 'a' && strtolower((string)$node->getAttribute('target')) === '_blank') {
+            $rel = trim((string)$node->getAttribute('rel'));
+            if (stripos($rel, 'noopener') === false || stripos($rel, 'noreferrer') === false) {
+                $node->setAttribute('rel', trim($rel . ' noopener noreferrer'));
+            }
+        }
+    }
+
+    $clean = '';
+    foreach ($rootNode->childNodes as $child) {
+        $clean .= $dom->saveHTML($child);
+    }
+    return trim($clean);
+}
+
+/**
+ * Returnează HTML-ul antetului documente din setări (sau fallback implicit).
+ */
+function documente_antet_html($pdo = null) {
+    if ($pdo === null && isset($GLOBALS['pdo'])) {
+        $pdo = $GLOBALS['pdo'];
+    }
+    if (!$pdo) {
+        return documente_antet_implicit_html();
+    }
+    try {
+        $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_html' LIMIT 1");
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $saved = trim((string)($row['valoare'] ?? ''));
+        if ($saved === '') {
+            return documente_antet_implicit_html($pdo);
+        }
+        $sanitized = documente_antet_sanitize_html($saved);
+        return $sanitized !== '' ? $sanitized : documente_antet_implicit_html($pdo);
+    } catch (Exception $e) {
+        return documente_antet_implicit_html($pdo);
+    }
+}
+
+/**
+ * CSS reutilizabil pentru antetul documentelor în paginile de print/tabele.
+ */
+function documente_antet_print_css() {
+    return '
+.erp-doc-antet { margin: 0 0 12px 0; page-break-inside: avoid; break-inside: avoid; }
+.erp-doc-antet-grid { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; border-bottom: 1px solid #8b8b8b; padding-bottom: 8px; }
+.erp-doc-antet-logo { flex: 1 1 52%; min-height: 70px; }
+.erp-doc-antet-logo img { max-width: 100%; max-height: 88px; object-fit: contain; display: block; }
+.erp-doc-antet-text { flex: 1 1 48%; text-align: center; }
+.erp-doc-antet-title { font-size: 21px; line-height: 1.08; font-weight: 700; letter-spacing: 0.2px; margin: 0; }
+.erp-doc-antet-subtitle { margin-top: 6px; font-size: 30px; line-height: 1.15; letter-spacing: 0.4px; text-transform: uppercase; }
+.erp-doc-antet-meta { margin-top: 3px; font-size: 22px; line-height: 1.15; }
+.erp-doc-antet-meta-small { font-size: 18px; }
+@media print {
+  .erp-doc-antet { margin-bottom: 10px; }
+}
+';
+}
+
+/**
+ * Randare antet documente gata de inserat în paginile HTML.
+ */
+function documente_antet_render($pdo = null) {
+    $html = documente_antet_html($pdo);
+    if (trim($html) === '') return '';
+    return '<section class="erp-doc-antet" aria-label="Antet document">' . $html . '</section>';
+}
+
+/**
  * Lista tagurilor disponibile cu descriere
  */
 function get_taguri_disponibile() {

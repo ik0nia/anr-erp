@@ -20,7 +20,8 @@
             <?php echo csrf_field(); ?>
             <input type="hidden" name="salveaza_lista" value="1">
             <input type="hidden" name="membri_ids" id="membri_ids_json" value="<?php echo htmlspecialchars(json_encode(array_filter(array_column($participanti, 'membru_id')))); ?>">
-            <input type="hidden" name="participanti_manuali" id="participanti_manuali_json" value="<?php echo htmlspecialchars(json_encode(array_map(function($p) { return ['nume' => $p['nume_manual'] ?? '', 'ordine' => $p['ordine']]; }, array_filter($participanti, function($p) { return empty($p['membru_id']) && !empty($p['nume_manual']); })))); ?>">
+            <input type="hidden" name="contacte_ids" id="contacte_ids_json" value="<?php echo htmlspecialchars(json_encode(array_filter(array_column($participanti, 'contact_id')))); ?>">
+            <input type="hidden" name="participanti_manuali" id="participanti_manuali_json" value="<?php echo htmlspecialchars(json_encode(array_map(function($p) { return ['nume' => $p['nume_manual'] ?? '', 'ordine' => $p['ordine']]; }, array_filter($participanti, function($p) { return empty($p['membru_id']) && empty($p['contact_id']) && !empty($p['nume_manual']); })))); ?>">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -113,6 +114,14 @@ const participantiSelectati = <?php echo json_encode(array_map(function($p){
             'numeComplet' => trim((string)($p['nume'] ?? '') . ' ' . (string)($p['prenume'] ?? ''))
         ];
     }
+    if (!empty($p['contact_id'])) {
+        return [
+            'key' => 'contact:' . (int)$p['contact_id'],
+            'tip' => 'contact',
+            'id' => (int)$p['contact_id'],
+            'numeComplet' => trim((string)($p['nume'] ?? '') . ' ' . (string)($p['prenume'] ?? ''))
+        ];
+    }
     return [
         'key' => 'manual:' . (int)($p['ordine'] ?? 0),
         'tip' => 'manual',
@@ -136,23 +145,28 @@ function normalizeName(row) {
 function renderLista() {
     const container = document.getElementById('lista-participanti');
     const membriHidden = document.getElementById('membri_ids_json');
+    const contacteHidden = document.getElementById('contacte_ids_json');
     const manualHidden = document.getElementById('participanti_manuali_json');
 
     const membriIds = participantiSelectati
         .filter(function(p) { return p.tip === 'membru' && p.id; })
         .map(function(p) { return p.id; });
+    const contacteIds = participantiSelectati
+        .filter(function(p) { return p.tip === 'contact' && p.id; })
+        .map(function(p) { return p.id; });
 
     const manuali = participantiSelectati
-        .filter(function(p) { return p.tip !== 'membru'; })
+        .filter(function(p) { return p.tip === 'manual'; })
         .map(function(p, idx) {
             return {
-                nume: (p.tip === 'manual' ? (p.numeManual || '') : (p.numeComplet || '')).trim(),
+                nume: (p.numeManual || '').trim(),
                 ordine: idx + 1
             };
         })
         .filter(function(p) { return p.nume !== ''; });
 
     membriHidden.value = JSON.stringify(membriIds);
+    if (contacteHidden) contacteHidden.value = JSON.stringify(contacteIds);
     manualHidden.value = JSON.stringify(manuali);
 
     if (participantiSelectati.length === 0) {

@@ -5,6 +5,7 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/bpa_helper.php';
 require_once __DIR__ . '/../includes/liste_helper.php';
+require_once __DIR__ . '/../includes/document_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) { header('Location: /ajutoare-bpa'); exit; }
@@ -24,6 +25,7 @@ if ($tabel['livrare_domiciliu']) $locuri[] = 'Livrare la domiciliu';
     <style>
         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
         body { font-family: Arial, sans-serif; max-width: 210mm; margin: 0 auto; padding: 15mm; font-size: 11pt; }
+        <?php echo documente_antet_print_css(); ?>
         .centrat { text-align: center; margin: 8px 0; }
         .titlu { font-size: 16pt; font-weight: bold; margin: 15px 0; }
         table { width: 100%; border-collapse: collapse; margin: 15px 0; }
@@ -37,6 +39,7 @@ if ($tabel['livrare_domiciliu']) $locuri[] = 'Livrare la domiciliu';
     </style>
 </head>
 <body>
+    <?php echo documente_antet_render($pdo); ?>
     <div class="centrat titlu">Tabel Distributie</div>
     <div class="centrat"><strong>Data: <?php echo date(DATE_FORMAT, strtotime($tabel['data_tabel'])); ?></strong> &nbsp; Nr. <?php echo htmlspecialchars($tabel['nr_tabel']); ?></div>
     <?php if (!empty($locuri)): ?>

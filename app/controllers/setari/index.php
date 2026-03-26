@@ -7,6 +7,7 @@
  */
 require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/app/services/SetariService.php';
+require_once APP_ROOT . '/includes/document_helper.php';
 
 $eroare = '';
 $succes = '';
@@ -19,7 +20,7 @@ setari_ensure_table($pdo);
 // Tab detection (needed early for some POST redirects)
 // ---------------------------------------------------------------------------
 $tab_setari = 'general';
-$valid_tabs = ['general', 'dashboard', 'email', 'cotizatii', 'incasari', 'tickete'];
+$valid_tabs = ['general', 'dashboard', 'email', 'cotizatii', 'incasari', 'antet-documente', 'tickete'];
 if (isset($_GET['tab']) && in_array($_GET['tab'], $valid_tabs)) {
     $tab_setari = $_GET['tab'];
 }
@@ -101,6 +102,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['incarca_antet_asociat
         exit;
     }
     $eroare = $result['error'];
+}
+
+// ---------------------------------------------------------------------------
+// POST: Antet documente (HTML editor)
+// ---------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_antet_documente'])) {
+    csrf_require_valid();
+    $tab_setari = 'antet-documente';
+    $antet_html_raw = (string)($_POST['documente_antet_html'] ?? '');
+    $antet_html_clean = documente_antet_sanitize_html($antet_html_raw);
+    $result = setari_save_documente_antet_html($pdo, $antet_html_clean);
+    if ($result['success']) {
+        header('Location: /setari?tab=antet-documente&succes_antet_documente=1');
+        exit;
+    }
+    $eroare = $result['error'] ?? 'Eroare la salvare antet documente.';
 }
 
 // ---------------------------------------------------------------------------
@@ -383,6 +400,7 @@ if (isset($_GET['succes_subiect_v2'])) $succes = 'Subiectul a fost salvat.';
 if (isset($_GET['succes_cotizatii'])) $succes = 'Modificările cotizațiilor au fost salvate.';
 if (isset($_GET['succes_incasari'])) $succes = 'Setările modulului Încasări au fost salvate.';
 if (isset($_GET['succes_antet'])) $succes = 'Antetul asociației a fost încărcat.';
+if (isset($_GET['succes_antet_documente'])) $succes = 'Antetul pentru documente a fost salvat.';
 if (isset($_GET['succes_logo'])) $succes = 'Logo-ul a fost actualizat cu succes.';
 if (isset($_GET['succes_registratura'])) $succes = 'Setările Registraturii au fost salvate.';
 if (isset($_GET['succes_newsletter'])) $succes = 'Setările Newsletter au fost salvate.';
@@ -402,6 +420,9 @@ $cale_libreoffice = $general['cale_libreoffice'];
 $registratura_nr_pornire = $general['registratura_nr_pornire'];
 $newsletter_email = $general['newsletter_email'];
 $antet_asociatie_docx = $general['antet_asociatie_docx'];
+$documente_antet_implicit_html = documente_antet_implicit_html($pdo);
+$documente_antet_custom_html = trim((string)(setari_get($pdo, 'documente_antet_html') ?? ''));
+$documente_antet_editor_html = $documente_antet_custom_html !== '' ? $documente_antet_custom_html : $documente_antet_implicit_html;
 
 $subiecte_dashboard_v2 = [];
 if ($tab_setari === 'dashboard') {

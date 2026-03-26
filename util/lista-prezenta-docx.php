@@ -4,6 +4,7 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/liste_helper.php';
+require_once __DIR__ . '/../includes/contacte_helper.php';
 require_once __DIR__ . '/../includes/log_helper.php';
 require_once __DIR__ . '/../includes/document_helper.php';
 
@@ -16,7 +17,17 @@ try {
     $lista = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$lista) { header('Location: /activitati'); exit; }
 
-    $stmt = $pdo->prepare('SELECT lm.ordine, lm.nume_manual, m.nume, m.prenume, m.datanastere, m.ciseria, m.cinumar, m.domloc FROM liste_prezenta_membri lm LEFT JOIN membri m ON lm.membru_id = m.id WHERE lm.lista_id = ? ORDER BY lm.ordine');
+    ensure_contacte_table($pdo);
+    $stmt = $pdo->prepare('
+        SELECT lm.ordine, lm.nume_manual, lm.membru_id, lm.contact_id,
+               m.nume, m.prenume, m.datanastere, m.ciseria, m.cinumar, m.domloc,
+               c.nume AS contact_nume, c.prenume AS contact_prenume
+        FROM liste_prezenta_membri lm
+        LEFT JOIN membri m ON lm.membru_id = m.id
+        LEFT JOIN contacte c ON c.id = lm.contact_id
+        WHERE lm.lista_id = ?
+        ORDER BY lm.ordine
+    ');
     $stmt->execute([$id]);
     $participanti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -68,7 +79,15 @@ foreach ($participanti as $i => $p) {
     foreach ($coloane as $col) {
         $val = '';
         if ($col === 'nr_crt') $val = (string)($i + 1);
-        elseif ($col === 'nume_prenume') $val = !empty($p['nume_manual']) ? $p['nume_manual'] : trim(($p['nume'] ?? '') . ' ' . ($p['prenume'] ?? ''));
+        elseif ($col === 'nume_prenume') {
+            if (!empty($p['nume_manual'])) {
+                $val = $p['nume_manual'];
+            } else {
+                $membruNume = trim(($p['nume'] ?? '') . ' ' . ($p['prenume'] ?? ''));
+                $contactNume = trim(($p['contact_nume'] ?? '') . ' ' . ($p['contact_prenume'] ?? ''));
+                $val = $membruNume !== '' ? $membruNume : $contactNume;
+            }
+        }
         elseif ($col === 'datanastere') $val = $p['datanastere'] ? date(DATE_FORMAT, strtotime($p['datanastere'])) : '';
         elseif ($col === 'varsta') $val = (string)(calculeaza_varsta($p['datanastere']) ?? '');
         elseif ($col === 'ci') $val = trim(($p['ciseria'] ?? '') . ' ' . ($p['cinumar'] ?? ''));

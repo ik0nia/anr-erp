@@ -25,9 +25,12 @@ $logo_url = incasari_get_setare($pdo, 'logo_chitanta') ?: (defined('PLATFORM_LOG
 $date_asociatie = incasari_get_setare($pdo, 'date_asociatie') ?: '';
 $incasat_de = $inc['created_by'] ?? 'Utilizator';
 
-$reprezentant = !empty($inc['reprezentand']) ? $inc['reprezentand'] : '';
+$reprezentant = !empty($inc['reprezentand']) ? trim((string)$inc['reprezentand']) : '';
+if (($inc['tip'] ?? '') === INCASARI_TIP_COTIZATIE && ($reprezentant === '' || preg_match('/^Cotizatie membru\s+0$/', $reprezentant))) {
+    $reprezentant = 'Cotizatie membru';
+}
 if ($reprezentant === '') {
-    $reprezentant = 'Cotizație anul ' . ($inc['anul'] ?? date('Y'));
+    $reprezentant = 'Cotizatie membru';
     if (($inc['tip'] ?? '') === INCASARI_TIP_DONATIE) $reprezentant = 'Donație';
     elseif (($inc['tip'] ?? '') === INCASARI_TIP_TAXA_PARTICIPARE) $reprezentant = 'Taxă participare';
     elseif (($inc['tip'] ?? '') === INCASARI_TIP_ALTE) $reprezentant = 'Alte încasări';

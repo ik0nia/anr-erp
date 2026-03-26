@@ -3,6 +3,7 @@
  * View: Print membri - pagina curata pentru printare
  * Variabile: $all_members (array)
  */
+require_once APP_ROOT . '/includes/document_helper.php';
 $all_columns = [
     'dosarnr' => 'Nr. Dosar',
     'nume' => 'Nume',
@@ -52,7 +53,8 @@ if (empty($selected_cols)) {
     .btn-close { background: #e5e7eb; color: #374151; }
     .btn-close:hover { background: #d1d5db; }
 
-    .print-header { text-align: center; padding: 10px 0 5px; }
+    <?php echo documente_antet_print_css(); ?>
+    .print-header { text-align: center; padding: 4px 0 5px; }
     .print-header h1 { font-size: 16px; font-weight: bold; }
     .print-header p { font-size: 11px; color: #666; }
 
@@ -156,6 +158,7 @@ if (empty($selected_cols)) {
     <button class="btn btn-close" onclick="window.close()">Inchide</button>
 </div>
 
+<?php echo documente_antet_render($pdo); ?>
 <div class="print-header">
     <h1><?php echo htmlspecialchars(defined('PLATFORM_NAME') ? PLATFORM_NAME : 'ERP'); ?> - Lista Membri</h1>
     <p>Data: <?php echo date('d.m.Y H:i'); ?> | Total: <?php echo count($all_members); ?> membri</p>

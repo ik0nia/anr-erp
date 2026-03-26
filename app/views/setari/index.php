@@ -57,6 +57,10 @@
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_setari === 'incasari' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Încasări
             </a>
+            <a href="/setari?tab=antet-documente" role="tab" aria-selected="<?php echo $tab_setari === 'antet-documente' ? 'true' : 'false'; ?>"
+               class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_setari === 'antet-documente' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
+                Antet documente
+            </a>
             <a href="/setari?tab=tickete" role="tab" aria-selected="<?php echo $tab_setari === 'tickete' ? 'true' : 'false'; ?>"
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_setari === 'tickete' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Tickete
@@ -213,6 +217,164 @@
                     </tbody>
                 </table>
             </div>
+        </section>
+
+        <?php elseif ($tab_setari === 'antet-documente'): ?>
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="antet-documente-heading">
+            <h2 id="antet-documente-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Antet documente</h2>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
+                Acest antet se aplică în print-uri și documente de tip listă/tabel din platformă.
+                Excluderi: <strong>Librărie documente</strong>, <strong>Generare documente</strong>, <strong>chitanțe</strong>.
+            </p>
+            <form method="post" action="/setari?tab=antet-documente" class="space-y-4">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="salveaza_antet_documente" value="1">
+                <label for="antet-documente-editor" class="block text-sm font-medium text-slate-700 dark:text-gray-300">
+                    Editor antet (WYSIWYG)
+                </label>
+
+                <div class="border border-slate-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                    <div class="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-gray-700/50 border-b border-slate-200 dark:border-gray-600" role="toolbar" aria-label="Formatare antet documente">
+                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="bold" aria-label="Text îngroșat"><strong>B</strong></button>
+                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="italic" aria-label="Text italic"><em>I</em></button>
+                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="underline" aria-label="Text subliniat"><u>U</u></button>
+                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="insertUnorderedList" aria-label="Listă cu puncte">• Listă</button>
+                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="insertOrderedList" aria-label="Listă numerotată">1. Listă</button>
+                        <button type="button" id="antet-doc-btn-link" class="px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" aria-label="Inserează link">Link</button>
+                        <button type="button" id="antet-doc-btn-img" class="px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" aria-label="Inserează imagine">Imagine</button>
+                        <button type="button" id="antet-doc-btn-table" class="px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" aria-label="Inserează tabel">Tabel</button>
+                        <button type="button" id="antet-doc-btn-html" class="px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" aria-expanded="false" aria-controls="antet-documente-html-wrap">Sursă HTML</button>
+                        <button type="button" id="antet-doc-btn-reset" class="px-2 py-1 text-sm rounded border border-amber-400 text-amber-700 dark:text-amber-300" aria-label="Resetează la antetul implicit">Reset implicit</button>
+                    </div>
+
+                    <div id="antet-documente-editor" contenteditable="true" class="min-h-[220px] p-4 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500" aria-label="Editor antet documente">
+                        <?php echo $documente_antet_editor_html; ?>
+                    </div>
+
+                    <div id="antet-documente-html-wrap" class="hidden border-t border-slate-200 dark:border-gray-600 p-3 bg-slate-50 dark:bg-gray-800">
+                        <label for="antet-documente-html" class="block text-xs text-slate-600 dark:text-gray-400 mb-1">Editare sursă HTML</label>
+                        <textarea id="antet-documente-html" rows="10" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-slate-900 dark:text-white font-mono text-xs"></textarea>
+                    </div>
+                </div>
+
+                <input type="hidden" name="documente_antet_html" id="documente-antet-html-hidden" value="">
+
+                <div class="flex flex-wrap gap-2">
+                    <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Salvează antetul</button>
+                    <span class="text-xs text-slate-500 dark:text-gray-400 self-center">Sunt permise: imagini, linkuri, tabele și formatare text.</span>
+                </div>
+            </form>
+            <script>
+            (function () {
+                var editor = document.getElementById('antet-documente-editor');
+                var htmlWrap = document.getElementById('antet-documente-html-wrap');
+                var htmlArea = document.getElementById('antet-documente-html');
+                var htmlHidden = document.getElementById('documente-antet-html-hidden');
+                var htmlBtn = document.getElementById('antet-doc-btn-html');
+                var defaultHtml = <?php echo json_encode($documente_antet_implicit_html, JSON_UNESCAPED_UNICODE); ?>;
+                if (!editor || !htmlHidden) return;
+
+                function syncHidden() {
+                    htmlHidden.value = editor.innerHTML;
+                }
+
+                function syncSourceFromEditor() {
+                    if (htmlArea) htmlArea.value = editor.innerHTML;
+                }
+
+                function syncEditorFromSource() {
+                    if (htmlArea) editor.innerHTML = htmlArea.value;
+                }
+
+                document.querySelectorAll('.antet-doc-btn[data-cmd]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var cmd = btn.getAttribute('data-cmd');
+                        if (!cmd) return;
+                        editor.focus();
+                        document.execCommand(cmd, false, null);
+                        syncHidden();
+                    });
+                });
+
+                var btnLink = document.getElementById('antet-doc-btn-link');
+                if (btnLink) {
+                    btnLink.addEventListener('click', function () {
+                        var url = window.prompt('Introduceți URL-ul linkului (https://...)');
+                        if (!url) return;
+                        editor.focus();
+                        document.execCommand('createLink', false, url);
+                        syncHidden();
+                    });
+                }
+
+                var btnImg = document.getElementById('antet-doc-btn-img');
+                if (btnImg) {
+                    btnImg.addEventListener('click', function () {
+                        var url = window.prompt('Introduceți URL-ul imaginii (https://...)');
+                        if (!url) return;
+                        editor.focus();
+                        document.execCommand('insertImage', false, url);
+                        syncHidden();
+                    });
+                }
+
+                var btnTable = document.getElementById('antet-doc-btn-table');
+                if (btnTable) {
+                    btnTable.addEventListener('click', function () {
+                        var rows = parseInt(window.prompt('Număr rânduri tabel', '2'), 10);
+                        var cols = parseInt(window.prompt('Număr coloane tabel', '2'), 10);
+                        if (!rows || !cols || rows < 1 || cols < 1 || rows > 10 || cols > 10) return;
+                        var html = '<table style="width:100%;border-collapse:collapse;" border="1" cellpadding="4" cellspacing="0"><tbody>';
+                        for (var r = 0; r < rows; r++) {
+                            html += '<tr>';
+                            for (var c = 0; c < cols; c++) html += '<td>&nbsp;</td>';
+                            html += '</tr>';
+                        }
+                        html += '</tbody></table>';
+                        editor.focus();
+                        document.execCommand('insertHTML', false, html);
+                        syncHidden();
+                    });
+                }
+
+                if (htmlBtn) {
+                    htmlBtn.addEventListener('click', function () {
+                        var isHidden = htmlWrap.classList.contains('hidden');
+                        if (isHidden) {
+                            syncSourceFromEditor();
+                            htmlWrap.classList.remove('hidden');
+                            htmlBtn.setAttribute('aria-expanded', 'true');
+                        } else {
+                            syncEditorFromSource();
+                            htmlWrap.classList.add('hidden');
+                            htmlBtn.setAttribute('aria-expanded', 'false');
+                            syncHidden();
+                        }
+                    });
+                }
+
+                if (htmlArea) {
+                    htmlArea.addEventListener('input', function () {
+                        syncEditorFromSource();
+                        syncHidden();
+                    });
+                }
+
+                var btnReset = document.getElementById('antet-doc-btn-reset');
+                if (btnReset) {
+                    btnReset.addEventListener('click', function () {
+                        if (!window.confirm('Resetați antetul la varianta implicită?')) return;
+                        editor.innerHTML = defaultHtml;
+                        if (htmlArea) htmlArea.value = defaultHtml;
+                        syncHidden();
+                    });
+                }
+
+                editor.addEventListener('input', syncHidden);
+                editor.addEventListener('blur', syncHidden);
+                syncHidden();
+            })();
+            </script>
         </section>
 
         <?php elseif ($tab_setari === 'cotizatii'): ?>

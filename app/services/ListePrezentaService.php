@@ -35,6 +35,41 @@ function liste_prezenta_ensure_nume_manual(PDO $pdo): void {
 }
 
 /**
+ * Asigură compatibilitatea tabelei liste_prezenta_membri pentru participanți non-membru:
+ * - coloană opțională contact_id (pentru participanți din Contacte)
+ * - membru_id nullable (permite manual/contact fără FK membru)
+ */
+function liste_prezenta_ensure_contact_support(PDO $pdo): void {
+    try {
+        $colsRaw = $pdo->query('SHOW COLUMNS FROM liste_prezenta_membri')->fetchAll(PDO::FETCH_ASSOC);
+        if (!$colsRaw) {
+            return;
+        }
+        $cols = [];
+        foreach ($colsRaw as $c) {
+            if (!empty($c['Field'])) {
+                $cols[(string)$c['Field']] = $c;
+            }
+        }
+
+        if (!isset($cols['contact_id'])) {
+            $pdo->exec('ALTER TABLE liste_prezenta_membri ADD COLUMN contact_id INT NULL AFTER membru_id');
+            try {
+                $pdo->exec('CREATE INDEX idx_lpm_contact_id ON liste_prezenta_membri(contact_id)');
+            } catch (PDOException $e) {
+                // index existent / drepturi insuficiente - non critic
+            }
+        }
+
+        if (isset($cols['membru_id']) && strtoupper((string)($cols['membru_id']['Null'] ?? 'YES')) === 'NO') {
+            $pdo->exec('ALTER TABLE liste_prezenta_membri MODIFY membru_id INT NULL');
+        }
+    } catch (PDOException $e) {
+        // Migrarea este best-effort; eventualele erori vor fi expuse la insert, dar nu blocăm pagina aici.
+    }
+}
+
+/**
  * Parseaza si valideaza datele POST comune (create/edit).
  */
 function liste_prezenta_parse_post(array $post): array {
@@ -54,7 +89,16 @@ function liste_prezenta_parse_post(array $post): array {
         }
     }
 
-    // Participanti manuali (fara membru_id)
+    $contacte_ids_raw = json_decode($post['contacte_ids'] ?? '[]', true) ?: [];
+    $contacte_ids = [];
+    foreach ($contacte_ids_raw as $cid) {
+        $cid_int = (int)$cid;
+        if ($cid_int > 0) {
+            $contacte_ids[] = $cid_int;
+        }
+    }
+
+    // Participanti manuali (fără membru/contact id)
     $participanti_manuali_raw = json_decode($post['participanti_manuali'] ?? '[]', true) ?: [];
     $participanti_manuali = [];
     foreach ($participanti_manuali_raw as $pm) {
@@ -75,7 +119,7 @@ function liste_prezenta_parse_post(array $post): array {
 
     return compact(
         'tip_titlu', 'detalii_activitate', 'data_lista', 'detalii_sus', 'detalii_jos',
-        'coloane', 'membri_ids', 'participanti_manuali',
+        'coloane', 'membri_ids', 'contacte_ids', 'participanti_manuali',
         'semn_st_n', 'semn_st_f', 'semn_c_n', 'semn_c_f', 'semn_d_n', 'semn_d_f'
     );
 }
@@ -83,10 +127,11 @@ function liste_prezenta_parse_post(array $post): array {
 /**
  * Salveaza membrii si participantii manuali pentru o lista.
  */
-function liste_prezenta_save_membri(PDO $pdo, int $lista_id, array $membri_ids, array $participanti_manuali): void {
+function liste_prezenta_save_membri(PDO $pdo, int $lista_id, array $membri_ids, array $contacte_ids, array $participanti_manuali): void {
     liste_prezenta_ensure_nume_manual($pdo);
+    liste_prezenta_ensure_contact_support($pdo);
 
-    $stmt_m = $pdo->prepare('INSERT INTO liste_prezenta_membri (lista_id, membru_id, ordine, nume_manual) VALUES (?, ?, ?, NULL)');
+    $stmt_m = $pdo->prepare('INSERT INTO liste_prezenta_membri (lista_id, membru_id, contact_id, ordine, nume_manual) VALUES (?, ?, NULL, ?, NULL)');
     $ordine_curenta = 1;
     foreach (array_values($membri_ids) as $mid) {
         if ($mid) {
@@ -95,7 +140,25 @@ function liste_prezenta_save_membri(PDO $pdo, int $lista_id, array $membri_ids, 
         }
     }
 
-    $stmt_m_manual = $pdo->prepare('INSERT INTO liste_prezenta_membri (lista_id, membru_id, ordine, nume_manual) VALUES (?, NULL, ?, ?)');
+    $stmt_c = $pdo->prepare('INSERT INTO liste_prezenta_membri (lista_id, membru_id, contact_id, ordine, nume_manual) VALUES (?, NULL, ?, ?, NULL)');
+    if (!empty($contacte_ids)) {
+        $in = implode(',', array_fill(0, count($contacte_ids), '?'));
+        $stmt_contacte = $pdo->prepare("SELECT id, nume, prenume FROM contacte WHERE id IN ($in)");
+        $stmt_contacte->execute(array_values($contacte_ids));
+        $mapContacte = [];
+        foreach ($stmt_contacte->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $mapContacte[(int)$c['id']] = trim((string)($c['nume'] ?? '') . ' ' . (string)($c['prenume'] ?? ''));
+        }
+        foreach (array_values($contacte_ids) as $cid) {
+            if (!isset($mapContacte[(int)$cid])) {
+                continue;
+            }
+            $stmt_c->execute([$lista_id, (int)$cid, $ordine_curenta]);
+            $ordine_curenta++;
+        }
+    }
+
+    $stmt_m_manual = $pdo->prepare('INSERT INTO liste_prezenta_membri (lista_id, membru_id, contact_id, ordine, nume_manual) VALUES (?, NULL, NULL, ?, ?)');
     foreach ($participanti_manuali as $pm) {
         $stmt_m_manual->execute([$lista_id, $ordine_curenta, $pm['nume']]);
         $ordine_curenta++;
@@ -166,7 +229,7 @@ function liste_prezenta_create(PDO $pdo, array $post, string $user): array {
         $stmt->execute([$d['tip_titlu'], $d['detalii_activitate'], $d['data_lista'], $d['detalii_sus'], $coloane_json, $d['detalii_jos'], $d['semn_st_n'], $d['semn_st_f'], $d['semn_c_n'], $d['semn_c_f'], $d['semn_d_n'], $d['semn_d_f'], $activitate_id, $user]);
         $lista_id = $pdo->lastInsertId();
 
-        liste_prezenta_save_membri($pdo, $lista_id, $d['membri_ids'], $d['participanti_manuali']);
+        liste_prezenta_save_membri($pdo, $lista_id, $d['membri_ids'], $d['contacte_ids'], $d['participanti_manuali']);
 
         if ($activitate_id) {
             $pdo->prepare('UPDATE activitati SET lista_prezenta_id = ?, responsabili = COALESCE(responsabili, ?) WHERE id = ?')->execute([$lista_id, $user, $activitate_id]);
@@ -196,7 +259,8 @@ function liste_prezenta_load(PDO $pdo, int $id): ?array {
 
         liste_prezenta_ensure_nume_manual($pdo);
 
-        $stmt = $pdo->prepare('SELECT lm.membru_id, lm.ordine, lm.nume_manual, m.nume, m.prenume, m.datanastere, m.ciseria, m.cinumar, m.domloc FROM liste_prezenta_membri lm LEFT JOIN membri m ON lm.membru_id = m.id WHERE lm.lista_id = ? ORDER BY lm.ordine');
+        liste_prezenta_ensure_contact_support($pdo);
+        $stmt = $pdo->prepare('SELECT lm.membru_id, lm.contact_id, lm.ordine, lm.nume_manual, COALESCE(m.nume, c.nume) AS nume, COALESCE(m.prenume, c.prenume) AS prenume, m.datanastere, m.ciseria, m.cinumar, m.domloc FROM liste_prezenta_membri lm LEFT JOIN membri m ON lm.membru_id = m.id LEFT JOIN contacte c ON lm.contact_id = c.id WHERE lm.lista_id = ? ORDER BY lm.ordine');
         $stmt->execute([$id]);
         $participanti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -220,7 +284,7 @@ function liste_prezenta_update(PDO $pdo, int $id, array $post): array {
 
         $pdo->prepare('DELETE FROM liste_prezenta_membri WHERE lista_id = ?')->execute([$id]);
 
-        liste_prezenta_save_membri($pdo, $id, $d['membri_ids'], $d['participanti_manuali']);
+        liste_prezenta_save_membri($pdo, $id, $d['membri_ids'], $d['contacte_ids'], $d['participanti_manuali']);
 
         log_activitate($pdo, 'Lista prezenta modificata ID ' . $id);
 
