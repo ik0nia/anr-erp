@@ -6,6 +6,7 @@ require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/liste_helper.php';
 require_once __DIR__ . '/../includes/log_helper.php';
 require_once __DIR__ . '/../includes/document_helper.php';
+require_once __DIR__ . '/../includes/contacte_helper.php';
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) { header('Location: /activitati'); exit; }
@@ -18,7 +19,7 @@ try {
 
     // Log printare
     log_activitate($pdo, "liste_prezenta: Lista de prezenta printata - {$lista['tip_titlu']} (ID: {$id}) / Data: " . date(DATE_FORMAT, strtotime($lista['data_lista'])));
-    $stmt = $pdo->prepare('SELECT lm.ordine, lm.nume_manual, m.nume, m.prenume, m.datanastere, m.ciseria, m.cinumar, m.domloc FROM liste_prezenta_membri lm LEFT JOIN membri m ON lm.membru_id = m.id WHERE lm.lista_id = ? ORDER BY lm.ordine');
+    $stmt = $pdo->prepare('SELECT lm.ordine, lm.nume_manual, m.nume, m.prenume, m.datanastere, m.ciseria, m.cinumar, m.domloc, c.nume AS contact_nume, c.prenume AS contact_prenume FROM liste_prezenta_membri lm LEFT JOIN membri m ON lm.membru_id = m.id LEFT JOIN contacte c ON c.id = lm.contact_id WHERE lm.lista_id = ? ORDER BY lm.ordine');
     $stmt->execute([$id]);
     $participanti = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -87,11 +88,12 @@ $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','
                     <?php
                     if ($col === 'nr_crt') echo $i + 1;
                     elseif ($col === 'nume_prenume') {
-                        // Folosește nume_manual dacă membru_id este NULL, altfel nume + prenume din membri
                         if (!empty($p['nume_manual'])) {
-                            echo htmlspecialchars($p['nume_manual']);
+                            echo htmlspecialchars((string)$p['nume_manual']);
                         } else {
-                            echo htmlspecialchars(trim(($p['nume'] ?? '') . ' ' . ($p['prenume'] ?? '')));
+                            $membruNume = trim((string)($p['nume'] ?? '') . ' ' . (string)($p['prenume'] ?? ''));
+                            $contactNume = trim((string)($p['contact_nume'] ?? '') . ' ' . (string)($p['contact_prenume'] ?? ''));
+                            echo htmlspecialchars($membruNume !== '' ? $membruNume : $contactNume);
                         }
                     }
                     elseif ($col === 'datanastere') echo $p['datanastere'] ? date(DATE_FORMAT, strtotime($p['datanastere'])) : '';
