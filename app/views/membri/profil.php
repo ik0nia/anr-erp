@@ -40,6 +40,26 @@ $input_class = 'w-full px-3 py-2 border border-slate-300 dark:border-gray-600 ro
 $btn_edit_class = 'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-600 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors';
 $btn_save_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors';
 $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-slate-300 dark:border-gray-600 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors';
+
+$edit_card = trim((string)($_GET['edit_card'] ?? ''));
+$carduri_editabile = [
+    'date-personale',
+    'date-contact',
+    'domiciliu',
+    'date-handicap',
+    'certificat-handicap',
+    'act-identitate',
+    'dosar',
+    'observatii',
+    'biblioteca-online',
+    'atasamente-docs',
+];
+if (!in_array($edit_card, $carduri_editabile, true)) {
+    $edit_card = '';
+}
+$is_card_in_edit = function($card_name) use ($edit_card) {
+    return $edit_card === $card_name;
+};
 ?>
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
@@ -159,7 +179,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                     data-membru-id="<?php echo (int)$membru['id']; ?>"
                     data-membru-nume="<?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>"
                     data-valoare-cot="<?php echo number_format($valoare_cotizatie_an, 2, '.', ''); ?>"
-                    data-cotizatie-an="<?php echo (int)$an_cotizatie_setata; ?>"
+                    data-cotizatie-an="<?php echo (int)$an_cotizatie; ?>"
                     data-cot-achitata="<?php echo $cotizatie_achitata_an_curent ? '1' : '0'; ?>"
                     aria-label="Incaseaza <?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>">
                 <i data-lucide="dollar-sign" class="mr-2 w-4 h-4" aria-hidden="true"></i>
@@ -252,13 +272,13 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
                         Date Personale
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-personale">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=date-personale" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-personale">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
                 <!-- View mode -->
-                <div class="card-view p-4" data-card="date-personale">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('date-personale') ? 'hidden' : ''; ?>" data-card="date-personale">
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Nume</dt>
@@ -295,7 +315,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                     </dl>
                 </div>
                 <!-- Edit mode -->
-                <div class="card-edit hidden p-4" data-card="date-personale">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('date-personale') ? '' : 'hidden'; ?>" data-card="date-personale">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="date-personale">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -344,7 +364,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -357,12 +377,12 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="phone" class="w-5 h-5" aria-hidden="true"></i>
                         Date Contact
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-contact">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=date-contact" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-contact">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
-                <div class="card-view p-4" data-card="date-contact">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('date-contact') ? 'hidden' : ''; ?>" data-card="date-contact">
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Telefon</dt>
@@ -386,7 +406,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         </div>
                     </dl>
                 </div>
-                <div class="card-edit hidden p-4" data-card="date-contact">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('date-contact') ? '' : 'hidden'; ?>" data-card="date-contact">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="date-contact">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -428,7 +448,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -441,12 +461,12 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
                         Domiciliu
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="domiciliu">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=domiciliu" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="domiciliu">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
-                <div class="card-view p-4" data-card="domiciliu">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('domiciliu') ? 'hidden' : ''; ?>" data-card="domiciliu">
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Localitatea</dt>
@@ -485,7 +505,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         </div>
                     </dl>
                 </div>
-                <div class="card-edit hidden p-4" data-card="domiciliu">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('domiciliu') ? '' : 'hidden'; ?>" data-card="domiciliu">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="domiciliu">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -552,7 +572,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -565,12 +585,12 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="heart" class="w-5 h-5" aria-hidden="true"></i>
                         Date despre handicap
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-handicap">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=date-handicap" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="date-handicap">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
-                <div class="card-view p-4" data-card="date-handicap">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('date-handicap') ? 'hidden' : ''; ?>" data-card="date-handicap">
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Motiv handicap</dt>
@@ -582,7 +602,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         </div>
                     </dl>
                 </div>
-                <div class="card-edit hidden p-4" data-card="date-handicap">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('date-handicap') ? '' : 'hidden'; ?>" data-card="date-handicap">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="handicap">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -601,7 +621,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -642,12 +662,12 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="file-badge" class="w-5 h-5" aria-hidden="true"></i>
                         Certificat handicap
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="certificat-handicap">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=certificat-handicap" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="certificat-handicap">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
-                <div class="card-view p-4" data-card="certificat-handicap">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('certificat-handicap') ? 'hidden' : ''; ?>" data-card="certificat-handicap">
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Nr. certificat</dt>
@@ -691,7 +711,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         </div>
                     </dl>
                 </div>
-                <div class="card-edit hidden p-4" data-card="certificat-handicap">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('certificat-handicap') ? '' : 'hidden'; ?>" data-card="certificat-handicap">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="handicap">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -764,7 +784,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -777,12 +797,12 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="id-card" class="w-5 h-5" aria-hidden="true"></i>
                         Act de Identitate
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="act-identitate">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=act-identitate" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="act-identitate">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
-                <div class="card-view p-4" data-card="act-identitate">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('act-identitate') ? 'hidden' : ''; ?>" data-card="act-identitate">
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Seria C.I.</dt>
@@ -863,7 +883,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                     </div>
                     <?php endif; ?>
                 </div>
-                <div class="card-edit hidden p-4" data-card="act-identitate">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('act-identitate') ? '' : 'hidden'; ?>" data-card="act-identitate">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>" enctype="multipart/form-data">
                         <input type="hidden" name="card" value="act-identitate">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -906,7 +926,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -919,12 +939,12 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="folder" class="w-5 h-5" aria-hidden="true"></i>
                         Dosar
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="dosar">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=dosar" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="dosar">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
-                <div class="card-view p-4" data-card="dosar">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('dosar') ? 'hidden' : ''; ?>" data-card="dosar">
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div>
                             <dt class="text-sm text-slate-500 dark:text-gray-400">Nr. dosar</dt>
@@ -942,7 +962,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         </div>
                     </dl>
                 </div>
-                <div class="card-edit hidden p-4" data-card="dosar">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('dosar') ? '' : 'hidden'; ?>" data-card="dosar">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="dosar">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -973,7 +993,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -1043,17 +1063,17 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="file-text" class="w-5 h-5" aria-hidden="true"></i>
                         Observatii
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="observatii">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=observatii" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="observatii">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
-                <div class="card-view p-4" data-card="observatii">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('observatii') ? 'hidden' : ''; ?>" data-card="observatii">
                     <div class="text-slate-900 dark:text-white">
                         <?php echo !empty($membru['notamembru']) ? nl2br(htmlspecialchars($membru['notamembru'])) : '<span class="text-slate-400 dark:text-gray-500">Nicio observatie</span>'; ?>
                     </div>
                 </div>
-                <div class="card-edit hidden p-4" data-card="observatii">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('observatii') ? '' : 'hidden'; ?>" data-card="observatii">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="observatii">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -1065,7 +1085,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -1078,12 +1098,12 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="book-open" class="w-5 h-5" aria-hidden="true"></i>
                         Acces Biblioteca Online
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="biblioteca-online">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=biblioteca-online" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="biblioteca-online">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Editeaza
-                    </button>
+                    </a>
                 </div>
-                <div class="card-view p-4" data-card="biblioteca-online">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('biblioteca-online') ? 'hidden' : ''; ?>" data-card="biblioteca-online">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Utilizator</span>
@@ -1095,7 +1115,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         </div>
                     </div>
                 </div>
-                <div class="card-edit hidden p-4" data-card="biblioteca-online">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('biblioteca-online') ? '' : 'hidden'; ?>" data-card="biblioteca-online">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>">
                         <input type="hidden" name="card" value="biblioteca-online">
                         <input type="hidden" name="actualizeaza_membru" value="1">
@@ -1114,7 +1134,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i> Salveaza
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
@@ -1127,13 +1147,13 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                         <i data-lucide="paperclip" class="w-5 h-5" aria-hidden="true"></i>
                         Atasamente Documente
                     </h3>
-                    <button type="button" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="atasamente-docs">
+                    <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>&edit_card=atasamente-docs" class="btn-edit-card <?php echo $btn_edit_class; ?>" data-card="atasamente-docs">
                         <i data-lucide="edit-3" class="w-4 h-4" aria-hidden="true"></i>
                         Incarca
-                    </button>
+                    </a>
                 </div>
                 <!-- View mode: list of uploaded files -->
-                <div class="card-view p-4" data-card="atasamente-docs">
+                <div class="card-view p-4 <?php echo $is_card_in_edit('atasamente-docs') ? 'hidden' : ''; ?>" data-card="atasamente-docs">
                     <?php
                     $toate_atasamentele = array_merge($atasamente_ch ?? [], $atasamente_ci ?? [], $atasamente_alt ?? []);
                     // Also include legacy doc_ch
@@ -1211,7 +1231,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                     <?php endif; ?>
                 </div>
                 <!-- Edit mode: upload form -->
-                <div class="card-edit hidden p-4" data-card="atasamente-docs">
+                <div class="card-edit p-4 <?php echo $is_card_in_edit('atasamente-docs') ? '' : 'hidden'; ?>" data-card="atasamente-docs">
                     <form method="post" action="/membru-profil?id=<?php echo $membru['id']; ?>" enctype="multipart/form-data">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="upload_atasament" value="1">
@@ -1238,7 +1258,7 @@ $btn_cancel_class = 'inline-flex items-center gap-1.5 px-4 py-2 text-sm font-med
                             <button type="submit" class="<?php echo $btn_save_class; ?>">
                                 <i data-lucide="upload" class="w-4 h-4" aria-hidden="true"></i> Incarca
                             </button>
-                            <button type="button" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</button>
+                            <a href="/membru-profil?id=<?php echo (int)$membru['id']; ?>" class="btn-cancel-card <?php echo $btn_cancel_class; ?>">Anulare</a>
                         </div>
                     </form>
                 </div>
