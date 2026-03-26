@@ -36,7 +36,7 @@ if ($tip === INCASARI_TIP_COTIZATIE) {
     $anul = incasari_an_cotizatie_implicit($pdo);
     cotizatii_ensure_tables($pdo);
     if ($reprezentand === null || $reprezentand === '') {
-        $reprezentand = 'Cotizatie membru ' . $anul;
+        $reprezentand = 'Cotizatie membru';
     }
     if ($suma <= 0) {
         $stmt = $pdo->prepare("SELECT hgrad, insotitor FROM membri WHERE id = ?");
