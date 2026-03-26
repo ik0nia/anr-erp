@@ -1493,29 +1493,56 @@ document.addEventListener('DOMContentLoaded', function() {
         if (text) { alert('Salvare esuata:\n\n' + text); }
     }
 
-    // Card edit/cancel toggle
-    document.querySelectorAll('.btn-edit-card').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var cardName = this.dataset.card;
-            var section = this.closest('section');
-            section.querySelector('.card-view[data-card="' + cardName + '"]').classList.add('hidden');
-            section.querySelector('.card-edit[data-card="' + cardName + '"]').classList.remove('hidden');
-            this.classList.add('hidden');
-            // Focus first input
-            var firstInput = section.querySelector('.card-edit input:not([type="hidden"]), .card-edit select, .card-edit textarea');
-            if (firstInput) firstInput.focus();
-            // Re-init lucide icons for the edit form
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        });
-    });
+    // Card edit/cancel toggle (delegated + robust: works for all edit buttons/cards)
+    function openEditCard(editBtn) {
+        var cardName = (editBtn && editBtn.dataset && editBtn.dataset.card) ? editBtn.dataset.card : '';
+        if (!cardName) return;
 
-    document.querySelectorAll('.btn-cancel-card').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var section = this.closest('section');
-            section.querySelector('.card-view').classList.remove('hidden');
-            section.querySelector('.card-edit').classList.add('hidden');
-            section.querySelector('.btn-edit-card').classList.remove('hidden');
-        });
+        var section = editBtn.closest('section');
+        var viewCard = section ? section.querySelector('.card-view[data-card="' + cardName + '"]') : null;
+        var editCard = section ? section.querySelector('.card-edit[data-card="' + cardName + '"]') : null;
+
+        if (!viewCard || !editCard) {
+            return;
+        }
+
+        viewCard.classList.add('hidden');
+        editCard.classList.remove('hidden');
+        editBtn.classList.add('hidden');
+
+        var firstInput = editCard.querySelector('input:not([type="hidden"]), select, textarea');
+        if (firstInput) firstInput.focus();
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeEditCard(cancelBtn) {
+        var section = cancelBtn.closest('section');
+        if (!section) return;
+
+        var editCard = cancelBtn.closest('.card-edit');
+        var cardName = (editCard && editCard.dataset && editCard.dataset.card) ? editCard.dataset.card : '';
+        var viewCard = cardName ? section.querySelector('.card-view[data-card="' + cardName + '"]') : section.querySelector('.card-view');
+        var editBtn = cardName ? section.querySelector('.btn-edit-card[data-card="' + cardName + '"]') : section.querySelector('.btn-edit-card');
+
+        if (viewCard) viewCard.classList.remove('hidden');
+        if (editCard) editCard.classList.add('hidden');
+        if (editBtn) editBtn.classList.remove('hidden');
+    }
+
+    document.addEventListener('click', function(e) {
+        var editBtn = e.target.closest('.btn-edit-card');
+        if (editBtn) {
+            e.preventDefault();
+            openEditCard(editBtn);
+            return;
+        }
+
+        var cancelBtn = e.target.closest('.btn-cancel-card');
+        if (cancelBtn) {
+            e.preventDefault();
+            closeEditCard(cancelBtn);
+        }
     });
 
     // File size validation
