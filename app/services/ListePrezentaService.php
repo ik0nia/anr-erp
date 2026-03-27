@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../bootstrap.php';
 require_once APP_ROOT . '/includes/log_helper.php';
 require_once APP_ROOT . '/includes/liste_helper.php';
+require_once APP_ROOT . '/includes/registratura_helper.php';
 
 /**
  * Incarca lista activitatilor pentru selectul din formular.
@@ -66,6 +67,36 @@ function liste_prezenta_ensure_contact_support(PDO $pdo): void {
         }
     } catch (PDOException $e) {
         // Migrarea este best-effort; eventualele erori vor fi expuse la insert, dar nu blocăm pagina aici.
+    }
+}
+
+/**
+ * Asigura coloana pentru numarul alocat din Registratura.
+ */
+function liste_prezenta_ensure_registratura_support(PDO $pdo): void {
+    try {
+        $colsRaw = $pdo->query('SHOW COLUMNS FROM liste_prezenta')->fetchAll(PDO::FETCH_ASSOC);
+        if (!$colsRaw) {
+            return;
+        }
+
+        $cols = [];
+        foreach ($colsRaw as $c) {
+            if (!empty($c['Field'])) {
+                $cols[(string)$c['Field']] = $c;
+            }
+        }
+
+        if (!isset($cols['nr_registratura'])) {
+            $pdo->exec('ALTER TABLE liste_prezenta ADD COLUMN nr_registratura VARCHAR(50) NULL AFTER data_lista');
+            try {
+                $pdo->exec('CREATE INDEX idx_liste_prezenta_nr_registratura ON liste_prezenta(nr_registratura)');
+            } catch (PDOException $e) {
+                // index existent / drepturi insuficiente - non critic
+            }
+        }
+    } catch (PDOException $e) {
+        // Migrare best-effort; nu blocam pagina daca schema nu poate fi alterata acum.
     }
 }
 
@@ -178,6 +209,13 @@ function liste_prezenta_create(PDO $pdo, array $post, string $user): array {
     }
 
     try {
+        liste_prezenta_ensure_registratura_support($pdo);
+        $started_tx = false;
+        if (!$pdo->inTransaction()) {
+            $pdo->beginTransaction();
+            $started_tx = true;
+        }
+
         $activitate_id = !empty($post['activitate_id']) ? (int)$post['activitate_id'] : null;
         if ($activitate_id !== null && $activitate_id <= 0) {
             $activitate_id = null;
@@ -225,9 +263,35 @@ function liste_prezenta_create(PDO $pdo, array $post, string $user): array {
         }
 
         $coloane_json = json_encode(array_values($d['coloane']));
-        $stmt = $pdo->prepare('INSERT INTO liste_prezenta (tip_titlu, detalii_activitate, data_lista, detalii_suplimentare_sus, coloane_selectate, detalii_suplimentare_jos, semnatura_stanga_nume, semnatura_stanga_functie, semnatura_centru_nume, semnatura_centru_functie, semnatura_dreapta_nume, semnatura_dreapta_functie, activitate_id, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+        $stmt = $pdo->prepare('INSERT INTO liste_prezenta (tip_titlu, detalii_activitate, data_lista, nr_registratura, detalii_suplimentare_sus, coloane_selectate, detalii_suplimentare_jos, semnatura_stanga_nume, semnatura_stanga_functie, semnatura_centru_nume, semnatura_centru_functie, semnatura_dreapta_nume, semnatura_dreapta_functie, activitate_id, created_by) VALUES (?,?,?,NULL,?,?,?,?,?,?,?,?,?,?,?)');
         $stmt->execute([$d['tip_titlu'], $d['detalii_activitate'], $d['data_lista'], $d['detalii_sus'], $coloane_json, $d['detalii_jos'], $d['semn_st_n'], $d['semn_st_f'], $d['semn_c_n'], $d['semn_c_f'], $d['semn_d_n'], $d['semn_d_f'], $activitate_id, $user]);
         $lista_id = $pdo->lastInsertId();
+
+        $titlu_document = trim((string)$d['tip_titlu']);
+        $detalii_document = trim((string)$d['detalii_activitate']);
+        $nume_document = $titlu_document;
+        if ($detalii_document !== '') {
+            $nume_document .= ' - ' . mb_substr($detalii_document, 0, 180);
+        }
+        if ($nume_document === '') {
+            $nume_document = 'Lista prezenta';
+        }
+
+        $reg = registratura_inregistreaza_document($pdo, [
+            'tip_act' => 'Lista prezenta',
+            'detalii' => 'Lista prezenta ID ' . (int)$lista_id . ': ' . $nume_document,
+            'nr_document' => 'LP-' . (int)$lista_id,
+            'data_document' => $d['data_lista'],
+            'provine_din' => 'ANR Bihor',
+            'continut_document' => $nume_document,
+            'destinatar_document' => 'ANR Bihor',
+        ]);
+        if (empty($reg['success']) || empty($reg['nr_inregistrare'])) {
+            $reg_err = (string)($reg['error'] ?? 'Nu s-a putut aloca numar in registratura.');
+            throw new RuntimeException($reg_err);
+        }
+        $nr_registratura = (string)$reg['nr_inregistrare'];
+        $pdo->prepare('UPDATE liste_prezenta SET nr_registratura = ? WHERE id = ?')->execute([$nr_registratura, $lista_id]);
 
         liste_prezenta_save_membri($pdo, $lista_id, $d['membri_ids'], $d['contacte_ids'], $d['participanti_manuali']);
 
@@ -239,8 +303,15 @@ function liste_prezenta_create(PDO $pdo, array $post, string $user): array {
 
         // Prezenta in istoricul membrilor se logheaza la finalizarea activitatii (ActivitatiService)
 
+        if (!empty($started_tx) && $pdo->inTransaction()) {
+            $pdo->commit();
+        }
+
         return ['success' => true, 'error' => '', 'lista_id' => (int)$lista_id, 'activitate_id' => $activitate_id];
-    } catch (PDOException $e) {
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         return ['success' => false, 'error' => 'Eroare la salvare: ' . $e->getMessage(), 'lista_id' => null, 'activitate_id' => null];
     }
 }

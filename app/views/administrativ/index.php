@@ -68,7 +68,7 @@
                         <label for="achizitie-status" class="text-sm text-slate-700 dark:text-gray-300">Status</label>
                         <select id="achizitie-status" name="status_achizitie" class="rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 px-3 py-2" aria-label="Status produs nou">
                             <?php foreach (administrativ_statusuri_achizitie() as $statusKey => $statusLabel): ?>
-                                <option value="<?php echo htmlspecialchars($statusKey); ?>" <?php echo $statusKey === 'achizitie_aprobata' ? 'selected' : ''; ?>><?php echo htmlspecialchars($statusLabel); ?></option>
+                                <option value="<?php echo htmlspecialchars($statusKey); ?>" <?php echo $statusKey === 'fara_status' ? 'selected' : ''; ?>><?php echo htmlspecialchars($statusLabel); ?></option>
                             <?php endforeach; ?>
                         </select>
                         <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">Adauga</button>

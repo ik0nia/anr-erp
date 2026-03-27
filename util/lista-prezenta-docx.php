@@ -58,7 +58,12 @@ $section->addTitle($lista['tip_titlu'], 0);
 if (!empty($lista['detalii_activitate'])) {
     $section->addText($lista['detalii_activitate'], ['size' => 10]);
 }
-$section->addText('Data: ' . date(DATE_FORMAT, strtotime($lista['data_lista'])), ['bold' => true, 'size' => 10]);
+$data_lista_formatata = date(DATE_FORMAT, strtotime($lista['data_lista']));
+if (!empty($lista['nr_registratura'])) {
+    $section->addText('Nr. ' . $lista['nr_registratura'] . ' / ' . $data_lista_formatata, ['bold' => true, 'size' => 10]);
+} else {
+    $section->addText('Data: ' . $data_lista_formatata, ['bold' => true, 'size' => 10]);
+}
 $section->addTextBreak(1);
 if (!empty($lista['detalii_suplimentare_sus'])) {
     $section->addText($lista['detalii_suplimentare_sus'], ['size' => 9], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START]);

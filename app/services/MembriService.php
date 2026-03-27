@@ -13,6 +13,7 @@ require_once APP_ROOT . '/includes/file_helper.php';
 require_once APP_ROOT . '/includes/membri_alerts.php';
 require_once APP_ROOT . '/includes/cotizatii_helper.php';
 require_once APP_ROOT . '/includes/incasari_helper.php';
+require_once APP_ROOT . '/includes/registru_interactiuni_v2_helper.php';
 
 /**
  * Lista membri cu filtrare, cautare si paginare.
@@ -20,7 +21,7 @@ require_once APP_ROOT . '/includes/incasari_helper.php';
  * @return array ['membri'=>[], 'total'=>int, 'total_pages'=>int, 'indicatori'=>[], 'membri_cu_avertizari'=>int, ...]
  */
 function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array {
-    $status_filter = $filters['status'] ?? 'activi';
+    $status_filter = $filters['status'] ?? 'toti';
     $cautare = trim($filters['cautare'] ?? '');
     $sort_col = $filters['sort'] ?? 'dosarnr';
     $sort_dir_input = strtolower($filters['dir'] ?? 'asc');
@@ -63,8 +64,8 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         $where_parts[] = "(
             status_dosar = 'Activ'
             AND (
-                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
-                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
+                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
+                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
             )
         )";
     }
@@ -199,8 +200,8 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
             status_dosar = 'Activ'
             AND (
-                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
-                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
+                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
+                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
             )");
         $membri_cu_avertizari = (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}
@@ -350,7 +351,7 @@ function membri_lista_all(PDO $pdo, array $get_params): array {
     }
 
     if ($avertizari_filter) {
-        $where_parts[] = "(status_dosar = 'Activ' AND ((cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0)) OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))))";
+        $where_parts[] = "(status_dosar = 'Activ' AND ((cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0)) OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))))";
     }
     if ($aniversari_azi_filter) {
         $where_parts[] = "datanastere IS NOT NULL AND MONTH(datanastere) = MONTH(CURDATE()) AND DAY(datanastere) = DAY(CURDATE())";
@@ -656,11 +657,25 @@ function membri_toggle_alert_informat(PDO $pdo, int $membru_id, string $alert_ti
     }
 
     try {
+        $membru = membri_get($pdo, $membru_id);
+        $nume_complet = trim((string)($membru['nume'] ?? '') . ' ' . (string)($membru['prenume'] ?? ''));
+        if ($nume_complet === '') {
+            $nume_complet = 'Membru ID ' . $membru_id;
+        }
+        $telefon_membru = trim((string)($membru['telefonnev'] ?? '')) ?: null;
+        $alert_labels = [
+            'ci' => 'expirare C.I.',
+            'ch' => 'expirare C.H.',
+            'cotizatie' => 'cotizatie neachitata',
+        ];
+        $alert_label = $alert_labels[$alert_tip] ?? $alert_tip;
+
         if ($debifa) {
             $stmt = $pdo->prepare('DELETE FROM membri_alerts_dismissed WHERE membru_id = ? AND alert_tip = ?');
             $stmt->execute([$membru_id, $alert_tip]);
             if ($stmt->rowCount() > 0) {
-                log_activitate($pdo, "membri: Avertisment {$alert_tip} debifat (membru nu mai e marcat ca informat) pentru membru ID {$membru_id}");
+                log_activitate($pdo, "membri: Membru informat resetat pentru avertizare {$alert_label} / {$nume_complet}", null, $membru_id);
+                membri_log_alert_in_registru_interactiuni($pdo, $membru_id, $nume_complet, $telefon_membru, 'Membru informat resetat', $alert_label);
             }
         } else {
             $pdo->exec("CREATE TABLE IF NOT EXISTS membri_alerts_dismissed (
@@ -678,7 +693,8 @@ function membri_toggle_alert_informat(PDO $pdo, int $membru_id, string $alert_ti
             if (!$stmt_check->fetch()) {
                 $stmt = $pdo->prepare('INSERT INTO membri_alerts_dismissed (membru_id, alert_tip) VALUES (?, ?)');
                 $stmt->execute([$membru_id, $alert_tip]);
-                log_activitate($pdo, "membri: Avertisment {$alert_tip} marcat ca informat pentru membru ID {$membru_id}");
+                log_activitate($pdo, "membri: Membru informat bifat pentru avertizare {$alert_label} / {$nume_complet}", null, $membru_id);
+                membri_log_alert_in_registru_interactiuni($pdo, $membru_id, $nume_complet, $telefon_membru, 'Membru informat', $alert_label);
             }
         }
 
@@ -686,6 +702,48 @@ function membri_toggle_alert_informat(PDO $pdo, int $membru_id, string $alert_ti
     } catch (PDOException $e) {
         $msg = $debifa ? 'Eroare la debifarea avertismentului.' : 'Eroare la marcarea avertismentului.';
         return ['success' => false, 'error' => $msg . ' ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Logheaza in registru_interactiuni_v2 evenimentul de membru informat.
+ */
+function membri_log_alert_in_registru_interactiuni(PDO $pdo, int $membru_id, string $nume_complet, ?string $telefon, string $actiune, string $alert_label): void {
+    try {
+        $subiect_id = membri_ensure_registru_v2_subiect($pdo, 'Actualizare Date');
+        $utilizator = $_SESSION['utilizator'] ?? 'Sistem';
+        $utilizator_id = $_SESSION['utilizator_id'] ?? null;
+        $notite = $actiune . ' pentru ' . $alert_label . ' / Membru ID ' . $membru_id;
+
+        $stmt = $pdo->prepare("INSERT INTO registru_interactiuni_v2
+            (tip, persoana, telefon, subiect_id, notite, utilizator, utilizator_id, data_ora)
+            VALUES ('vizita', ?, ?, ?, ?, ?, ?, NOW())");
+        $stmt->execute([$nume_complet, $telefon, $subiect_id, $notite, $utilizator, $utilizator_id]);
+    } catch (PDOException $e) {
+        // Nu blocam fluxul principal daca logarea in registru esueaza.
+    }
+}
+
+/**
+ * Asigura existenta subiectului pentru registru_interactiuni_v2 si returneaza ID-ul.
+ */
+function membri_ensure_registru_v2_subiect(PDO $pdo, string $nume_subiect): ?int {
+    try {
+        $stmt = $pdo->prepare("SELECT id FROM registru_interactiuni_v2_subiecte WHERE nume = ? LIMIT 1");
+        $stmt->execute([$nume_subiect]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && !empty($row['id'])) {
+            return (int)$row['id'];
+        }
+
+        $stmt_max = $pdo->query("SELECT COALESCE(MAX(ordine), 0) + 1 AS next_ord FROM registru_interactiuni_v2_subiecte");
+        $next_ord = (int)($stmt_max->fetch(PDO::FETCH_ASSOC)['next_ord'] ?? 1);
+
+        $stmt_ins = $pdo->prepare("INSERT INTO registru_interactiuni_v2_subiecte (nume, ordine, activ) VALUES (?, ?, 1)");
+        $stmt_ins->execute([$nume_subiect, $next_ord]);
+        return (int)$pdo->lastInsertId();
+    } catch (PDOException $e) {
+        return null;
     }
 }
 

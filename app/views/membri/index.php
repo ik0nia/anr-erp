@@ -75,12 +75,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                 <input type="hidden" name="dir" value="<?php echo htmlspecialchars(strtolower($sort_dir)); ?>">
                 <input type="hidden" name="per_page" value="<?php echo $per_page; ?>">
                 <input type="hidden" name="page" value="1">
-                <input type="hidden" name="status" value="<?php echo htmlspecialchars($status_filter); ?>">
-                <?php if ($avertizari_filter): ?><input type="hidden" name="avertizari" value="1"><?php endif; ?>
-                <?php if ($actualizare_cnp_ci_filter): ?><input type="hidden" name="actualizare_cnp_ci" value="1"><?php endif; ?>
-                <?php if ($aniversari_azi_filter): ?><input type="hidden" name="aniversari_azi" value="1"><?php endif; ?>
-                <?php if ($cotizatie_neachitata_filter): ?><input type="hidden" name="cotizatie_neachitata" value="1"><?php endif; ?>
-                <?php if ($fara_contact_filter): ?><input type="hidden" name="fara_contact" value="1"><?php endif; ?>
+                <input type="hidden" name="status" value="toti">
                 <div class="relative">
                     <i data-lucide="search" class="w-5 h-5 absolute top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-gray-500 pointer-events-none" aria-hidden="true" style="left: 14px;"></i>
                     <input type="search"
@@ -162,7 +157,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
             '&per_page=' . $per_page;
         ?>
         <!-- Rând 2: Filtre status -->
-        <div class="mb-2 flex items-center gap-2 flex-wrap">
+        <div class="mb-2 flex items-center justify-center gap-2 flex-wrap">
             <a href="<?php echo $status_base_url; ?>&status=toti"
                class="px-4 py-2 rounded-lg font-medium transition-colors <?php echo $status_filter === 'toti' ? 'bg-slate-700 text-white dark:bg-slate-500' : 'bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500'; ?>">
                 Toti
@@ -209,7 +204,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider resizable-th" data-col="dosarnr">
                                 <div class="flex items-center justify-between">
-                                    <span><?php echo membri_sort_link('dosarnr', 'Nr. Dosar', $sort_col, strtolower($sort_dir), $sort_link_params); ?></span>
+                                    <span><?php echo membri_sort_link('dosarnr', 'Nr. Dosar - Status', $sort_col, strtolower($sort_dir), $sort_link_params); ?></span>
                                     <div class="resize-handle cursor-col-resize w-1 h-full bg-transparent hover:bg-amber-400" aria-hidden="true" role="presentation"></div>
                                 </div>
                             </th>
@@ -285,7 +280,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                         <?php else: ?>
                         <?php foreach ($membri as $m):
                             $m_id = (int)($m['id'] ?? 0);
-                            $dosarnr = htmlspecialchars($m['dosarnr'] ?? '-');
+                            $dosarnr_raw = trim((string)($m['dosarnr'] ?? ''));
                             $status_afisat = $m['status_dosar'] ?? 'Activ';
                             $status_colors_dosar = [
                                 'Activ' => 'text-emerald-600 dark:text-emerald-400',
@@ -303,7 +298,12 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                             role="link"
                             aria-label="Deschide profilul <?php echo htmlspecialchars($nume_complet); ?>">
                             <td class="px-6 py-4 whitespace-nowrap text-base">
-                                <span class="font-bold <?php echo $dosar_color; ?>"><?php echo $dosarnr; ?></span>
+                                <span class="font-bold <?php echo $dosar_color; ?>">
+                                    <?php
+                                    $dosar_status = ($dosarnr_raw !== '' ? $dosarnr_raw : '-') . ' - ' . ($status_afisat !== '' ? $status_afisat : '-');
+                                    echo htmlspecialchars($dosar_status);
+                                    ?>
+                                </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-base text-left font-bold text-slate-900 dark:text-white">
                                 <?php echo htmlspecialchars($nume_complet); ?>

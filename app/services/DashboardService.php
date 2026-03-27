@@ -40,7 +40,7 @@ function dashboard_load_tasks(PDO $pdo, ?int $user_id = null): array {
 }
 
 /**
- * Incarca statistici: membri cu avertizari (CI/certificat care expira in <= 60 zile).
+ * Incarca statistici: membri cu avertizari (CI/certificat care expira in <= 65 zile).
  *
  * @return array ['membri_cu_avertizari'=>int, 'ci_de_actualizat'=>int, 'ch_de_actualizat'=>int]
  */
@@ -50,24 +50,24 @@ function dashboard_load_stats(PDO $pdo): array {
     $ch_de_actualizat = 0;
     $filter_status = "(status_dosar IS NULL OR status_dosar = 'Activ' OR status_dosar NOT IN ('Suspendat', 'Expirat', 'Retras', 'Decedat'))";
     try {
-        // CI expiring within 60 days
+        // CI expiring within 65 days
         $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
             {$filter_status}
-            AND (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))");
+            AND (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))");
         $ci_de_actualizat = (int) $stmt->fetch()['n'];
 
-        // CH expiring within 60 days
+        // CH expiring within 65 days
         $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
             {$filter_status}
-            AND (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))");
+            AND (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))");
         $ch_de_actualizat = (int) $stmt->fetch()['n'];
 
         // Combined count (backward compat): members with CI OR CH expiring
         $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE
             {$filter_status}
             AND (
-                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
-                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 60 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
+                (cidataexp IS NOT NULL AND cidataexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND cidataexp > CURDATE() AND (expira_ci_notificat IS NULL OR expira_ci_notificat = 0))
+                OR (ceexp IS NOT NULL AND ceexp <= DATE_ADD(CURDATE(), INTERVAL 65 DAY) AND ceexp > CURDATE() AND (expira_ch_notificat IS NULL OR expira_ch_notificat = 0))
             )");
         $membri_cu_avertizari = (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}

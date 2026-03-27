@@ -16,7 +16,7 @@ function administrativ_ensure_tables(PDO $pdo) {
         $cols = $pdo->query("SHOW COLUMNS FROM administrativ_achizitii")->fetchAll(PDO::FETCH_COLUMN);
         if (!empty($cols)) {
             if (!in_array('status_achizitie', $cols, true)) {
-                $pdo->exec("ALTER TABLE administrativ_achizitii ADD COLUMN status_achizitie VARCHAR(32) NOT NULL DEFAULT 'achizitie_aprobata'");
+                $pdo->exec("ALTER TABLE administrativ_achizitii ADD COLUMN status_achizitie VARCHAR(32) NOT NULL DEFAULT 'fara_status'");
             }
             if (!in_array('data_adaugare', $cols, true)) {
                 $pdo->exec("ALTER TABLE administrativ_achizitii ADD COLUMN data_adaugare DATETIME NULL");
@@ -32,7 +32,7 @@ function administrativ_ensure_tables(PDO $pdo) {
         $cols_istoric = $pdo->query("SHOW COLUMNS FROM administrativ_achizitii_istoric")->fetchAll(PDO::FETCH_COLUMN);
         if (!empty($cols_istoric)) {
             if (!in_array('status_achizitie', $cols_istoric, true)) {
-                $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN status_achizitie VARCHAR(32) NOT NULL DEFAULT 'achizitie_aprobata'");
+                $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN status_achizitie VARCHAR(32) NOT NULL DEFAULT 'fara_status'");
             }
             if (!in_array('locatie', $cols_istoric, true)) {
                 $pdo->exec("ALTER TABLE administrativ_achizitii_istoric ADD COLUMN locatie VARCHAR(100) DEFAULT NULL");
@@ -55,6 +55,7 @@ function administrativ_ensure_tables(PDO $pdo) {
 
 function administrativ_statusuri_achizitie() {
     return [
+        'fara_status' => 'Fara status',
         'achizitie_aprobata' => 'Achizitie Aprobata',
         'comandat' => 'Comandat',
         'pe_viitor' => 'Pe viitor',
@@ -65,7 +66,7 @@ function administrativ_statusuri_achizitie() {
 function administrativ_normalize_status_achizitie($status) {
     $status = is_string($status) ? trim($status) : '';
     $statusuri = administrativ_statusuri_achizitie();
-    return isset($statusuri[$status]) ? $status : 'achizitie_aprobata';
+    return isset($statusuri[$status]) ? $status : 'fara_status';
 }
 
 // ---- Necesar achiziții ----
@@ -79,7 +80,7 @@ function administrativ_achizitii_lista(PDO $pdo, $doar_necumparate = false) {
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function administrativ_achizitie_adauga(PDO $pdo, $denumire, $locatie = null, $urgenta = 'normal', $furnizor = null, $added_by = null, $status_achizitie = 'achizitie_aprobata') {
+function administrativ_achizitie_adauga(PDO $pdo, $denumire, $locatie = null, $urgenta = 'normal', $furnizor = null, $added_by = null, $status_achizitie = 'fara_status') {
     administrativ_ensure_tables($pdo);
     $locatie = in_array($locatie, ['Sediu', 'Centru', 'Alta']) ? $locatie : null;
     $urgenta = in_array($urgenta, ['normal', 'urgent', 'optional']) ? $urgenta : 'normal';

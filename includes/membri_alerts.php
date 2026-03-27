@@ -4,7 +4,7 @@
  */
 
 /**
- * Verifică dacă actul de identitate expiră în următoarele 60 zile
+ * Verifică dacă actul de identitate expiră în următoarele 65 zile
  * Folosește cidataexp dacă este disponibil, altfel calculează din cidataelib + 10 ani
  */
 function verifica_expirare_ci($cidataexp = null, $cidataelib = null) {
@@ -20,14 +20,14 @@ function verifica_expirare_ci($cidataexp = null, $cidataelib = null) {
     }
     
     $acum = new DateTime();
-    $in_60_zile = clone $acum;
-    $in_60_zile->modify('+60 days');
+    $in_65_zile = clone $acum;
+    $in_65_zile->modify('+65 days');
     
-    return $data_expirare <= $in_60_zile && $data_expirare > $acum;
+    return $data_expirare <= $in_65_zile && $data_expirare > $acum;
 }
 
 /**
- * Verifică dacă certificatul de handicap expiră în următoarele 60 zile
+ * Verifică dacă certificatul de handicap expiră în următoarele 65 zile
  */
 function verifica_expirare_certificat($ceexp) {
     if (empty($ceexp)) {
@@ -36,10 +36,10 @@ function verifica_expirare_certificat($ceexp) {
     
     $data_expirare = new DateTime($ceexp);
     $acum = new DateTime();
-    $in_60_zile = clone $acum;
-    $in_60_zile->modify('+60 days');
+    $in_65_zile = clone $acum;
+    $in_65_zile->modify('+65 days');
     
-    return $data_expirare <= $in_60_zile && $data_expirare > $acum;
+    return $data_expirare <= $in_65_zile && $data_expirare > $acum;
 }
 
 /**
