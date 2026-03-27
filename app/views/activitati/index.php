@@ -219,6 +219,42 @@
                         </table>
                     </div>
                 </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
+                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Toate activitățile programate (viitor)</h2>
+                    <p class="text-xs text-slate-600 dark:text-gray-400 mb-3">
+                        Interval afișat: de la data curentă până la ultima activitate programată.
+                    </p>
+                    <?php if (!empty($activitati_viitoare)): ?>
+                    <ul class="space-y-2" aria-label="Lista activităților programate pe viitor">
+                        <?php foreach ($activitati_viitoare as $av): ?>
+                        <?php
+                            $avDt = new DateTime($av['data_ora']);
+                            $ora_interval = $avDt->format(TIME_FORMAT);
+                            if (!empty($av['ora_finalizare'])) {
+                                $oraFin = is_object($av['ora_finalizare']) ? $av['ora_finalizare'] : new DateTime($av['ora_finalizare']);
+                                if ($oraFin instanceof DateTime) {
+                                    $ora_interval .= '-' . $oraFin->format(TIME_FORMAT);
+                                }
+                            }
+                        ?>
+                        <li class="border border-slate-200 dark:border-gray-700 rounded-lg p-3">
+                            <div class="text-sm font-medium text-slate-900 dark:text-white">
+                                <?php echo htmlspecialchars($av['nume'] ?? 'Activitate'); ?>
+                            </div>
+                            <div class="text-xs text-slate-600 dark:text-gray-400 mt-1">
+                                <?php echo data_cu_ziua_ro($avDt); ?>, <?php echo htmlspecialchars($ora_interval); ?>
+                                <?php if (!empty($av['locatie'])): ?>
+                                    — <?php echo htmlspecialchars((string)$av['locatie']); ?>
+                                <?php endif; ?>
+                            </div>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php else: ?>
+                    <p class="text-slate-500 dark:text-gray-400 text-sm">Nu există activități programate în viitor.</p>
+                    <?php endif; ?>
+                </div>
             </section>
 
             <!-- Coloana dreapta: Liste prezență + Rezumat -->
@@ -244,8 +280,8 @@
                             <thead>
                                 <tr class="border-b border-slate-200 dark:border-gray-600">
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">ID</th>
-                                    <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Listă</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Data</th>
+                                    <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Listă</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Utilizator</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Acțiuni</th>
                                 </tr>
@@ -254,12 +290,12 @@
                                 <?php foreach ($liste_prezenta as $lp): ?>
                                 <tr class="border-b border-slate-100 dark:border-gray-700">
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo (int)$lp['id']; ?></td>
-                                    <td class="py-2 text-left">
+                                    <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo date(DATE_FORMAT, strtotime($lp['data_lista'])); ?></td>
+                                    <td class="py-2 text-left align-middle">
                                         <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline font-medium">
                                             <?php echo htmlspecialchars($lp['tip_titlu'] . ($lp['detalii_activitate'] ? ': ' . mb_substr($lp['detalii_activitate'], 0, 30) : '')); ?>
                                         </a>
                                     </td>
-                                    <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo date(DATE_FORMAT, strtotime($lp['data_lista'])); ?></td>
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($lp['created_by'] ?? '-'); ?></td>
                                     <td class="py-2 flex gap-1 items-center">
                                         <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Modifică lista">Modifică</a>
@@ -281,6 +317,7 @@
                     <p class="text-slate-500 dark:text-gray-400 text-sm">Nu există liste create.</p>
                     <?php endif; ?>
                 </div>
+
             </aside>
         </div>
     </div>

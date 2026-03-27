@@ -69,7 +69,7 @@ $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','
     <?php endif; ?>
     <div class="centrat"><strong>Data: <?php echo date(DATE_FORMAT, strtotime($lista['data_lista'])); ?></strong></div>
     <?php if (!empty($lista['detalii_suplimentare_sus'])): ?>
-    <div class="centrat" style="margin: 10px 0;"><?php echo nl2br(htmlspecialchars($lista['detalii_suplimentare_sus'])); ?></div>
+    <div style="margin: 10px 0; text-align: left;"><?php echo nl2br(htmlspecialchars($lista['detalii_suplimentare_sus'])); ?></div>
     <?php endif; ?>
 
     <table>
@@ -111,7 +111,7 @@ $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','
     </table>
 
     <?php if (!empty($lista['detalii_suplimentare_jos'])): ?>
-    <div style="margin: 15px 0;"><?php echo nl2br(htmlspecialchars($lista['detalii_suplimentare_jos'])); ?></div>
+    <div style="margin: 15px 0; text-align: left;"><?php echo nl2br(htmlspecialchars($lista['detalii_suplimentare_jos'])); ?></div>
     <?php endif; ?>
 
     <?php

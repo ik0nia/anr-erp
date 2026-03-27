@@ -95,6 +95,7 @@ if ($afiseaza_tot) {
 $data_result = activitati_list($pdo, $data_start, $data_end);
 $activitati = $data_result['activitati'];
 if ($data_result['eroare']) $eroare_bd = $data_result['eroare'];
+$activitati_viitoare = activitati_list_viitoare_overview($pdo, $ziua_curenta);
 
 $liste_prezenta = activitati_liste_prezenta($pdo);
 $luni_ro = activitati_luni_ro();

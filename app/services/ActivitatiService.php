@@ -81,6 +81,31 @@ function activitati_list(PDO $pdo, string $data_start, string $data_end): array 
 }
 
 /**
+ * Listă compactă pentru panoul "activități viitoare" (de la azi până la ultima activitate programată).
+ *
+ * @return array ['activitati'=>[], 'eroare'=>string|null]
+ */
+function activitati_list_viitoare_overview(PDO $pdo, string $data_start): array {
+    $cols = activitati_columns($pdo);
+    $sel = 'id, data_ora, nume, locatie, status';
+    if (in_array('recurenta', $cols, true)) $sel .= ', recurenta';
+    if (in_array('ora_finalizare', $cols, true)) $sel .= ', ora_finalizare';
+
+    try {
+        $stmt = $pdo->prepare("SELECT {$sel} FROM activitati WHERE DATE(data_ora) >= ? AND status IN ('Planificata', 'Reprogramata') ORDER BY data_ora ASC");
+        $stmt->execute([$data_start]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$a) {
+            if (!isset($a['recurenta'])) $a['recurenta'] = null;
+            if (!isset($a['ora_finalizare'])) $a['ora_finalizare'] = null;
+        }
+        return ['activitati' => $rows, 'eroare' => null];
+    } catch (PDOException $e) {
+        return ['activitati' => [], 'eroare' => 'Eroare la încărcarea listei de activități viitoare.'];
+    }
+}
+
+/**
  * Incarca activitati trecute pentru un an specific (istoric).
  */
 function activitati_istoric(PDO $pdo, int $an): array {
