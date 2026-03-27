@@ -87,7 +87,7 @@ function activitati_list(PDO $pdo, string $data_start, string $data_end): array 
  */
 function activitati_list_viitoare_overview(PDO $pdo, string $data_start): array {
     $cols = activitati_columns($pdo);
-    $sel = 'id, data_ora, nume, locatie, status';
+    $sel = 'id, data_ora, nume, locatie, responsabili, info_suplimentare, status';
     if (in_array('recurenta', $cols, true)) $sel .= ', recurenta';
     if (in_array('ora_finalizare', $cols, true)) $sel .= ', ora_finalizare';
 
@@ -203,6 +203,77 @@ function activitati_create(PDO $pdo, array $data, string $utilizator = 'Sistem')
         return ['success' => true, 'id' => $id, 'error' => null];
     } catch (PDOException $e) {
         return ['success' => false, 'id' => null, 'error' => 'Eroare la salvare: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Actualizeaza o activitate planificata.
+ *
+ * @return array ['success'=>bool, 'error'=>string|null]
+ */
+function activitati_update(PDO $pdo, int $id, array $data, string $utilizator = 'Sistem'): array {
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'Activitate invalidă.'];
+    }
+
+    $nume = trim((string)($data['nume'] ?? ''));
+    $data_str = trim((string)($data['data'] ?? ''));
+    $ora = trim((string)($data['ora'] ?? ''));
+    if ($nume === '' || $data_str === '' || $ora === '') {
+        return ['success' => false, 'error' => 'Numele, data și ora de început sunt obligatorii.'];
+    }
+
+    $data_ora = $data_str . ' ' . $ora;
+    $dt = DateTime::createFromFormat('Y-m-d H:i', $data_ora);
+    if (!$dt) {
+        return ['success' => false, 'error' => 'Format invalid pentru data sau ora de început.'];
+    }
+
+    $ora_fin_sql = null;
+    $ora_fin_raw = trim((string)($data['ora_finalizare'] ?? ''));
+    if ($ora_fin_raw !== '') {
+        $ora_fin_dt = DateTime::createFromFormat('H:i', $ora_fin_raw);
+        if (!$ora_fin_dt) {
+            return ['success' => false, 'error' => 'Format invalid pentru ora de finalizare.'];
+        }
+        $ora_fin_sql = $ora_fin_dt->format('H:i:s');
+    }
+
+    $responsabili_array = isset($data['responsabili']) && is_array($data['responsabili']) ? $data['responsabili'] : [];
+    $responsabili = !empty($responsabili_array) ? implode(', ', array_filter(array_map('trim', $responsabili_array))) : null;
+    if ($responsabili === null && !empty($data['responsabili_text'])) {
+        $responsabili = trim((string)$data['responsabili_text']);
+    }
+
+    $locatie = trim((string)($data['locatie'] ?? ''));
+    $info = trim((string)($data['info_suplimentare'] ?? ''));
+    $rec_valide = activitati_recurente_valide();
+    $recurenta = in_array((string)($data['recurenta'] ?? ''), $rec_valide, true) ? (string)$data['recurenta'] : null;
+
+    try {
+        $stmtCurent = $pdo->prepare('SELECT id, nume, data_ora, status FROM activitati WHERE id = ?');
+        $stmtCurent->execute([$id]);
+        $curent = $stmtCurent->fetch(PDO::FETCH_ASSOC);
+        if (!$curent) {
+            return ['success' => false, 'error' => 'Activitatea nu a fost găsită.'];
+        }
+
+        $pdo->prepare('UPDATE activitati SET data_ora = ?, ora_finalizare = ?, nume = ?, locatie = ?, responsabili = ?, info_suplimentare = ?, recurenta = ? WHERE id = ?')
+            ->execute([
+                $dt->format('Y-m-d H:i'),
+                $ora_fin_sql,
+                $nume,
+                $locatie !== '' ? $locatie : null,
+                $responsabili !== '' ? $responsabili : null,
+                $info !== '' ? $info : null,
+                $recurenta,
+                $id
+            ]);
+
+        log_activitate($pdo, 'Activitate modificată: ' . ($curent['nume'] ?? 'Activitate') . ' -> ' . $nume . ' (' . $dt->format(DATETIME_FORMAT) . ')', $utilizator);
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la actualizarea activității: ' . $e->getMessage()];
     }
 }
 

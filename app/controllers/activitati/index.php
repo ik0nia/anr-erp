@@ -35,6 +35,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_activitate']))
     $eroare = $result['error'];
 }
 
+// --- POST: Editeaza activitate ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['editeaza_activitate'])) {
+    csrf_require_valid();
+    $id = (int)($_POST['activitate_id'] ?? $_POST['id'] ?? 0);
+    if ($id > 0) {
+        $result_edit = activitati_update($pdo, $id, $_POST, $utilizator);
+        if ($result_edit['success']) {
+            $redirect_afiseaza_tot = !empty($_POST['afiseaza_tot']) ? '?afiseaza_tot=1' : '';
+            $sep = $redirect_afiseaza_tot ? '&' : '?';
+            header('Location: /activitati' . $redirect_afiseaza_tot . $sep . 'succes_activitate_editata=1');
+            exit;
+        }
+        $eroare = $result_edit['error'] ?? 'Nu s-a putut actualiza activitatea.';
+    }
+}
+
 // --- POST: Actualizeaza status ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_status'])) {
     csrf_require_valid();

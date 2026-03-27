@@ -98,6 +98,9 @@ function activitati_calendar_print_h(string $v): string
             color: #666;
             font-style: italic;
         }
+        .no-print-calendar-actions {
+            display: none !important;
+        }
         @media print {
             .no-print { display: none !important; }
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
