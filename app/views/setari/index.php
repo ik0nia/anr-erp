@@ -111,7 +111,7 @@
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 mb-6" aria-labelledby="incasari-design-heading">
             <h2 id="incasari-design-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Design chitanțe</h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Configurați template-ul chitanței, dimensiunea tipăririi, logo-ul și datele asociației.</p>
-            <form method="post" action="/setari?tab=incasari">
+            <form method="post" action="/setari?tab=incasari" enctype="multipart/form-data">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_design_chitante" value="1">
                 <div class="space-y-3 mb-4">
@@ -137,6 +137,36 @@
                     <textarea name="date_asociatie" rows="6" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" placeholder="Denumire, CUI, sediu, cont bancar..."><?php echo htmlspecialchars($incasari_setari_design['date_asociatie'] ?? ''); ?></textarea>
                     <label class="block text-sm font-medium text-slate-700 dark:text-gray-300">Email notificări ștergere chitanță</label>
                     <input type="email" name="email_notificari_stergere_chitanta" value="<?php echo htmlspecialchars($incasari_setari_design['email_notificari_stergere_chitanta'] ?? ''); ?>" placeholder="ex: contabilitate@asociatie.ro" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+
+                    <div class="p-4 border border-slate-200 dark:border-gray-600 rounded-lg" aria-labelledby="setari-incasari-info-supl-heading">
+                        <h3 id="setari-incasari-info-supl-heading" class="text-base font-semibold text-slate-900 dark:text-white mb-2">Informații suplimentare pe chitanță</h3>
+                        <p class="text-sm text-slate-600 dark:text-gray-400 mb-3">
+                            Încărcați o imagine tip carte de vizită (recomandat: 5,5 cm × 8,5 cm). Imaginea este afișată pe fiecare chitanță ERP în colțul stânga-jos, la aproximativ 2 cm de linia de tăiere.
+                        </p>
+                        <label for="setari-chitanta-info-suplimentara-image" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+                            Imagine informații suplimentare (PNG/JPG/WEBP/GIF, max 8 MB)
+                        </label>
+                        <input
+                            type="file"
+                            id="setari-chitanta-info-suplimentara-image"
+                            name="info_suplimentare_chitanta_imagine"
+                            accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+                            aria-describedby="setari-chitanta-info-suplimentara-help">
+                        <p id="setari-chitanta-info-suplimentara-help" class="text-xs text-slate-500 dark:text-gray-400 mt-2">
+                            Dacă încărcați o nouă imagine, aceasta o va înlocui pe cea existentă.
+                        </p>
+
+                        <?php if (!empty($incasari_setari_design['info_suplimentare_chitanta_image_url'])): ?>
+                            <div class="mt-3">
+                                <p class="text-xs font-medium text-slate-700 dark:text-gray-300 mb-2">Previzualizare imagine activă:</p>
+                                <img
+                                    src="<?php echo htmlspecialchars($incasari_setari_design['info_suplimentare_chitanta_image_url']); ?>"
+                                    alt="Imagine informații suplimentare chitanță"
+                                    class="max-w-[220px] h-auto border border-slate-300 dark:border-gray-600 rounded">
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Salvează design</button>
             </form>

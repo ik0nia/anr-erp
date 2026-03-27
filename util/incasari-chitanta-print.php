@@ -23,6 +23,14 @@ incasari_trimite_fgo($pdo, $inc);
 
 $logo_url = incasari_get_setare($pdo, 'logo_chitanta') ?: (defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : '');
 $date_asociatie = incasari_get_setare($pdo, 'date_asociatie') ?: '';
+$info_suplimentara_img = trim((string)(incasari_get_setare($pdo, 'informatii_suplimentare_chitanta_image_path') ?? ''));
+$info_suplimentara_img_url = '';
+if ($info_suplimentara_img !== '') {
+    $abs = APP_ROOT . '/' . ltrim($info_suplimentara_img, '/');
+    if (is_file($abs)) {
+        $info_suplimentara_img_url = '/' . ltrim($info_suplimentara_img, '/');
+    }
+}
 $incasat_de = $inc['created_by'] ?? 'Utilizator';
 $dimensiune_chitanta = incasari_get_setare($pdo, 'dimensiune_chitanta') ?: 'a5';
 $format_pdf_link = $dimensiune_chitanta === 'a4' ? '' : '&format=a5';
@@ -94,6 +102,21 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
         .chitanta-half .text-incasare { line-height: 1.4; }
         .chitanta-half .footer { text-align: right; margin-top: 12mm; }
         .chitanta-half .footer .semnatura { margin-top: 2mm; border-bottom: 1px solid #000; width: 25mm; display: inline-block; }
+        .chitanta-half { position: relative; }
+        .info-suplimentara-card {
+            position: absolute;
+            left: 8mm;
+            bottom: 20mm; /* ~2 cm de linia de tăiere dintre cele 2 chitanțe */
+            width: 55mm;  /* 5.5 cm */
+            height: 85mm; /* 8.5 cm */
+            overflow: hidden;
+        }
+        .info-suplimentara-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -124,6 +147,11 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
                 Încasat de: <?php echo htmlspecialchars($incasat_de); ?><br>
                 Semnătura: <span class="semnatura"></span>
             </div>
+            <?php if ($info_suplimentara_img_url !== ''): ?>
+            <div class="info-suplimentara-card" aria-hidden="true">
+                <img src="<?php echo htmlspecialchars($info_suplimentara_img_url); ?>" alt="">
+            </div>
+            <?php endif; ?>
         </div>
         <?php endfor; ?>
     </div>

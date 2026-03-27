@@ -735,14 +735,27 @@ function setari_incasari_serii_save(PDO $pdo, array $data): array
  */
 function setari_incasari_design_save(PDO $pdo, array $data): array
 {
-    incasari_set_setare($pdo, 'logo_chitanta', trim($data['logo_chitanta'] ?? ''));
-    incasari_set_setare($pdo, 'date_asociatie', trim($data['date_asociatie'] ?? ''));
-    incasari_set_setare($pdo, 'dimensiune_chitanta', in_array(($data['dimensiune_chitanta'] ?? 'a5'), ['a5', 'a4'], true) ? $data['dimensiune_chitanta'] : 'a5');
-    incasari_set_setare($pdo, 'template_chitanta', trim($data['template_chitanta'] ?? 'standard'));
     $email_notificari_stergere = trim((string)($data['email_notificari_stergere_chitanta'] ?? ''));
     if ($email_notificari_stergere !== '' && !filter_var($email_notificari_stergere, FILTER_VALIDATE_EMAIL)) {
         return ['success' => false, 'error' => 'Adresa email pentru notificări ștergere chitanță nu este validă.'];
     }
+
+    $upload_info_img = $data['info_suplimentare_chitanta_imagine'] ?? null;
+    if (is_array($upload_info_img) && (int)($upload_info_img['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+        $upload_result = incasari_upload_info_suplimentara_image($pdo, $upload_info_img);
+        if (empty($upload_result['success'])) {
+            return ['success' => false, 'error' => $upload_result['error'] ?? 'Eroare la încărcarea imaginii pentru informații suplimentare.'];
+        }
+    }
+
+    incasari_set_setare($pdo, 'logo_chitanta', trim((string)($data['logo_chitanta'] ?? '')));
+    incasari_set_setare($pdo, 'date_asociatie', trim((string)($data['date_asociatie'] ?? '')));
+    incasari_set_setare(
+        $pdo,
+        'dimensiune_chitanta',
+        in_array((string)($data['dimensiune_chitanta'] ?? 'a5'), ['a5', 'a4'], true) ? (string)$data['dimensiune_chitanta'] : 'a5'
+    );
+    incasari_set_setare($pdo, 'template_chitanta', trim((string)($data['template_chitanta'] ?? 'standard')));
     incasari_set_setare($pdo, 'email_notificari_stergere_chitanta', $email_notificari_stergere);
     log_activitate($pdo, 'Setări: design chitanțe Încasări actualizat.');
     return ['success' => true, 'error' => null];
@@ -781,6 +794,9 @@ function setari_incasari_load(PDO $pdo): array
         $nr_final_incasari = max((int)($serie_incasari['nr_curent'] ?? 1), (int)($serie_incasari['nr_start'] ?? 1));
     }
 
+    $info_suplimentare_path = trim((string)(incasari_get_setare($pdo, 'informatii_suplimentare_chitanta_image_path') ?? ''));
+    $info_suplimentare_url = $info_suplimentare_path !== '' ? '/' . ltrim($info_suplimentare_path, '/') : '';
+
     return [
         'serie_donatii' => array_merge($serie_donatii, ['nr_final' => $nr_final_donatii]),
         'serie_incasari' => array_merge($serie_incasari, ['nr_final' => $nr_final_incasari]),
@@ -796,6 +812,8 @@ function setari_incasari_load(PDO $pdo): array
             'fgo_merchant_tax_id' => incasari_get_setare($pdo, 'fgo_merchant_tax_id') ?: '',
             'fgo_api_url' => incasari_get_setare($pdo, 'fgo_api_url') ?: 'https://api.fgo.ro',
             'fgo_mediu' => incasari_get_setare($pdo, 'fgo_mediu') ?: 'test',
+            'info_suplimentare_chitanta_image_path' => $info_suplimentare_path,
+            'info_suplimentare_chitanta_image_url' => $info_suplimentare_url,
         ],
     ];
 }
