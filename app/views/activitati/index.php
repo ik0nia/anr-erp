@@ -333,7 +333,7 @@
                                 <tr class="border-b border-slate-200 dark:border-gray-600">
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">ID</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Data</th>
-                                    <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Listă</th>
+                                    <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200" style="text-align:left !important;">Listă</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Utilizator</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Acțiuni</th>
                                 </tr>
@@ -343,8 +343,8 @@
                                 <tr class="border-b border-slate-100 dark:border-gray-700">
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo (int)$lp['id']; ?></td>
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo date(DATE_FORMAT, strtotime($lp['data_lista'])); ?></td>
-                                    <td class="py-2 text-left align-middle">
-                                        <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="inline-block text-left text-amber-600 dark:text-amber-400 hover:underline font-medium">
+                                    <td class="py-2 text-left align-middle" style="text-align:left !important;">
+                                        <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="inline-block text-left text-amber-600 dark:text-amber-400 hover:underline font-medium" style="text-align:left !important; display:inline-block; width:100%;">
                                             <?php echo htmlspecialchars($lp['tip_titlu'] . ($lp['detalii_activitate'] ? ': ' . mb_substr($lp['detalii_activitate'], 0, 30) : '')); ?>
                                         </a>
                                     </td>
