@@ -107,11 +107,12 @@ function documente_antet_sanitize_html($html) {
 
     $allowedTags = [
         'div', 'p', 'span', 'strong', 'b', 'em', 'i', 'u', 'br',
-        'img', 'a', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td',
+        'img', 'figure', 'figcaption', 'a',
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'colgroup', 'col',
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li',
     ];
     $removeWithContent = ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select', 'meta', 'link'];
-    $allowedAttrs = ['class', 'style', 'href', 'target', 'rel', 'src', 'alt', 'title', 'width', 'height', 'colspan', 'rowspan', 'align', 'cellpadding', 'cellspacing', 'border'];
+    $allowedAttrs = ['class', 'style', 'href', 'target', 'rel', 'src', 'alt', 'title', 'width', 'height', 'colspan', 'rowspan', 'align', 'cellpadding', 'cellspacing', 'border', 'span', 'data-mce-style'];
 
     $internalErrors = libxml_use_internal_errors(true);
     $dom = new DOMDocument('1.0', 'UTF-8');
@@ -218,6 +219,33 @@ function documente_antet_html($pdo = null) {
         return documente_antet_implicit_html();
     }
     try {
+        $source = 'html';
+        $stmtSource = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_source' LIMIT 1");
+        $stmtSource->execute();
+        $rowSource = $stmtSource->fetch(PDO::FETCH_ASSOC);
+        if (!empty($rowSource['valoare']) && trim((string)$rowSource['valoare']) === 'image') {
+            $source = 'image';
+        }
+
+        if ($source === 'image') {
+            $stmtImg = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_image_path' LIMIT 1");
+            $stmtImg->execute();
+            $rowImg = $stmtImg->fetch(PDO::FETCH_ASSOC);
+            $relImg = trim((string)($rowImg['valoare'] ?? ''));
+            $absImg = $relImg !== '' ? (__DIR__ . '/../' . ltrim($relImg, '/')) : '';
+
+            if ($relImg !== '' && is_file($absImg)) {
+                $stmtAlt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_image_alt' LIMIT 1");
+                $stmtAlt->execute();
+                $rowAlt = $stmtAlt->fetch(PDO::FETCH_ASSOC);
+                $alt = trim((string)($rowAlt['valoare'] ?? ''));
+                if ($alt === '') {
+                    $alt = 'Antet documente platformă';
+                }
+                return '<div class="erp-doc-antet-image-wrap"><img class="erp-doc-antet-image" src="/' . htmlspecialchars(ltrim($relImg, '/'), ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars($alt, ENT_QUOTES, 'UTF-8') . '"></div>';
+            }
+        }
+
         $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_html' LIMIT 1");
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -246,8 +274,17 @@ function documente_antet_print_css() {
 .erp-doc-antet-subtitle { margin-top: 6px; font-size: 30px; line-height: 1.15; letter-spacing: 0.4px; text-transform: uppercase; }
 .erp-doc-antet-meta { margin-top: 3px; font-size: 22px; line-height: 1.15; }
 .erp-doc-antet-meta-small { font-size: 18px; }
+.erp-doc-antet-image-wrap { width: 100%; }
+.erp-doc-antet-image { display: block; width: 100%; max-width: 100%; height: auto; object-fit: contain; }
+.erp-two-col { display:flex; gap:16px; align-items:flex-start; }
+.erp-two-col .erp-col-left { flex:1 1 50%; }
+.erp-two-col .erp-col-right { flex:1 1 50%; }
+img.erp-img-left { float:left; margin:0 12px 8px 0; max-width:50%; height:auto; }
+img.erp-img-right { float:right; margin:0 0 8px 12px; max-width:50%; height:auto; }
+img.erp-img-inline { display:inline-block; max-width:100%; height:auto; }
 @media print {
   .erp-doc-antet { margin-bottom: 10px; }
+  .erp-two-col { display:flex !important; }
 }
 ';
 }

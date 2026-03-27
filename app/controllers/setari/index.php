@@ -111,13 +111,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_antet_docume
     csrf_require_valid();
     $tab_setari = 'antet-documente';
     $antet_html_raw = (string)($_POST['documente_antet_html'] ?? '');
-    $antet_html_clean = documente_antet_sanitize_html($antet_html_raw);
-    $result = setari_save_documente_antet_html($pdo, $antet_html_clean);
-    if ($result['success']) {
-        header('Location: /setari?tab=antet-documente&succes_antet_documente=1');
-        exit;
+    $antet_source = (string)($_POST['documente_antet_source'] ?? 'html');
+    $antet_image_alt = (string)($_POST['documente_antet_image_alt'] ?? '');
+
+    $upload_result = setari_upload_documente_antet_image($pdo, $_FILES['documente_antet_image'] ?? []);
+    if (!$upload_result['success']) {
+        $eroare = $upload_result['error'] ?? 'Eroare la încărcarea imaginii antet.';
+    } else {
+        $result = setari_save_documente_antet_config($pdo, $antet_source, $antet_html_raw, $antet_image_alt);
+        if ($result['success']) {
+            header('Location: /setari?tab=antet-documente&succes_antet_documente=1');
+            exit;
+        }
+        $eroare = $result['error'] ?? 'Eroare la salvare antet documente.';
     }
-    $eroare = $result['error'] ?? 'Eroare la salvare antet documente.';
 }
 
 // ---------------------------------------------------------------------------
@@ -423,6 +430,16 @@ $antet_asociatie_docx = $general['antet_asociatie_docx'];
 $documente_antet_implicit_html = documente_antet_implicit_html($pdo);
 $documente_antet_custom_html = trim((string)(setari_get($pdo, 'documente_antet_html') ?? ''));
 $documente_antet_editor_html = $documente_antet_custom_html !== '' ? $documente_antet_custom_html : $documente_antet_implicit_html;
+$documente_antet_source = trim((string)(setari_get($pdo, 'documente_antet_source') ?? 'html'));
+if (!in_array($documente_antet_source, ['html', 'image'], true)) {
+    $documente_antet_source = 'html';
+}
+$documente_antet_image_path = trim((string)(setari_get($pdo, 'documente_antet_image_path') ?? ''));
+$documente_antet_image_url = $documente_antet_image_path !== '' ? '/' . ltrim($documente_antet_image_path, '/') : '';
+$documente_antet_image_alt = trim((string)(setari_get($pdo, 'documente_antet_image_alt') ?? ''));
+if ($documente_antet_image_alt === '') {
+    $documente_antet_image_alt = 'Antet documente platformă';
+}
 
 $subiecte_dashboard_v2 = [];
 if ($tab_setari === 'dashboard') {
