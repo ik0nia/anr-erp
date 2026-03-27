@@ -221,7 +221,15 @@
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Toate activitățile programate (viitor)</h2>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Toate activitățile programate (viitor)</h2>
+                        <a href="/util/activitati-calendar-print.php" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-600 text-sm font-medium"
+                           aria-label="Tipărește calendarul activităților programate">
+                            <i data-lucide="printer" class="w-4 h-4" aria-hidden="true"></i>
+                            Print
+                        </a>
+                    </div>
                     <p class="text-xs text-slate-600 dark:text-gray-400 mb-3">
                         Interval afișat: de la data curentă până la ultima activitate programată.
                     </p>
@@ -238,7 +246,7 @@
                                 }
                             }
                         ?>
-                        <li class="border border-slate-200 dark:border-gray-700 rounded-lg p-3">
+                        <li class="border-2 border-slate-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800">
                             <div class="text-sm font-medium text-slate-900 dark:text-white">
                                 <?php echo htmlspecialchars($av['nume'] ?? 'Activitate'); ?>
                             </div>
