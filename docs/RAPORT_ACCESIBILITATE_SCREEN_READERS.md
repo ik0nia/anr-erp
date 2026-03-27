@@ -1,10 +1,36 @@
 # ♿ Raport Accesibilitate Screen Readers - CRM ANR Bihor
-**Data:** 3 februarie 2026  
+**Data:** 27 martie 2026  
 **Scop:** Asigurare compatibilitate 100% cu cititoarele de ecran (screen readers) pentru utilizatori nevăzători
 
 ---
 
 ## ✅ PROBLEME IDENTIFICATE ȘI REZOLVATE
+
+### 0. **Actualizare audit mobil + screen reader (martie 2026)**
+**Status:** ✅ REZOLVAT
+
+**Cerințe noi implementate:**
+- ✅ Dashboard mobil:
+  - grilă „butoane mari” setată la **maxim 3 butoane / rând** (`grid-cols-3`)
+  - ordonare secțiuni pe mobil: **Butoane mari → Căutare membri → Taskuri → Registru interacțiuni → Librărie documente**
+  - pe desktop, ordinea existentă rămâne neschimbată
+- ✅ Antet mobil:
+  - buton **Notificări** în stânga sus
+  - **Logo platformă** centrat în antet
+  - buton **Meniu** în dreapta sus
+  - la notificări necitite: fără textul „Notificări necitite”, doar stil vizual distinct + badge numeric lângă clopoțel
+- ✅ Accesibilitate suplimentară:
+  - `aria-label`, `aria-haspopup`, `aria-controls`, `aria-expanded` pe butoanele mobile principale
+  - `aria-live="polite"` + `aria-atomic="true"` pe badge-ul de notificări
+  - meniu mobil cu gestionare focus (focus pe primul link la deschidere, return focus la trigger la închidere, close pe `Escape`)
+  - evitarea dublării controalelor mobile (fără creare automată redundantă în JS)
+
+**Fișiere modificate:**
+- `app/views/layout/header.php`
+- `app/views/layout/sidebar.php`
+- `js/mobile-navigation.js`
+- `app/views/dashboard/index.php`
+- `js/accessibility-enhancements.js`
 
 ### 1. **Data Calendaristică Acoperă Butonul User Menu**
 **Status:** ✅ REZOLVAT

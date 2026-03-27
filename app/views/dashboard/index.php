@@ -38,7 +38,7 @@
             <!-- Coloana stanga - Butoane rapide, Cauta membru si Librarie -->
             <aside class="lg:order-1 lg:col-span-1 flex flex-col gap-4" aria-label="Zona informatii">
                 <!-- Bloc butoane actiuni rapide -->
-                <nav class="grid grid-cols-5 gap-2 w-full" aria-label="Actiuni rapide">
+                <nav class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 w-full" aria-label="Actiuni rapide">
                     <a href="/activitati?adauga=1&redirect=<?php echo urlencode($_SERVER['REQUEST_URI'] ?? '/dashboard'); ?>" class="aspect-square flex flex-col items-center justify-center bg-white dark:bg-gray-800 border-2 border-slate-200 dark:border-gray-600 rounded-xl shadow-sm hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition relative"
                        aria-label="Creaza activitate noua">
                         <i data-lucide="calendar-plus" class="w-10 h-10 text-amber-600 dark:text-amber-400 mb-1" aria-hidden="true"></i>
@@ -104,7 +104,7 @@
                     </a>
                 </nav>
                 <!-- Bloc Cauta membru -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 lg:hidden">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Cauta Membru</h2>
                     <form method="get" action="/dashboard" id="form-cautare-membru" class="mb-4">
                         <div class="relative">
@@ -146,57 +146,10 @@
                         <?php endif; ?>
                     </div>
                 </div>
-                <!-- Bloc Librarie documente -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
-                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">
-                        <a href="/librarie-documente" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">Librarie documente</a>
-                    </h2>
-                    <form method="get" action="/dashboard" id="form-cautare-librarie" class="mb-4">
-                        <input type="hidden" name="cautare_membru" value="<?php echo htmlspecialchars($cautare_membru); ?>">
-                        <div class="relative">
-                            <input type="search" name="cautare_librarie" id="cautare_librarie"
-                                   value="<?php echo htmlspecialchars($librarie_cautare); ?>"
-                                   placeholder="Cauta document in librarie..."
-                                   class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
-                                   aria-label="Cauta document in librarie">
-                            <button type="submit" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-gray-400 hover:text-amber-600" aria-label="Cauta">
-                                <i data-lucide="search" class="w-5 h-5" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </form>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
-                        <?php if (empty($librarie_lista)): ?>
-                        <p class="text-sm text-slate-600 dark:text-gray-400"><?php echo $librarie_cautare !== '' ? 'Nu s-au gasit documente.' : 'Niciun document incarcat. <a href="/librarie-documente" class="text-amber-600 dark:text-amber-400 hover:underline">Librarie documente</a>'; ?></p>
-                        <?php else: ?>
-                        <?php foreach ($librarie_lista as $ld): ?>
-                        <div class="flex items-center justify-between gap-2 p-2 rounded hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-100 dark:border-gray-600 last:border-0">
-                            <div class="min-w-0 flex-1">
-                                <p class="text-xs font-medium text-slate-500 dark:text-gray-400 truncate"><?php echo htmlspecialchars($ld['institutie']); ?></p>
-                                <p class="text-sm font-medium text-slate-900 dark:text-white truncate"><?php echo htmlspecialchars($ld['nume_document']); ?></p>
-                            </div>
-                            <span class="flex items-center gap-2 flex-shrink-0">
-                                <a href="util/descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>&amp;print=1" target="_blank" rel="noopener noreferrer"
-                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-slate-500 transition"
-                                   aria-label="Print <?php echo htmlspecialchars($ld['nume_document']); ?>">
-                                    <i data-lucide="printer" class="w-4 h-4" aria-hidden="true"></i>
-                                    <span>Print</span>
-                                </a>
-                                <a href="util/descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>"
-                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-blue-500 transition"
-                                   aria-label="Descarca <?php echo htmlspecialchars($ld['nume_document']); ?>">
-                                    <i data-lucide="download" class="w-4 h-4" aria-hidden="true"></i>
-                                    <span>Descarca</span>
-                                </a>
-                            </span>
-                        </div>
-                        <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
             </aside>
 
             <!-- Coloana mijloc - Taskuri -->
-            <section class="lg:order-2 lg:col-span-1 flex flex-col gap-4 min-w-0 overflow-hidden" aria-labelledby="titlu-todo">
+            <section class="order-2 lg:order-2 lg:col-span-1 flex flex-col gap-4 min-w-0 overflow-hidden" aria-labelledby="titlu-todo">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden">
                     <header class="flex flex-wrap justify-between items-center gap-4 p-6 pb-4">
                         <h2 id="titlu-todo" class="text-lg font-semibold text-slate-900 dark:text-white">
@@ -276,7 +229,7 @@
             </section>
 
             <!-- Coloana dreapta - Registru Interactiuni si Interactiuni zilnice -->
-            <aside class="lg:order-3 lg:col-span-1 flex flex-col gap-4" aria-label="Registru Interactiuni">
+            <aside class="order-3 lg:order-3 lg:col-span-1 flex flex-col gap-4" aria-label="Registru Interactiuni">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
                     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                         <a href="/registru-interactiuni" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">Registru Interactiuni</a>
@@ -365,6 +318,56 @@
                     </div>
                 </div>
             </aside>
+
+            <!-- Mobile-first: Librarie documente dupa Registru Interactiuni -->
+            <section class="order-4 lg:order-1 lg:col-span-1">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
+                    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">
+                        <a href="/librarie-documente" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">Librarie documente</a>
+                    </h2>
+                    <form method="get" action="/dashboard" id="form-cautare-librarie" class="mb-4">
+                        <input type="hidden" name="cautare_membru" value="<?php echo htmlspecialchars($cautare_membru); ?>">
+                        <div class="relative">
+                            <input type="search" name="cautare_librarie" id="cautare_librarie"
+                                   value="<?php echo htmlspecialchars($librarie_cautare); ?>"
+                                   placeholder="Cauta document in librarie..."
+                                   class="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                                   aria-label="Cauta document in librarie">
+                            <button type="submit" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-gray-400 hover:text-amber-600" aria-label="Cauta">
+                                <i data-lucide="search" class="w-5 h-5" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        <?php if (empty($librarie_lista)): ?>
+                        <p class="text-sm text-slate-600 dark:text-gray-400"><?php echo $librarie_cautare !== '' ? 'Nu s-au gasit documente.' : 'Niciun document incarcat. <a href="/librarie-documente" class="text-amber-600 dark:text-amber-400 hover:underline">Librarie documente</a>'; ?></p>
+                        <?php else: ?>
+                        <?php foreach ($librarie_lista as $ld): ?>
+                        <div class="flex items-center justify-between gap-2 p-2 rounded hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-100 dark:border-gray-600 last:border-0">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-xs font-medium text-slate-500 dark:text-gray-400 truncate"><?php echo htmlspecialchars($ld['institutie']); ?></p>
+                                <p class="text-sm font-medium text-slate-900 dark:text-white truncate"><?php echo htmlspecialchars($ld['nume_document']); ?></p>
+                            </div>
+                            <span class="flex items-center gap-2 flex-shrink-0">
+                                <a href="util/descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>&amp;print=1" target="_blank" rel="noopener noreferrer"
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-slate-500 transition"
+                                   aria-label="Print <?php echo htmlspecialchars($ld['nume_document']); ?>">
+                                    <i data-lucide="printer" class="w-4 h-4" aria-hidden="true"></i>
+                                    <span>Print</span>
+                                </a>
+                                <a href="util/descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>"
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-blue-500 transition"
+                                   aria-label="Descarca <?php echo htmlspecialchars($ld['nume_document']); ?>">
+                                    <i data-lucide="download" class="w-4 h-4" aria-hidden="true"></i>
+                                    <span>Descarca</span>
+                                </a>
+                            </span>
+                        </div>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </section>
 
         </div>
     </div>

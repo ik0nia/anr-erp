@@ -8,6 +8,7 @@ if (!empty($_SESSION['user_id'])) {
 // Detectare pagina curenta pentru active state
 $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $current_path = '/' . trim($current_path, '/');
+$sidebar_notificari_is_active = ($current_path === '/notificari' || strpos($current_path, '/notificari/') === 0);
 
 function sidebar_link_class($path, $current) {
     $is_active = ($current === $path) || ($path !== '/' && $path !== '/dashboard' && strpos($current, $path) === 0);
@@ -49,7 +50,7 @@ foreach ($submenu_pages as $sp) {
         <h2 class="text-xl font-bold text-center mb-2 w-full"><?php echo htmlspecialchars(get_platform_name()); ?></h2>
         <?php if ($notificari_necitate_count > 0): ?>
         <div class="w-full mb-2" role="region" aria-label="Notificări necitite">
-            <a href="/notificari" class="flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+            <a href="/notificari" class="flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900 <?php echo $sidebar_notificari_is_active ? 'ring-2 ring-white/70' : ''; ?>"
                aria-label="Notificări necitite! Mergi la Notificări">
                 <i data-lucide="bell" class="w-5 h-5 flex-shrink-0" aria-hidden="true"></i>
                 <span class="whitespace-nowrap">Notificări necitite! (<?php echo $notificari_necitate_count; ?>)</span>
@@ -146,24 +147,6 @@ foreach ($submenu_pages as $sp) {
                 var open = panel.classList.toggle('hidden');
                 btn.setAttribute('aria-expanded', open ? 'false' : 'true');
                 if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
-            });
-        }
-
-        // Mobile: hamburger toggle
-        var sidebar = document.getElementById('navigation');
-        var overlay = document.getElementById('mobile-sidebar-overlay');
-        var hamburger = document.getElementById('mobile-menu-btn');
-
-        if (hamburger && sidebar) {
-            hamburger.addEventListener('click', function() {
-                sidebar.classList.toggle('-translate-x-full');
-                if (overlay) overlay.classList.toggle('hidden');
-            });
-        }
-        if (overlay) {
-            overlay.addEventListener('click', function() {
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
             });
         }
     })();

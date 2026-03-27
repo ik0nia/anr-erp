@@ -20,24 +20,11 @@
         const sidebar = document.querySelector('aside[role="navigation"]');
         if (!sidebar) return;
 
-        // Creează butonul hamburger dacă nu există
-        let hamburgerBtn = document.getElementById('mobile-menu-toggle');
-        if (!hamburgerBtn) {
-            hamburgerBtn = document.createElement('button');
-            hamburgerBtn.id = 'mobile-menu-toggle';
-            hamburgerBtn.className = 'lg:hidden fixed top-4 left-4 z-50 p-2 bg-slate-900 dark:bg-slate-800 text-white rounded-lg shadow-lg hover:bg-slate-800 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition';
-            hamburgerBtn.setAttribute('aria-label', 'Deschide meniul');
-            hamburgerBtn.setAttribute('aria-expanded', 'false');
-            hamburgerBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
-            document.body.appendChild(hamburgerBtn);
-            
-            // Inițializează icon-ul
-            if (typeof lucide !== 'undefined') {
-                setTimeout(() => lucide.createIcons(), 100);
-            }
-        }
+        // Folosim butonul existent din antet (nu mai generăm dinamic unul separat)
+        const hamburgerBtn = document.getElementById('mobile-menu-btn');
+        if (!hamburgerBtn) return;
 
-        // Adaugă overlay pentru mobile
+        // Reutilizează overlay-ul existent sau îl creează dacă lipsește
         let overlay = document.getElementById('mobile-sidebar-overlay');
         if (!overlay) {
             overlay = document.createElement('div');
@@ -55,20 +42,27 @@
             sidebar.classList.remove('-translate-x-full');
             sidebar.classList.add('translate-x-0');
             overlay.classList.remove('hidden');
+            overlay.setAttribute('aria-hidden', 'false');
             hamburgerBtn.setAttribute('aria-expanded', 'true');
-            hamburgerBtn.innerHTML = '<i data-lucide="x" class="w-6 h-6"></i>';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            hamburgerBtn.setAttribute('aria-label', 'Închide meniul');
             document.body.style.overflow = 'hidden';
+            var firstNavLink = sidebar.querySelector('a[href], button:not([disabled])');
+            if (firstNavLink) {
+                setTimeout(function() { firstNavLink.focus(); }, 0);
+            }
         }
 
         function closeSidebar() {
             sidebar.classList.remove('translate-x-0');
             sidebar.classList.add('-translate-x-full');
             overlay.classList.add('hidden');
+            overlay.setAttribute('aria-hidden', 'true');
             hamburgerBtn.setAttribute('aria-expanded', 'false');
-            hamburgerBtn.innerHTML = '<i data-lucide="menu" class="w-6 h-6"></i>';
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            hamburgerBtn.setAttribute('aria-label', 'Deschide meniul');
             document.body.style.overflow = '';
+            if (document.activeElement && sidebar.contains(document.activeElement)) {
+                hamburgerBtn.focus();
+            }
         }
 
         // Event listeners
@@ -102,7 +96,7 @@
         // Ajustare layout main pentru mobile
         const main = document.querySelector('main');
         if (main) {
-            main.classList.add('lg:ml-0', 'ml-0', 'pt-16', 'lg:pt-0');
+            main.classList.add('lg:ml-0', 'ml-0', 'pt-[4.5rem]', 'lg:pt-0');
         }
     }
 
@@ -183,14 +177,14 @@
     window.mobileNavigation = {
         openSidebar: function() {
             const sidebar = document.querySelector('aside[role="navigation"]');
-            const btn = document.getElementById('mobile-menu-toggle');
+            const btn = document.getElementById('mobile-menu-btn');
             if (sidebar && btn && sidebar.classList.contains('-translate-x-full')) {
                 btn.click();
             }
         },
         closeSidebar: function() {
             const sidebar = document.querySelector('aside[role="navigation"]');
-            const btn = document.getElementById('mobile-menu-toggle');
+            const btn = document.getElementById('mobile-menu-btn');
             if (sidebar && btn && !sidebar.classList.contains('-translate-x-full')) {
                 btn.click();
             }
