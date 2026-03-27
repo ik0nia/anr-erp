@@ -149,6 +149,9 @@ Schema bazei de date este organizată în mai multe fișiere SQL pentru ușurin�
 - `newsletter_email` - Email expeditor newsletter
 - `antet_asociatie_docx` - Fișier DOCX antet pentru fluxurile DOCX/PDF existente
 - `documente_antet_html` - Antet HTML configurabil pentru print-uri și tabele (cu excluderile de business definite în aplicație)
+- `documente_antet_source` - Sursa antetului documente (`html` sau `image`)
+- `documente_antet_image_path` - Calea imaginii uploadate pentru antet documente (alternativă la editor)
+- `documente_antet_image_alt` - Text alternativ (ALT) pentru imaginea de antet (accesibilitate)
 
 ---
 

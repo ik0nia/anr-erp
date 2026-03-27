@@ -508,6 +508,117 @@ function setari_save_documente_antet_html(PDO $pdo, string $antet_html): array
     }
 }
 
+/**
+ * Upload imagine pentru antetul documentelor (alternativă la antetul HTML).
+ * $file este intrarea din $_FILES['documente_antet_image'].
+ */
+function setari_upload_documente_antet_image(PDO $pdo, array $file): array
+{
+    if (!isset($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return ['success' => true, 'path' => null, 'error' => null];
+    }
+    if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'path' => null, 'error' => 'Eroare la încărcarea imaginii antet.'];
+    }
+    if (($file['size'] ?? 0) > 8 * 1024 * 1024) {
+        return ['success' => false, 'path' => null, 'error' => 'Imaginea antet depășește 8 MB.'];
+    }
+
+    $allowedByMime = [
+        'image/png' => 'png',
+        'image/jpeg' => 'jpg',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+    ];
+    $ext = strtolower((string)pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION));
+    $allowedExt = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+
+    $mime = '';
+    if (function_exists('finfo_open')) {
+        $f = finfo_open(FILEINFO_MIME_TYPE);
+        if ($f) {
+            $mime = (string)finfo_file($f, (string)($file['tmp_name'] ?? ''));
+            finfo_close($f);
+        }
+    }
+
+    $finalExt = '';
+    if ($mime !== '' && isset($allowedByMime[$mime])) {
+        $finalExt = $allowedByMime[$mime];
+    } elseif (in_array($ext, $allowedExt, true)) {
+        $finalExt = $ext === 'jpeg' ? 'jpg' : $ext;
+    }
+    if ($finalExt === '') {
+        return ['success' => false, 'path' => null, 'error' => 'Format imagine neacceptat. Sunt permise PNG/JPG/WEBP/GIF.'];
+    }
+
+    $upload_dir = APP_ROOT . '/uploads/antet-documente/';
+    if (!is_dir($upload_dir) && !mkdir($upload_dir, 0755, true)) {
+        return ['success' => false, 'path' => null, 'error' => 'Nu s-a putut crea directorul pentru imagini antet.'];
+    }
+
+    $filename = 'antet_documente_' . date('Ymd_His') . '_' . substr(md5((string)uniqid('', true)), 0, 10) . '.' . $finalExt;
+    $full_path = $upload_dir . $filename;
+    if (!move_uploaded_file((string)$file['tmp_name'], $full_path)) {
+        return ['success' => false, 'path' => null, 'error' => 'Nu s-a putut salva imaginea antet pe server.'];
+    }
+
+    try {
+        $rel_path = 'uploads/antet-documente/' . $filename;
+        $old_path = trim((string)(setari_get($pdo, 'documente_antet_image_path') ?? ''));
+        setari_set($pdo, 'documente_antet_image_path', $rel_path);
+        if ($old_path !== '' && $old_path !== $rel_path) {
+            $old_abs = APP_ROOT . '/' . ltrim($old_path, '/');
+            if (is_file($old_abs)) {
+                @unlink($old_abs);
+            }
+        }
+        log_activitate($pdo, 'Setări: imagine antet documente încărcată – ' . $filename);
+        return ['success' => true, 'path' => $rel_path, 'error' => null];
+    } catch (PDOException $e) {
+        @unlink($full_path);
+        return ['success' => false, 'path' => null, 'error' => 'Eroare la salvare setare imagine antet: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Salvează configurația antetului documente (sursă HTML sau imagine).
+ */
+function setari_save_documente_antet_config(PDO $pdo, string $source, string $antet_html, string $image_alt = ''): array
+{
+    $source = $source === 'image' ? 'image' : 'html';
+    $image_alt = trim($image_alt);
+    if ($image_alt === '') {
+        $image_alt = 'Antet documente platformă';
+    }
+
+    try {
+        $new_html = documente_antet_sanitize_html($antet_html);
+        $old_html = setari_get($pdo, 'documente_antet_html') ?? '';
+        $old_source = setari_get($pdo, 'documente_antet_source') ?? 'html';
+        $old_alt = setari_get($pdo, 'documente_antet_image_alt') ?? '';
+
+        if ($source === 'image') {
+            $img_path = trim((string)(setari_get($pdo, 'documente_antet_image_path') ?? ''));
+            $img_abs = $img_path !== '' ? APP_ROOT . '/' . ltrim($img_path, '/') : '';
+            if ($img_path === '' || !is_file($img_abs)) {
+                return ['success' => false, 'error' => 'Selectați și încărcați o imagine validă pentru antet.'];
+            }
+        }
+
+        setari_set($pdo, 'documente_antet_html', $new_html);
+        setari_set($pdo, 'documente_antet_source', $source);
+        setari_set($pdo, 'documente_antet_image_alt', $image_alt);
+
+        if ($old_html !== $new_html || $old_source !== $source || $old_alt !== $image_alt) {
+            log_activitate($pdo, 'Setări: configurație antet documente actualizată (' . $source . ').');
+        }
+        return ['success' => true, 'error' => null];
+    } catch (PDOException $e) {
+        return ['success' => false, 'error' => 'Eroare la salvare configurare antet documente: ' . $e->getMessage()];
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Cotizatii settings (delegates to cotizatii_helper)
 // ---------------------------------------------------------------------------

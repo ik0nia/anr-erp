@@ -226,153 +226,181 @@
                 Acest antet se aplică în print-uri și documente de tip listă/tabel din platformă.
                 Excluderi: <strong>Librărie documente</strong>, <strong>Generare documente</strong>, <strong>chitanțe</strong>.
             </p>
-            <form method="post" action="/setari?tab=antet-documente" class="space-y-4">
+
+            <form method="post" action="/setari?tab=antet-documente" class="space-y-5" enctype="multipart/form-data">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_antet_documente" value="1">
-                <label for="antet-documente-editor" class="block text-sm font-medium text-slate-700 dark:text-gray-300">
-                    Editor antet (WYSIWYG)
-                </label>
+                <input type="hidden" name="documente_antet_html" id="documente-antet-html-hidden" value="">
 
-                <div class="border border-slate-300 dark:border-gray-600 rounded-lg overflow-hidden">
-                    <div class="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-gray-700/50 border-b border-slate-200 dark:border-gray-600" role="toolbar" aria-label="Formatare antet documente">
-                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="bold" aria-label="Text îngroșat"><strong>B</strong></button>
-                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="italic" aria-label="Text italic"><em>I</em></button>
-                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="underline" aria-label="Text subliniat"><u>U</u></button>
-                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="insertUnorderedList" aria-label="Listă cu puncte">• Listă</button>
-                        <button type="button" class="antet-doc-btn px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" data-cmd="insertOrderedList" aria-label="Listă numerotată">1. Listă</button>
-                        <button type="button" id="antet-doc-btn-link" class="px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" aria-label="Inserează link">Link</button>
-                        <button type="button" id="antet-doc-btn-img" class="px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" aria-label="Inserează imagine">Imagine</button>
-                        <button type="button" id="antet-doc-btn-table" class="px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" aria-label="Inserează tabel">Tabel</button>
-                        <button type="button" id="antet-doc-btn-html" class="px-2 py-1 text-sm rounded border border-slate-300 dark:border-gray-500" aria-expanded="false" aria-controls="antet-documente-html-wrap">Sursă HTML</button>
-                        <button type="button" id="antet-doc-btn-reset" class="px-2 py-1 text-sm rounded border border-amber-400 text-amber-700 dark:text-amber-300" aria-label="Resetează la antetul implicit">Reset implicit</button>
+                <fieldset class="rounded-lg border border-slate-200 dark:border-gray-700 p-4" aria-describedby="antet-source-help">
+                    <legend class="px-2 text-sm font-semibold text-slate-800 dark:text-gray-200">Sursă antet documente</legend>
+                    <p id="antet-source-help" class="text-xs text-slate-600 dark:text-gray-400 mb-3">
+                        Alegeți modul de afișare al antetului: editor avansat sau imagine încărcată.
+                    </p>
+                    <div class="flex flex-wrap gap-4" role="radiogroup" aria-label="Sursă antet documente">
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-gray-200">
+                            <input type="radio" name="documente_antet_source" value="html" <?php echo $documente_antet_source === 'html' ? 'checked' : ''; ?> class="h-4 w-4 text-amber-600 focus:ring-amber-500">
+                            Editor HTML avansat
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-gray-200">
+                            <input type="radio" name="documente_antet_source" value="image" <?php echo $documente_antet_source === 'image' ? 'checked' : ''; ?> class="h-4 w-4 text-amber-600 focus:ring-amber-500">
+                            Imagine antet (upload)
+                        </label>
                     </div>
+                </fieldset>
 
-                    <div id="antet-documente-editor" contenteditable="true" class="min-h-[220px] p-4 bg-white dark:bg-gray-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500" aria-label="Editor antet documente">
-                        <?php echo $documente_antet_editor_html; ?>
+                <div id="antet-image-config" class="rounded-lg border border-slate-200 dark:border-gray-700 p-4 space-y-3 <?php echo $documente_antet_source === 'image' ? '' : 'hidden'; ?>" aria-live="polite">
+                    <h3 class="text-sm font-semibold text-slate-800 dark:text-gray-200">Imagine antet (alternativă la editor)</h3>
+                    <p class="text-xs text-slate-600 dark:text-gray-400">Formate acceptate: PNG, JPG, WEBP, GIF. Maxim 8 MB.</p>
+                    <div>
+                        <label for="documente_antet_image" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Încarcă imagine antet</label>
+                        <input type="file" id="documente_antet_image" name="documente_antet_image" accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
+                               class="block w-full text-sm text-slate-800 dark:text-gray-200 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200">
                     </div>
-
-                    <div id="antet-documente-html-wrap" class="hidden border-t border-slate-200 dark:border-gray-600 p-3 bg-slate-50 dark:bg-gray-800">
-                        <label for="antet-documente-html" class="block text-xs text-slate-600 dark:text-gray-400 mb-1">Editare sursă HTML</label>
-                        <textarea id="antet-documente-html" rows="10" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-slate-900 dark:text-white font-mono text-xs"></textarea>
+                    <div>
+                        <label for="documente_antet_image_alt" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Text alternativ imagine (accesibilitate)</label>
+                        <input type="text" id="documente_antet_image_alt" name="documente_antet_image_alt" value="<?php echo htmlspecialchars($documente_antet_image_alt); ?>"
+                               class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+                               placeholder="Ex: Antet Asociația Nevăzătorilor Bihor">
                     </div>
+                    <?php if (!empty($documente_antet_image_url)): ?>
+                    <div class="rounded border border-slate-200 dark:border-gray-600 p-3 bg-slate-50 dark:bg-gray-700/40">
+                        <p class="text-xs text-slate-600 dark:text-gray-400 mb-2">Previzualizare imagine antet curentă:</p>
+                        <img src="<?php echo htmlspecialchars($documente_antet_image_url); ?>" alt="<?php echo htmlspecialchars($documente_antet_image_alt); ?>" class="max-w-full h-auto">
+                    </div>
+                    <?php endif; ?>
                 </div>
 
-                <input type="hidden" name="documente_antet_html" id="documente-antet-html-hidden" value="">
+                <div id="antet-html-config" class="space-y-3 <?php echo $documente_antet_source === 'html' ? '' : 'hidden'; ?>" aria-live="polite">
+                    <label for="antet-documente-editor" class="block text-sm font-medium text-slate-700 dark:text-gray-300">
+                        Editor antet (avansat, stil Word)
+                    </label>
+                    <p class="text-xs text-slate-600 dark:text-gray-400">
+                        Include aliniere text, tabele, imagini, legături, liste, indentare, culori, stiluri și cod HTML.
+                        Pentru antet în 2 coloane (stânga/dreapta), folosiți butonul „Șablon 2 coloane”.
+                    </p>
+                    <div class="flex gap-2">
+                        <button type="button" id="antet-doc-template-two-cols" class="px-3 py-1.5 text-xs rounded border border-slate-300 dark:border-gray-500 text-slate-800 dark:text-gray-200">
+                            Șablon 2 coloane
+                        </button>
+                        <button type="button" id="antet-doc-reset-default" class="px-3 py-1.5 text-xs rounded border border-amber-400 text-amber-700 dark:text-amber-300">
+                            Reset implicit
+                        </button>
+                    </div>
+                    <textarea id="antet-documente-editor" class="min-h-[280px]"><?php echo htmlspecialchars($documente_antet_editor_html); ?></textarea>
+                </div>
 
                 <div class="flex flex-wrap gap-2">
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg">Salvează antetul</button>
-                    <span class="text-xs text-slate-500 dark:text-gray-400 self-center">Sunt permise: imagini, linkuri, tabele și formatare text.</span>
+                    <span class="text-xs text-slate-500 dark:text-gray-400 self-center">Editorul suportă imagini, tabele, aliniere, structură pe coloane și sursă HTML.</span>
                 </div>
             </form>
+
+            <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
             <script>
             (function () {
-                var editor = document.getElementById('antet-documente-editor');
-                var htmlWrap = document.getElementById('antet-documente-html-wrap');
-                var htmlArea = document.getElementById('antet-documente-html');
-                var htmlHidden = document.getElementById('documente-antet-html-hidden');
-                var htmlBtn = document.getElementById('antet-doc-btn-html');
+                var sourceHtmlRadio = document.querySelector('input[name="documente_antet_source"][value="html"]');
+                var sourceImageRadio = document.querySelector('input[name="documente_antet_source"][value="image"]');
+                var htmlBlock = document.getElementById('antet-html-config');
+                var imageBlock = document.getElementById('antet-image-config');
+                var hiddenHtml = document.getElementById('documente-antet-html-hidden');
+                var editorSelector = '#antet-documente-editor';
                 var defaultHtml = <?php echo json_encode($documente_antet_implicit_html, JSON_UNESCAPED_UNICODE); ?>;
-                if (!editor || !htmlHidden) return;
 
-                function syncHidden() {
-                    htmlHidden.value = editor.innerHTML;
+                function toggleBlocks() {
+                    var useImage = !!(sourceImageRadio && sourceImageRadio.checked);
+                    if (htmlBlock) htmlBlock.classList.toggle('hidden', useImage);
+                    if (imageBlock) imageBlock.classList.toggle('hidden', !useImage);
                 }
 
-                function syncSourceFromEditor() {
-                    if (htmlArea) htmlArea.value = editor.innerHTML;
+                if (sourceHtmlRadio) sourceHtmlRadio.addEventListener('change', toggleBlocks);
+                if (sourceImageRadio) sourceImageRadio.addEventListener('change', toggleBlocks);
+                toggleBlocks();
+
+                function syncTinyToHidden() {
+                    if (!hiddenHtml) return;
+                    var ed = window.tinymce ? tinymce.get('antet-documente-editor') : null;
+                    var textarea = document.getElementById('antet-documente-editor');
+                    hiddenHtml.value = ed ? ed.getContent() : (textarea ? textarea.value : '');
                 }
 
-                function syncEditorFromSource() {
-                    if (htmlArea) editor.innerHTML = htmlArea.value;
-                }
-
-                document.querySelectorAll('.antet-doc-btn[data-cmd]').forEach(function (btn) {
-                    btn.addEventListener('click', function () {
-                        var cmd = btn.getAttribute('data-cmd');
-                        if (!cmd) return;
-                        editor.focus();
-                        document.execCommand(cmd, false, null);
-                        syncHidden();
-                    });
+                tinymce.init({
+                    selector: editorSelector,
+                    menubar: 'file edit view insert format table tools',
+                    plugins: 'advlist autolink lists link image table code fullscreen wordcount visualblocks visualchars quickbars',
+                    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough forecolor backcolor | alignleft aligncenter alignright alignjustify | outdent indent | bullist numlist | table image link | removeformat code fullscreen',
+                    toolbar_mode: 'sliding',
+                    height: 420,
+                    branding: false,
+                    promotion: false,
+                    automatic_uploads: false,
+                    image_title: true,
+                    image_caption: true,
+                    image_advtab: true,
+                    object_resizing: true,
+                    browser_spellcheck: true,
+                    contextmenu: 'link image table',
+                    image_class_list: [
+                        { title: 'Imagine inline', value: 'erp-img-inline' },
+                        { title: 'Încadrare stânga (text pe dreapta)', value: 'erp-img-left' },
+                        { title: 'Încadrare dreapta (text pe stânga)', value: 'erp-img-right' }
+                    ],
+                    style_formats: [
+                        { title: 'Structură antet', items: [
+                            { title: 'Container 2 coloane', block: 'div', classes: 'erp-two-col', wrapper: true },
+                            { title: 'Coloană stânga', block: 'div', classes: 'erp-col-left', wrapper: true },
+                            { title: 'Coloană dreapta', block: 'div', classes: 'erp-col-right', wrapper: true }
+                        ] }
+                    ],
+                    content_style: [
+                        'body { font-family: Arial, sans-serif; font-size: 14px; }',
+                        '.erp-two-col { display:flex; gap:16px; align-items:flex-start; }',
+                        '.erp-two-col .erp-col-left { flex:1 1 50%; }',
+                        '.erp-two-col .erp-col-right { flex:1 1 50%; }',
+                        'img.erp-img-left { float:left; margin:0 12px 8px 0; max-width:50%; height:auto; }',
+                        'img.erp-img-right { float:right; margin:0 0 8px 12px; max-width:50%; height:auto; }',
+                        'img.erp-img-inline { display:inline-block; max-width:100%; height:auto; }'
+                    ].join('\n'),
+                    setup: function (editor) {
+                        editor.on('init change keyup undo redo input SetContent', syncTinyToHidden);
+                    }
+                }).then(function () {
+                    syncTinyToHidden();
                 });
 
-                var btnLink = document.getElementById('antet-doc-btn-link');
-                if (btnLink) {
-                    btnLink.addEventListener('click', function () {
-                        var url = window.prompt('Introduceți URL-ul linkului (https://...)');
-                        if (!url) return;
-                        editor.focus();
-                        document.execCommand('createLink', false, url);
-                        syncHidden();
+                var twoColsBtn = document.getElementById('antet-doc-template-two-cols');
+                if (twoColsBtn) {
+                    twoColsBtn.addEventListener('click', function () {
+                        var ed = tinymce.get('antet-documente-editor');
+                        if (!ed) return;
+                        var twoColsHtml = '' +
+                            '<div class="erp-two-col">' +
+                                '<div class="erp-col-left"><p><strong>Coloana stânga</strong></p><p>Introduceți conținutul dorit.</p></div>' +
+                                '<div class="erp-col-right"><p><strong>Coloana dreapta</strong></p><p>Introduceți conținutul dorit.</p></div>' +
+                            '</div>';
+                        ed.insertContent(twoColsHtml);
+                        syncTinyToHidden();
                     });
                 }
 
-                var btnImg = document.getElementById('antet-doc-btn-img');
-                if (btnImg) {
-                    btnImg.addEventListener('click', function () {
-                        var url = window.prompt('Introduceți URL-ul imaginii (https://...)');
-                        if (!url) return;
-                        editor.focus();
-                        document.execCommand('insertImage', false, url);
-                        syncHidden();
-                    });
-                }
-
-                var btnTable = document.getElementById('antet-doc-btn-table');
-                if (btnTable) {
-                    btnTable.addEventListener('click', function () {
-                        var rows = parseInt(window.prompt('Număr rânduri tabel', '2'), 10);
-                        var cols = parseInt(window.prompt('Număr coloane tabel', '2'), 10);
-                        if (!rows || !cols || rows < 1 || cols < 1 || rows > 10 || cols > 10) return;
-                        var html = '<table style="width:100%;border-collapse:collapse;" border="1" cellpadding="4" cellspacing="0"><tbody>';
-                        for (var r = 0; r < rows; r++) {
-                            html += '<tr>';
-                            for (var c = 0; c < cols; c++) html += '<td>&nbsp;</td>';
-                            html += '</tr>';
-                        }
-                        html += '</tbody></table>';
-                        editor.focus();
-                        document.execCommand('insertHTML', false, html);
-                        syncHidden();
-                    });
-                }
-
-                if (htmlBtn) {
-                    htmlBtn.addEventListener('click', function () {
-                        var isHidden = htmlWrap.classList.contains('hidden');
-                        if (isHidden) {
-                            syncSourceFromEditor();
-                            htmlWrap.classList.remove('hidden');
-                            htmlBtn.setAttribute('aria-expanded', 'true');
-                        } else {
-                            syncEditorFromSource();
-                            htmlWrap.classList.add('hidden');
-                            htmlBtn.setAttribute('aria-expanded', 'false');
-                            syncHidden();
-                        }
-                    });
-                }
-
-                if (htmlArea) {
-                    htmlArea.addEventListener('input', function () {
-                        syncEditorFromSource();
-                        syncHidden();
-                    });
-                }
-
-                var btnReset = document.getElementById('antet-doc-btn-reset');
-                if (btnReset) {
-                    btnReset.addEventListener('click', function () {
+                var resetBtn = document.getElementById('antet-doc-reset-default');
+                if (resetBtn) {
+                    resetBtn.addEventListener('click', function () {
                         if (!window.confirm('Resetați antetul la varianta implicită?')) return;
-                        editor.innerHTML = defaultHtml;
-                        if (htmlArea) htmlArea.value = defaultHtml;
-                        syncHidden();
+                        var ed = tinymce.get('antet-documente-editor');
+                        if (ed) {
+                            ed.setContent(defaultHtml);
+                            syncTinyToHidden();
+                        }
                     });
                 }
 
-                editor.addEventListener('input', syncHidden);
-                editor.addEventListener('blur', syncHidden);
-                syncHidden();
+                var form = document.querySelector('form[action="/setari?tab=antet-documente"]');
+                if (form) {
+                    form.addEventListener('submit', function () {
+                        syncTinyToHidden();
+                    });
+                }
             })();
             </script>
         </section>
