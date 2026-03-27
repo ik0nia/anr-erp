@@ -7,6 +7,11 @@
  */
 ?>
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
+    <style>
+        @media print {
+            .no-print-calendar-actions { display: none !important; }
+        }
+    </style>
     <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
         <h1 class="text-xl font-semibold text-slate-900 dark:text-white">Calendar activități</h1>
     </header>
@@ -41,6 +46,11 @@
         <?php if (isset($_GET['succes_activitate_stearsa'])): ?>
             <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg" role="alert">
                 Activitatea a fost ștearsă cu succes.
+            </div>
+        <?php endif; ?>
+        <?php if (isset($_GET['succes_activitate_editata'])): ?>
+            <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg" role="alert">
+                Activitatea a fost actualizată cu succes.
             </div>
         <?php endif; ?>
         <?php if (!empty($eroare)): ?>
@@ -256,6 +266,40 @@
                                     — <?php echo htmlspecialchars((string)$av['locatie']); ?>
                                 <?php endif; ?>
                             </div>
+                            <div class="mt-2 flex flex-wrap gap-2 no-print-calendar-actions">
+                                <button type="button"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-amber-400 dark:border-amber-500 bg-amber-100 dark:bg-amber-800/70 text-amber-900 dark:text-amber-100 hover:bg-amber-200 dark:hover:bg-amber-700 text-xs font-medium"
+                                        aria-label="Editează activitatea <?php echo htmlspecialchars((string)($av['nume'] ?? '')); ?>"
+                                        onclick='deschideEditareActivitate(<?php echo json_encode([
+                                            'id' => (int)($av['id'] ?? 0),
+                                            'nume' => (string)($av['nume'] ?? ''),
+                                            'data' => $avDt->format('Y-m-d'),
+                                            'ora' => $avDt->format('H:i'),
+                                            'ora_finalizare' => !empty($av['ora_finalizare']) ? (is_object($av['ora_finalizare']) ? $av['ora_finalizare']->format('H:i') : date('H:i', strtotime((string)$av['ora_finalizare']))) : '',
+                                            'locatie' => (string)($av['locatie'] ?? ''),
+                                            'responsabili' => (string)($av['responsabili'] ?? ''),
+                                            'info_suplimentare' => (string)($av['info_suplimentare'] ?? ''),
+                                            'recurenta' => (string)($av['recurenta'] ?? ''),
+                                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT); ?>)'>
+                                    <i data-lucide="edit" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                    Editare
+                                </button>
+                                <form method="post" action="/activitati<?php echo $afiseaza_tot ? '?afiseaza_tot=1' : ''; ?>" class="inline"
+                                      onsubmit="return confirm('Sigur doriți să ștergeți activitatea <?php echo htmlspecialchars((string)($av['nume'] ?? '')); ?>?');">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="sterge_activitate" value="1">
+                                    <input type="hidden" name="activitate_id" value="<?php echo (int)($av['id'] ?? 0); ?>">
+                                    <?php if ($afiseaza_tot): ?>
+                                    <input type="hidden" name="afiseaza_tot" value="1">
+                                    <?php endif; ?>
+                                    <button type="submit"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-500 bg-red-600 text-white hover:bg-red-700 text-xs font-medium"
+                                            aria-label="Șterge activitatea <?php echo htmlspecialchars((string)($av['nume'] ?? '')); ?>">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                        Sterge
+                                    </button>
+                                </form>
+                            </div>
                         </li>
                         <?php endforeach; ?>
                     </ul>
@@ -429,6 +473,82 @@
     </form>
 </dialog>
 
+<!-- Modal editare activitate -->
+<dialog id="formular-editare-activitate" class="rounded-lg shadow-xl p-0 max-w-lg w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto"
+        aria-labelledby="titlu-formular-editare-activitate" aria-modal="true">
+    <form method="post" action="/activitati<?php echo $afiseaza_tot ? '?afiseaza_tot=1' : ''; ?>">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="editeaza_activitate" value="1">
+        <input type="hidden" name="activitate_id" id="edit-activitate-id" value="0">
+        <?php if ($afiseaza_tot): ?>
+        <input type="hidden" name="afiseaza_tot" value="1">
+        <?php endif; ?>
+        <div class="p-6">
+            <h2 id="titlu-formular-editare-activitate" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Editare activitate</h2>
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-activitate-data" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">Data</label>
+                        <input type="date" id="edit-activitate-data" name="data" required
+                               class="w-full px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                    </div>
+                    <div>
+                        <label for="edit-activitate-ora" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">Ora de început</label>
+                        <input type="time" id="edit-activitate-ora" name="ora" required
+                               class="w-full px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                    </div>
+                </div>
+                <div>
+                    <label for="edit-activitate-ora-finalizare" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">Până la ora</label>
+                    <input type="time" id="edit-activitate-ora-finalizare" name="ora_finalizare"
+                           class="w-full px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                </div>
+                <div>
+                    <label for="edit-activitate-nume" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Nume activitate</label>
+                    <input type="text" id="edit-activitate-nume" name="nume" required
+                           class="w-full px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                </div>
+                <div>
+                    <label for="edit-activitate-recurenta" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">Recurență</label>
+                    <select id="edit-activitate-recurenta" name="recurenta" class="w-full px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                        <option value="">— Fără recurență —</option>
+                        <option value="zilnic">Zilnic</option>
+                        <option value="saptamanal">Săptămânal (aceeași zi)</option>
+                        <option value="lunar">Lunar</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="edit-activitate-locatie" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">Locație</label>
+                    <input type="text" id="edit-activitate-locatie" name="locatie"
+                           class="w-full px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                </div>
+                <div>
+                    <label for="edit-activitate-responsabili-text" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">Responsabili (text)</label>
+                    <input type="text" id="edit-activitate-responsabili-text" name="responsabili_text"
+                           class="w-full px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                           placeholder="Ex: Ion Popescu, Maria Ionescu">
+                    <p class="text-xs text-slate-600 dark:text-gray-400 mt-1">Poți introduce direct lista responsabililor, separată prin virgulă.</p>
+                </div>
+                <div>
+                    <label for="edit-activitate-info" class="block text-sm font-medium text-slate-900 dark:text-white mb-1">Informații suplimentare</label>
+                    <textarea id="edit-activitate-info" name="info_suplimentare" rows="3"
+                              class="w-full px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 bg-slate-50 dark:bg-gray-700/50 flex justify-end gap-2">
+            <button type="button" onclick="document.getElementById('formular-editare-activitate').close()"
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-600">
+                Anulare
+            </button>
+            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg focus:ring-2 focus:ring-amber-500">
+                Salvează modificările
+            </button>
+        </div>
+    </form>
+</dialog>
+
 <script>
 lucide.createIcons();
 <?php if ($deschide_formular): ?>
@@ -452,6 +572,31 @@ document.getElementById('btn-adauga-participanti')?.addEventListener('click', fu
     if (locatie) q += '&locatie=' + encodeURIComponent(locatie);
     if (responsabili) q += '&responsabili=' + encodeURIComponent(responsabili);
     window.location.href = q;
+});
+
+function deschideEditareActivitate(data) {
+    if (!data || !data.id) return;
+    var dlg = document.getElementById('formular-editare-activitate');
+    if (!dlg) return;
+    document.getElementById('edit-activitate-id').value = data.id || 0;
+    document.getElementById('edit-activitate-nume').value = data.nume || '';
+    document.getElementById('edit-activitate-data').value = data.data || '';
+    document.getElementById('edit-activitate-ora').value = data.ora || '';
+    document.getElementById('edit-activitate-ora-finalizare').value = data.ora_finalizare || '';
+    document.getElementById('edit-activitate-locatie').value = data.locatie || '';
+    document.getElementById('edit-activitate-responsabili-text').value = data.responsabili || '';
+    document.getElementById('edit-activitate-info').value = data.info_suplimentare || '';
+    document.getElementById('edit-activitate-recurenta').value = data.recurenta || '';
+    dlg.showModal();
+}
+
+document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') {
+        var dlgEdit = document.getElementById('formular-editare-activitate');
+        if (dlgEdit && dlgEdit.open) {
+            dlgEdit.close();
+        }
+    }
 });
 </script>
 </body>
