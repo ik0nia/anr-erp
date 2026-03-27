@@ -344,7 +344,7 @@
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo (int)$lp['id']; ?></td>
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo date(DATE_FORMAT, strtotime($lp['data_lista'])); ?></td>
                                     <td class="py-2 text-left align-middle">
-                                        <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline font-medium">
+                                        <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="inline-block text-left text-amber-600 dark:text-amber-400 hover:underline font-medium">
                                             <?php echo htmlspecialchars($lp['tip_titlu'] . ($lp['detalii_activitate'] ? ': ' . mb_substr($lp['detalii_activitate'], 0, 30) : '')); ?>
                                         </a>
                                     </td>
