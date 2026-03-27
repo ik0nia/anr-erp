@@ -61,7 +61,7 @@ if (!empty($lista['detalii_activitate'])) {
 $section->addText('Data: ' . date(DATE_FORMAT, strtotime($lista['data_lista'])), ['bold' => true, 'size' => 10]);
 $section->addTextBreak(1);
 if (!empty($lista['detalii_suplimentare_sus'])) {
-    $section->addText($lista['detalii_suplimentare_sus'], ['size' => 9]);
+    $section->addText($lista['detalii_suplimentare_sus'], ['size' => 9], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START]);
     $section->addTextBreak(1);
 }
 
@@ -97,7 +97,7 @@ foreach ($participanti as $i => $p) {
 }
 $section->addTextBreak(1);
 if (!empty($lista['detalii_suplimentare_jos'])) {
-    $section->addText($lista['detalii_suplimentare_jos'], ['size' => 9]);
+    $section->addText($lista['detalii_suplimentare_jos'], ['size' => 9], ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START]);
     $section->addTextBreak(1);
 }
 
