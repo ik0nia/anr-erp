@@ -1,4 +1,11 @@
 <?php if (!defined('APP_ROOT')) define('APP_ROOT', dirname(__DIR__, 3)); ?>
+<?php
+$mobile_notificari_necitate_count = 0;
+if (!empty($_SESSION['user_id']) && isset($pdo)) {
+    require_once APP_ROOT . '/includes/notificari_helper.php';
+    $mobile_notificari_necitate_count = notificari_count_necitate($pdo, (int)$_SESSION['user_id']);
+}
+?>
 <!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="utf-8">
@@ -162,10 +169,32 @@
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 flex h-screen overflow-hidden">
-<!-- Top bar mobile cu logo -->
-<div class="lg:hidden fixed top-0 left-0 right-0 z-30 bg-slate-900 dark:bg-slate-800 flex items-center justify-center py-2.5 shadow-lg">
-    <a href="/dashboard">
-        <img src="<?php echo defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : ''; ?>" alt="Logo" class="h-16 w-auto object-contain">
-    </a>
+<!-- Top bar mobile: notificari stanga, logo centru, meniu dreapta -->
+<div class="lg:hidden fixed top-0 left-0 right-0 z-50 bg-slate-900 dark:bg-slate-800 h-16 shadow-lg">
+    <div class="relative h-full flex items-center justify-center px-3">
+        <a href="/notificari"
+           id="mobile-notifications-link"
+           class="absolute left-3 inline-flex items-center justify-center w-11 h-11 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900 <?php echo $mobile_notificari_necitate_count > 0 ? 'bg-violet-600 text-white hover:bg-violet-700' : 'bg-slate-800 text-white hover:bg-slate-700'; ?>"
+           aria-label="<?php echo $mobile_notificari_necitate_count > 0 ? 'Notificări: ' . (int)$mobile_notificari_necitate_count . ' necitite' : 'Notificări'; ?>">
+            <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
+            <?php if ($mobile_notificari_necitate_count > 0): ?>
+                <span class="absolute -top-1 -right-1 min-w-[1.15rem] h-[1.15rem] px-1 rounded-full bg-red-600 text-[10px] leading-[1.15rem] font-bold text-white text-center" aria-live="polite" aria-atomic="true">
+                    <?php echo (int)$mobile_notificari_necitate_count; ?>
+                </span>
+            <?php endif; ?>
+        </a>
+
+        <a href="/dashboard" class="inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-amber-500 rounded" aria-label="Dashboard">
+            <img src="<?php echo defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : ''; ?>" alt="Logo platformă" class="h-12 w-auto object-contain">
+        </a>
+
+        <button id="mobile-menu-btn"
+                type="button"
+                class="absolute right-3 inline-flex items-center justify-center w-11 h-11 rounded-lg bg-slate-800 text-white hover:bg-slate-700 transition focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                aria-label="Deschide meniul principal"
+                aria-controls="navigation"
+                aria-expanded="false">
+            <i data-lucide="menu" class="w-5 h-5" aria-hidden="true"></i>
+        </button>
+    </div>
 </div>
-<!-- Mobile hamburger este creat de mobile-navigation.js -->
