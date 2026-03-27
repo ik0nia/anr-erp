@@ -206,8 +206,6 @@
         const skipLinks = [
             { href: '#main-content', text: 'Sari la conținut principal' },
             { href: '#navigation', text: 'Sari la navigare' },
-            { href: '#mobile-notifications-link', text: 'Sari la notificări' },
-            { href: '#mobile-menu-btn', text: 'Sari la meniul principal' },
         ];
 
         skipLinks.forEach(link => {
