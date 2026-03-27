@@ -232,7 +232,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_serii_incasa
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_design_chitante'])) {
     csrf_require_valid();
     $tab_setari = 'incasari';
-    $result = setari_incasari_design_save($pdo, $_POST);
+    $payload = $_POST;
+    $payload['info_suplimentare_chitanta_imagine'] = $_FILES['info_suplimentare_chitanta_imagine'] ?? null;
+    $result = setari_incasari_design_save($pdo, $payload);
     if ($result['success']) {
         header('Location: /setari?tab=incasari&succes_incasari=1');
         exit;

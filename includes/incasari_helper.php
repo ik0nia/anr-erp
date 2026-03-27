@@ -354,6 +354,83 @@ function incasari_set_setare($pdo, $cheie, $valoare) {
     return true;
 }
 
+/**
+ * Încarcă imaginea "Informații suplimentare pe chitanță" și salvează calea în setări.
+ *
+ * @return array ['success'=>bool, 'path'=>string|null, 'error'=>string|null]
+ */
+function incasari_upload_info_suplimentara_image($pdo, array $file) {
+    incasari_ensure_tables($pdo);
+
+    $errorCode = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+    if ($errorCode === UPLOAD_ERR_NO_FILE) {
+        return ['success' => false, 'path' => null, 'error' => 'Nu a fost selectată nicio imagine.'];
+    }
+    if ($errorCode !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'path' => null, 'error' => 'Eroare la încărcarea imaginii (cod ' . $errorCode . ').'];
+    }
+    if ((int)($file['size'] ?? 0) > 8 * 1024 * 1024) {
+        return ['success' => false, 'path' => null, 'error' => 'Imaginea depășește 8 MB.'];
+    }
+
+    $allowedByMime = [
+        'image/png' => 'png',
+        'image/jpeg' => 'jpg',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+    ];
+    $allowedExt = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+    $ext = strtolower((string)pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION));
+    $mime = '';
+
+    if (function_exists('finfo_open')) {
+        $f = finfo_open(FILEINFO_MIME_TYPE);
+        if ($f) {
+            $mime = (string)finfo_file($f, (string)($file['tmp_name'] ?? ''));
+            finfo_close($f);
+        }
+    }
+
+    $finalExt = '';
+    if ($mime !== '' && isset($allowedByMime[$mime])) {
+        $finalExt = $allowedByMime[$mime];
+    } elseif (in_array($ext, $allowedExt, true)) {
+        $finalExt = $ext === 'jpeg' ? 'jpg' : $ext;
+    }
+    if ($finalExt === '') {
+        return ['success' => false, 'path' => null, 'error' => 'Format imagine neacceptat. Folosiți PNG/JPG/WEBP/GIF.'];
+    }
+
+    $uploadDir = APP_ROOT . '/uploads/incasari-chitante/';
+    if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+        return ['success' => false, 'path' => null, 'error' => 'Nu s-a putut crea directorul pentru imagini chitanțe.'];
+    }
+
+    $filename = 'chitanta_info_' . date('Ymd_His') . '_' . substr(md5((string)uniqid('', true)), 0, 10) . '.' . $finalExt;
+    $fullPath = $uploadDir . $filename;
+    if (!move_uploaded_file((string)$file['tmp_name'], $fullPath)) {
+        return ['success' => false, 'path' => null, 'error' => 'Nu s-a putut salva imaginea pe server.'];
+    }
+
+    try {
+        $relPath = 'uploads/incasari-chitante/' . $filename;
+        $oldPath = trim((string)(incasari_get_setare($pdo, 'informatii_suplimentare_chitanta_image_path') ?? ''));
+        incasari_set_setare($pdo, 'informatii_suplimentare_chitanta_image_path', $relPath);
+
+        if ($oldPath !== '' && $oldPath !== $relPath) {
+            $oldAbs = APP_ROOT . '/' . ltrim($oldPath, '/');
+            if (is_file($oldAbs)) {
+                @unlink($oldAbs);
+            }
+        }
+
+        return ['success' => true, 'path' => $relPath, 'error' => null];
+    } catch (PDOException $e) {
+        @unlink($fullPath);
+        return ['success' => false, 'path' => null, 'error' => 'Eroare la salvarea setării imaginii: ' . $e->getMessage()];
+    }
+}
+
 /** Etichete tip încasare. */
 function incasari_tipuri_afisare() {
     return [

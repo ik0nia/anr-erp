@@ -24,6 +24,12 @@ incasari_trimite_fgo($pdo, $inc);
 $logo_url = incasari_get_setare($pdo, 'logo_chitanta') ?: (defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : '');
 $date_asociatie = incasari_get_setare($pdo, 'date_asociatie') ?: '';
 $incasat_de = $inc['created_by'] ?? 'Utilizator';
+$info_supl_img = incasari_get_setare($pdo, 'informatii_suplimentare_chitanta_image_path') ?: '';
+$info_supl_img_abs = $info_supl_img !== '' ? APP_ROOT . '/' . ltrim($info_supl_img, '/') : '';
+$info_supl_img_tag = '';
+if ($info_supl_img !== '' && is_file($info_supl_img_abs)) {
+    $info_supl_img_tag = '<img src="' . htmlspecialchars('/' . ltrim($info_supl_img, '/')) . '" style="width:55mm;height:85mm;object-fit:contain;" alt="Informatii suplimentare chitanta">';
+}
 
 $reprezentant = !empty($inc['reprezentand']) ? trim((string)$inc['reprezentand']) : '';
 if (($inc['tip'] ?? '') === INCASARI_TIP_COTIZATIE && ($reprezentant === '' || preg_match('/^Cotizatie membru\s+0$/', $reprezentant))) {
@@ -89,6 +95,10 @@ $one .= '<div style="text-align:right; font-size:11px; margin-top:' . ($template
 $one .= 'Încasat de: ' . htmlspecialchars($incasat_de) . '<br>';
 $one .= 'Semnătura: ___________________';
 $one .= '</div>';
+if ($info_supl_img_tag !== '') {
+    // 2 cm deasupra liniei de tăiere, în colțul stânga-jos al fiecărei jumătăți.
+    $one .= '<div style="position:absolute; left:8mm; bottom:20mm;">' . $info_supl_img_tag . '</div>';
+}
 
 try {
     if ($format === 'a5') {
@@ -101,7 +111,7 @@ try {
             'margin_top' => 5,
             'margin_bottom' => 5,
         ]);
-        $mpdf->WriteHTML('<div style="font-family:sans-serif;">' . $one . '</div>');
+        $mpdf->WriteHTML('<div style="font-family:sans-serif; position:relative; min-height:130mm;">' . $one . '</div>');
     } else {
         // 2 chitanțe pe o pagină A4 - fiecare exact pe jumătate (148.5mm)
         $mpdf = new \Mpdf\Mpdf([
@@ -115,7 +125,7 @@ try {
         $mpdf->autoPageBreak = false;
 
         // Prima chitanță
-        $mpdf->WriteHTML('<div style="font-family:sans-serif;">' . $one . '</div>');
+        $mpdf->WriteHTML('<div style="font-family:sans-serif; position:relative; min-height:130mm;">' . $one . '</div>');
 
         // Forțăm poziția Y la exact jumătatea paginii A4 (297mm / 2 = 148.5mm)
         $mpdf->SetY(148.5);
@@ -123,7 +133,7 @@ try {
         $mpdf->WriteHTML('<div style="border-top:1px dashed #999; padding-top:2mm;"></div>');
 
         // A doua chitanță
-        $mpdf->WriteHTML('<div style="font-family:sans-serif;">' . $one . '</div>');
+        $mpdf->WriteHTML('<div style="font-family:sans-serif; position:relative; min-height:130mm;">' . $one . '</div>');
     }
 
     $filename = 'chitanta-' . preg_replace('/[^a-z0-9_-]/i', '-', $seria . '-' . $nr) . ($format === 'a5' ? '-a5' : '') . '.pdf';

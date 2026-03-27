@@ -53,6 +53,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_design_chita
     if ($email_notificari_stergere !== '' && !filter_var($email_notificari_stergere, FILTER_VALIDATE_EMAIL)) {
         $eroare = 'Adresa email pentru notificări ștergere chitanță nu este validă.';
     } else {
+        if (isset($_FILES['info_suplimentare_chitanta_imagine']) && (int)($_FILES['info_suplimentare_chitanta_imagine']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $upload_result = incasari_upload_info_suplimentara_image($pdo, $_FILES['info_suplimentare_chitanta_imagine']);
+            if (empty($upload_result['success'])) {
+                $eroare = $upload_result['error'] ?? 'Eroare la încărcarea imaginii pentru informații suplimentare.';
+            }
+        }
+    }
+
+    if ($eroare === '') {
         incasari_set_setare($pdo, 'logo_chitanta', trim((string)($_POST['logo_chitanta'] ?? '')));
         incasari_set_setare($pdo, 'date_asociatie', trim((string)($_POST['date_asociatie'] ?? '')));
         incasari_set_setare(
@@ -87,7 +96,12 @@ $incasari_setari_design = [
     'dimensiune_chitanta' => incasari_get_setare($pdo, 'dimensiune_chitanta') ?: 'a5',
     'template_chitanta' => incasari_get_setare($pdo, 'template_chitanta') ?: 'standard',
     'email_notificari_stergere_chitanta' => incasari_get_setare($pdo, 'email_notificari_stergere_chitanta') ?: '',
+    'info_suplimentare_chitanta_image_path' => incasari_get_setare($pdo, 'informatii_suplimentare_chitanta_image_path') ?: '',
+    'info_suplimentare_chitanta_image_url' => '',
 ];
+$incasari_setari_design['info_suplimentare_chitanta_image_url'] = $incasari_setari_design['info_suplimentare_chitanta_image_path'] !== ''
+    ? '/' . ltrim((string)$incasari_setari_design['info_suplimentare_chitanta_image_path'], '/')
+    : '';
 
 include APP_ROOT . '/header.php';
 include APP_ROOT . '/sidebar.php';
