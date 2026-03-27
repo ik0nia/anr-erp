@@ -67,7 +67,15 @@ $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','
     <?php if (!empty($lista['detalii_activitate'])): ?>
     <div class="centrat"><?php echo nl2br(htmlspecialchars($lista['detalii_activitate'])); ?></div>
     <?php endif; ?>
-    <div class="centrat"><strong>Data: <?php echo date(DATE_FORMAT, strtotime($lista['data_lista'])); ?></strong></div>
+    <?php
+    $data_lista_formatata = date(DATE_FORMAT, strtotime($lista['data_lista']));
+    $nr_registratura = trim((string)($lista['nr_registratura'] ?? ''));
+    ?>
+    <?php if ($nr_registratura !== ''): ?>
+    <div class="centrat"><strong>Nr. <?php echo htmlspecialchars($nr_registratura); ?> / <?php echo htmlspecialchars($data_lista_formatata); ?></strong></div>
+    <?php else: ?>
+    <div class="centrat"><strong>Data: <?php echo htmlspecialchars($data_lista_formatata); ?></strong></div>
+    <?php endif; ?>
     <?php if (!empty($lista['detalii_suplimentare_sus'])): ?>
     <div style="margin: 10px 0; text-align: left;"><?php echo nl2br(htmlspecialchars($lista['detalii_suplimentare_sus'])); ?></div>
     <?php endif; ?>
