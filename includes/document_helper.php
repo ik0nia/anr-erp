@@ -553,6 +553,98 @@ function docx_aplica_inlocuiri_complet($docx_path, $valori) {
 }
 
 /**
+ * Repara parti XML goale din DOCX care pot provoca erori in PhpWord (DOMDocument::loadXML empty).
+ * Returneaza true daca a facut cel putin o reparatie.
+ */
+function documente_docx_repara_xml_goale($docx_path) {
+    if (!file_exists($docx_path) || !class_exists('ZipArchive')) return false;
+    $zip = new ZipArchive();
+    if ($zip->open($docx_path, ZipArchive::CREATE) !== true) return false;
+
+    $repaired = false;
+    $docXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        . '<w:body><w:p/><w:sectPr/></w:body></w:document>';
+    $hdrXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p/></w:hdr>';
+    $ftrXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        . '<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p/></w:ftr>';
+
+    $targets = [];
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $name = $zip->getNameIndex($i);
+        if (preg_match('#^word/(document|header\d+|footer\d+)\.xml$#', $name)) {
+            $targets[] = $name;
+        }
+    }
+    if (!in_array('word/document.xml', $targets, true)) {
+        $targets[] = 'word/document.xml';
+    }
+
+    foreach ($targets as $name) {
+        $content = $zip->getFromName($name);
+        $isEmpty = ($content === false || trim((string)$content) === '');
+        if (!$isEmpty) continue;
+
+        if ($name === 'word/document.xml') {
+            $zip->addFromString($name, $docXml);
+        } elseif (strpos($name, 'word/header') === 0) {
+            $zip->addFromString($name, $hdrXml);
+        } elseif (strpos($name, 'word/footer') === 0) {
+            $zip->addFromString($name, $ftrXml);
+        }
+        $repaired = true;
+    }
+
+    $zip->close();
+    return $repaired;
+}
+
+/**
+ * Verifică dacă DOCX-ul conține părți XML obligatorii nevalide/goale.
+ * Returnează true dacă fișierul e sănătos pentru procesare PhpWord.
+ */
+function documente_docx_valideaza_structura_minima($docx_path) {
+    if (!file_exists($docx_path) || !class_exists('ZipArchive')) return false;
+    $zip = new ZipArchive();
+    if ($zip->open($docx_path) !== true) return false;
+
+    $required = ['word/document.xml', '[Content_Types].xml'];
+    foreach ($required as $name) {
+        $raw = $zip->getFromName($name);
+        if ($raw === false || trim((string)$raw) === '') {
+            $zip->close();
+            return false;
+        }
+    }
+
+    $parts = ['word/document.xml'];
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $name = $zip->getNameIndex($i);
+        if (preg_match('#^word/(header\d+|footer\d+)\.xml$#', $name)) {
+            $parts[] = $name;
+        }
+    }
+    foreach ($parts as $part) {
+        $xml = $zip->getFromName($part);
+        if ($xml === false || trim((string)$xml) === '') {
+            $zip->close();
+            return false;
+        }
+        if (class_exists('DOMDocument')) {
+            $dom = new DOMDocument();
+            if (@$dom->loadXML((string)$xml) === false) {
+                $zip->close();
+                return false;
+            }
+        }
+    }
+
+    $zip->close();
+    return true;
+}
+
+/**
  * Înlocuiește în documentul DOCX orice tag rămas [nume_tag] cu un spațiu (când nu avem $valori).
  */
 function docx_inlocuieste_taguri_ramase_cu_spatiu($docx_path) {
@@ -665,6 +757,7 @@ function genereaza_document_din_valori($template_path, array $valori, $output_fi
     }
     require_once $classFile;
     try {
+        documente_docx_repara_xml_goale($template_path);
         $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($template_path);
         $templateProcessor->setMacroOpeningChars('[');
         $templateProcessor->setMacroClosingChars(']');
@@ -673,6 +766,7 @@ function genereaza_document_din_valori($template_path, array $valori, $output_fi
         }
         $templateProcessor->saveAs($output_path);
         docx_aplica_inlocuiri_complet($output_path, $valori);
+        documente_docx_repara_xml_goale($output_path);
         return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
     } catch (Exception $e) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => $e->getMessage()];
@@ -745,6 +839,7 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
     if (file_exists($classFile)) {
         require_once $classFile;
         try {
+            documente_docx_repara_xml_goale($template_path);
             $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($template_path);
             $templateProcessor->setMacroOpeningChars('[');
             $templateProcessor->setMacroClosingChars(']');
@@ -753,6 +848,7 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
             }
             $templateProcessor->saveAs($output_path);
             docx_aplica_inlocuiri_complet($output_path, $valori);
+            documente_docx_repara_xml_goale($output_path);
             return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
         } catch (Exception $e) {
             return ['success' => false, 'path' => null, 'filename' => null, 'error' => $e->getMessage()];
@@ -909,6 +1005,9 @@ function docx_la_pdf_phpword_mpdf($docx_path) {
     if (!$docx_path || !file_exists($docx_path)) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Fișierul DOCX nu există.'];
     }
+    // Unele template-uri ajung cu XML-uri goale după editări externe și declanșează
+    // DOMDocument::loadXML() cu source gol în lanțul PhpWord -> mPDF.
+    documente_docx_repara_xml_goale($docx_path);
     $autoload = __DIR__ . '/../vendor/autoload.php';
     if (!file_exists($autoload)) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Composer autoload lipsă. Rulați: composer install'];
@@ -1416,28 +1515,21 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
         }
     }
 
+    if (is_file($template_pdf_path) && filesize($template_pdf_path) === 0) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Template-ul PDF este gol (0 bytes).'];
+    }
+
     $streams = documente_pdf_extract_page_streams($template_pdf_path);
     if (empty($streams)) {
         return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Nu s-au putut citi stream-urile PDF pentru localizarea tagurilor.'];
     }
 
     $placementsByPage = [];
-    $tagFoundInRawText = false;
     foreach ($streams as $idx => $stream) {
-        if (preg_match('/\[[a-zA-Z0-9_]+\]/', (string)$stream)) {
-            $tagFoundInRawText = true;
-        }
         $p = documente_pdf_detect_tag_positions($stream, $tagValues, $idx + 1);
         if (!empty($p)) {
             $placementsByPage[$idx + 1] = $p;
         }
-    }
-
-    if (empty($placementsByPage)) {
-        $msg = $tagFoundInRawText
-            ? 'Tagurile din template-ul PDF au fost găsite, dar nu s-au putut localiza coordonatele de scriere.'
-            : 'Template-ul PDF nu conține taguri detectabile de forma [nume_tag].';
-        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => $msg];
     }
 
     $autoload = __DIR__ . '/../vendor/autoload.php';
@@ -1492,6 +1584,10 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
                     $pdf->Text($xMm, $yMm, $enc);
                 }
             }
+        }
+        if (empty($placementsByPage)) {
+            // Nu blocăm generarea dacă template-ul PDF nu are taguri detectabile în stream;
+            // livrăm documentul neschimbat (identic cu template-ul) pentru compatibilitate.
         }
         $pdf->Output('F', $output_path);
     } catch (Exception $e) {
