@@ -1211,6 +1211,12 @@ function membri_jurnal_activitate(PDO $pdo, int $membru_id, int $limit = 100): a
  */
 function membri_documente_generate(PDO $pdo, int $membru_id, array $membru): array {
     if ($membru_id <= 0) return [];
+    if (function_exists('documente_lista_generate_membru')) {
+        $direct = documente_lista_generate_membru($pdo, $membru_id);
+        if (!empty($direct)) {
+            return $direct;
+        }
+    }
     $documente = [];
 
     // 1. Search log_activitate for "Document generat" entries for this member

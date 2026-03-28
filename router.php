@@ -86,6 +86,7 @@ $routes = [
     '/api/trimite-email-document'  => ['type' => 'legacy', 'script' => 'trimite-email-document.php',      'file' => 'api/trimite-email-document.php'],
     '/api/log-print-document'      => ['type' => 'legacy', 'script' => 'log-print-document.php',          'file' => 'api/log-print-document.php'],
     '/api/log-actiune-membru'      => ['type' => 'legacy', 'script' => 'log-actiune-membru.php',         'file' => 'api/log-actiune-membru.php'],
+    '/api/marcheaza-actiune-document-generat' => ['type' => 'legacy', 'script' => 'marcheaza-actiune-document-generat.php', 'file' => 'api/marcheaza-actiune-document-generat.php'],
 ];
 
 // --- Route matching ---

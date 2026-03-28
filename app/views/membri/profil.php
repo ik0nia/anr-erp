@@ -161,6 +161,9 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             <button type="button"
                     data-action="generare-document"
                     data-membru-id="<?php echo $membru['id']; ?>"
+                    data-membru-nume="<?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>"
+                    data-membru-telefon="<?php echo htmlspecialchars((string)($membru['telefonnev'] ?? '')); ?>"
+                    data-membru-email="<?php echo htmlspecialchars((string)($membru['email'] ?? '')); ?>"
                     class="inline-flex items-center px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                     aria-label="Genereaza document pentru <?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>">
                 <i data-lucide="file-text" class="mr-2 w-4 h-4" aria-hidden="true"></i>
@@ -1282,6 +1285,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                         <tr>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider">Document</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider whitespace-nowrap">Data generare</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider whitespace-nowrap">Nr. inregistrare</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider whitespace-nowrap">Utilizator</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase tracking-wider">Actiuni</th>
                         </tr>
@@ -1298,6 +1302,9 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                             </td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
                                 <?php echo $doc_ts ? date('d.m.Y H:i', $doc_ts) : '—'; ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
+                                <?php echo htmlspecialchars((string)($doc['nr_inregistrare'] ?? '—')); ?>
                             </td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
                                 <?php echo htmlspecialchars($doc['utilizator'] ?? ''); ?>

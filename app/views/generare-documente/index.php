@@ -49,8 +49,8 @@
                            class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg w-64 text-slate-900 dark:text-white dark:bg-gray-700">
                 </div>
                 <div>
-                    <label for="fisier_template" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Fisier .docx</label>
-                    <input type="file" id="fisier_template" name="fisier_template" accept=".docx" required
+                    <label for="fisier_template" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Fisier .docx / .pdf</label>
+                    <input type="file" id="fisier_template" name="fisier_template" accept=".docx,.pdf" required
                            class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-900 dark:text-white dark:bg-gray-700">
                 </div>
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Incarca template-ul selectat">
@@ -68,6 +68,7 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Nume</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Fisier</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Tip</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Activ</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Actiuni</th>
                         </tr>
@@ -75,13 +76,14 @@
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                         <?php if (empty($templates)): ?>
                         <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista templateuri.</td>
+                            <td colspan="5" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista templateuri.</td>
                         </tr>
                         <?php else: ?>
                         <?php foreach ($templates as $t): ?>
                         <tr>
                             <td class="px-4 py-3 text-sm text-slate-900 dark:text-white"><?php echo htmlspecialchars($t['nume_afisare']); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($t['nume_fisier']); ?></td>
+                            <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo strtoupper(pathinfo((string)$t['nume_fisier'], PATHINFO_EXTENSION)); ?></td>
                             <td class="px-4 py-3">
                                 <form method="post" class="inline">
                                     <?php echo csrf_field(); ?>
@@ -147,10 +149,13 @@
                 Taguri disponibile
             </h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">
-                Templateurile se stocheaza in folderul <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">uploads/documente_template</code>. Folositi in documentele Word tagurile sub forma <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[nume_tag]</code>. Ex: <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[nume]</code>, <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[prenume]</code>, <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[datagenerare]</code>.
+                Templateurile se stocheaza in folderul <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">uploads/documente_template</code>. Sunt acceptate fisiere <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">.docx</code> si <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">.pdf</code>. Folositi tagurile sub forma <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[nume_tag]</code>. Ex: <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[nume]</code>, <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[prenume]</code>, <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[datagenerare]</code>.
+            </p>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">
+                Tagurile fara date in profilul membrului si <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[datagenerare]</code> (daca nu este bifata optiunea la generare) vor aparea ca spatiu in documentul generat; nu se afiseaza textul <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[tag]</code>.
             </p>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
-                Tagurile fara date in profilul membrului si <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[datagenerare]</code> (daca nu este bifata optiunea la generare) vor aparea ca spatiu in documentul generat; nu se afiseaza textul <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[tag]</code>.
+                Pentru template-urile PDF este necesara configurarea caii LibreOffice in <strong>Setari</strong> (campul <em>Cale LibreOffice</em>) pentru conversie si pastrarea formatarii.
             </p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
                 <?php foreach ($taguri as $tag): ?>

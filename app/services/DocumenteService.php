@@ -21,6 +21,7 @@ function documente_ensure_table(PDO $pdo): ?string {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_activ (activ)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        documente_ensure_generated_table($pdo);
         if (!is_dir(UPLOAD_TEMPLATE_DIR)) {
             mkdir(UPLOAD_TEMPLATE_DIR, 0755, true);
         }
@@ -47,18 +48,18 @@ function documente_upload_template(PDO $pdo, string $nume_afisare, array $file_i
         return 'Numele afisat este obligatoriu.';
     }
     if (!isset($file_info) || $file_info['error'] !== UPLOAD_ERR_OK) {
-        return 'Selectati un fisier .docx valid.';
+        return 'Selectati un fisier .docx sau .pdf valid.';
     }
 
     $ext = strtolower(pathinfo($file_info['name'], PATHINFO_EXTENSION));
-    if ($ext !== 'docx') {
-        return 'Doar fisiere Word (.docx) sunt acceptate.';
+    if (!in_array($ext, ['docx', 'pdf'], true)) {
+        return 'Doar fisiere Word (.docx) sau PDF (.pdf) sunt acceptate.';
     }
     if ($file_info['size'] > 10 * 1024 * 1024) {
         return 'Fisierul depaseste 10 MB.';
     }
 
-    $filename = 'tpl_' . time() . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $nume_afisare) . '.docx';
+    $filename = 'tpl_' . time() . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $nume_afisare) . '.' . $ext;
     $filepath = UPLOAD_TEMPLATE_DIR . $filename;
 
     if (!move_uploaded_file($file_info['tmp_name'], $filepath)) {
