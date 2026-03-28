@@ -8,6 +8,95 @@ define('UPLOAD_TEMPLATE_DIR', __DIR__ . '/../uploads/documente_template/');
 define('UPLOAD_GENERATE_DIR', __DIR__ . '/../uploads/documente_generate/');
 
 /**
+ * Asigură existența tabelei pentru documentele generate per membru.
+ * Folosită pentru listarea robustă în profil (fără parsare fragilă din log-uri).
+ */
+function documente_ensure_generated_table(PDO $pdo): void {
+    static $done = false;
+    if ($done) return;
+    $done = true;
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS documente_generate (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            membru_id INT NOT NULL,
+            template_id INT NULL,
+            template_nume VARCHAR(255) NULL,
+            tip_template VARCHAR(10) NULL,
+            fisier_pdf VARCHAR(255) NOT NULL,
+            fisier_docx VARCHAR(255) NULL,
+            nr_inregistrare VARCHAR(50) NULL,
+            created_by VARCHAR(255) NULL,
+            trimis_email_at DATETIME NULL,
+            trimis_whatsapp_at DATETIME NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_doc_gen_membru_data (membru_id, created_at),
+            INDEX idx_doc_gen_template (template_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    } catch (PDOException $e) {
+        // Nu blocăm fluxurile de generare în caz de eroare schema.
+    }
+}
+
+/**
+ * Curăță un segment de nume fișier pentru a evita caractere invalide.
+ */
+function documente_filename_slug($value, $fallback = 'document') {
+    $value = trim((string)$value);
+    $value = preg_replace('/[\\\\\/:*?"<>|]+/u', ' ', $value);
+    $value = preg_replace('/\s+/u', ' ', $value);
+    $value = trim($value);
+    if ($value === '') {
+        $value = (string)$fallback;
+    }
+    return mb_substr($value, 0, 120);
+}
+
+/**
+ * Salvează metadatele unui document generat în tabelul documente_generate.
+ * Returnează ID-ul nou creat sau null dacă salvarea eșuează.
+ */
+function documente_save_generated(PDO $pdo, array $payload): ?int {
+    documente_ensure_generated_table($pdo);
+    try {
+        $stmt = $pdo->prepare("INSERT INTO documente_generate
+            (membru_id, template_id, template_nume, tip_template, fisier_pdf, fisier_docx, nr_inregistrare, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            (int)($payload['membru_id'] ?? 0),
+            isset($payload['template_id']) ? (int)$payload['template_id'] : null,
+            $payload['template_nume'] ?? null,
+            $payload['tip_template'] ?? null,
+            (string)($payload['fisier_pdf'] ?? ''),
+            $payload['fisier_docx'] ?? null,
+            $payload['nr_inregistrare'] ?? null,
+            $payload['created_by'] ?? ($_SESSION['utilizator'] ?? 'Sistem'),
+        ]);
+        return (int)$pdo->lastInsertId();
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+/**
+ * Marchează înregistrarea unui document generat ca trimisă pe un canal (email/whatsapp).
+ */
+function documente_mark_generated_action(PDO $pdo, int $document_generat_id, string $channel): void {
+    if ($document_generat_id <= 0) return;
+    $channel = strtolower(trim($channel));
+    $field = null;
+    if ($channel === 'email') $field = 'trimis_email_at';
+    if ($channel === 'whatsapp') $field = 'trimis_whatsapp_at';
+    if ($field === null) return;
+    documente_ensure_generated_table($pdo);
+    try {
+        $pdo->prepare("UPDATE documente_generate SET {$field} = NOW() WHERE id = ?")->execute([$document_generat_id]);
+    } catch (PDOException $e) {
+        // Ignorăm fără a bloca fluxul principal.
+    }
+}
+
+/**
  * Formatează o dată Y-m-d conform DATE_FORMAT. Returnează spațiu dacă e gol.
  * Extrasă din closures duplicate din membru_la_valori_tag / voluntar_la_valori_tag.
  */
@@ -879,4 +968,217 @@ function converteste_docx_la_pdf($docx_path, $pdo = null) {
     }
 
     return docx_la_pdf_phpword_mpdf($docx_path);
+}
+
+/**
+ * Returnează extensia template-ului (docx/pdf) pe baza numelui de fișier.
+ */
+function documente_template_extension($template_filename) {
+    $ext = strtolower((string)pathinfo((string)$template_filename, PATHINFO_EXTENSION));
+    if ($ext === 'pdf') return 'pdf';
+    return 'docx';
+}
+
+/**
+ * Citește calea către LibreOffice din setări.
+ */
+function documente_get_libreoffice_path($pdo = null) {
+    if ($pdo === null && isset($GLOBALS['pdo'])) {
+        $pdo = $GLOBALS['pdo'];
+    }
+    if (!$pdo) return '';
+    try {
+        $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'cale_libreoffice' LIMIT 1");
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return trim((string)($row['valoare'] ?? ''));
+    } catch (Exception $e) {
+        return '';
+    }
+}
+
+/**
+ * Conversie generică cu LibreOffice (headless): docx<->pdf.
+ */
+function documente_convert_with_libreoffice($input_path, $output_ext, $pdo = null) {
+    $input_path = realpath((string)$input_path);
+    if (!$input_path || !file_exists($input_path)) {
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Fișierul sursă nu există pentru conversie.'];
+    }
+
+    $output_ext = strtolower(trim((string)$output_ext));
+    if (!in_array($output_ext, ['docx', 'pdf'], true)) {
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Format de ieșire neacceptat pentru conversie.'];
+    }
+
+    $libreoffice = documente_get_libreoffice_path($pdo);
+    if ($libreoffice === '') {
+        return [
+            'success' => false,
+            'path' => null,
+            'filename' => null,
+            'error' => 'Pentru template-urile PDF este necesar LibreOffice. Configurați calea în Setări > Documente.'
+        ];
+    }
+
+    $out_dir = dirname($input_path);
+    $expected = preg_replace('/\.[a-z0-9]+$/i', '.' . $output_ext, $input_path);
+    $cmd = escapeshellarg($libreoffice)
+        . ' --headless --convert-to ' . escapeshellarg($output_ext)
+        . ' --outdir ' . escapeshellarg($out_dir)
+        . ' ' . escapeshellarg($input_path) . ' 2>&1';
+
+    $output = [];
+    $status = 1;
+    exec($cmd, $output, $status);
+
+    if ($status === 0 && file_exists($expected)) {
+        return ['success' => true, 'path' => $expected, 'filename' => basename($expected), 'error' => null];
+    }
+
+    return [
+        'success' => false,
+        'path' => null,
+        'filename' => null,
+        'error' => 'Conversia cu LibreOffice a eșuat: ' . trim(implode(' ', array_slice($output, 0, 4)))
+    ];
+}
+
+/**
+ * Generează PDF final pornind din template PDF:
+ * PDF template -> DOCX (LibreOffice) -> înlocuire taguri -> PDF.
+ */
+function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $membru, array $opts = [], $pdo = null) {
+    $template_pdf_path = realpath((string)$template_pdf_path);
+    if (!$template_pdf_path || !file_exists($template_pdf_path)) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Template-ul PDF nu există.'];
+    }
+
+    if (!is_dir(UPLOAD_GENERATE_DIR)) {
+        @mkdir(UPLOAD_GENERATE_DIR, 0755, true);
+    }
+
+    $tmp_prefix = 'pdf_tpl_' . (int)($membru['id'] ?? 0) . '_' . uniqid();
+    $tmp_pdf_template = UPLOAD_GENERATE_DIR . $tmp_prefix . '.pdf';
+    if (!@copy($template_pdf_path, $tmp_pdf_template)) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Nu s-a putut copia template-ul PDF.'];
+    }
+
+    $converted_tpl = documente_convert_with_libreoffice($tmp_pdf_template, 'docx', $pdo);
+    if (!$converted_tpl['success']) {
+        @unlink($tmp_pdf_template);
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => $converted_tpl['error'] ?? 'Conversie PDF->DOCX eșuată.'];
+    }
+
+    $gen_docx = genereaza_document_docx($converted_tpl['path'], $membru, null, [
+        'include_data_generare' => !empty($opts['include_data_generare']),
+        'nume_template' => $opts['nume_template'] ?? 'Document PDF',
+    ]);
+    if (!$gen_docx['success']) {
+        @unlink($tmp_pdf_template);
+        @unlink($converted_tpl['path']);
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => $gen_docx['error'] ?? 'Generarea DOCX intermediar a eșuat.'];
+    }
+
+    $gen_pdf = converteste_docx_la_pdf($gen_docx['path'], $pdo);
+    @unlink($tmp_pdf_template);
+    @unlink($converted_tpl['path']);
+
+    if (!$gen_pdf['success'] || empty($gen_pdf['path']) || !file_exists($gen_pdf['path'])) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => $gen_docx['path'], 'error' => $gen_pdf['error'] ?? 'Conversia finală la PDF a eșuat.'];
+    }
+
+    return [
+        'success' => true,
+        'pdf_path' => $gen_pdf['path'],
+        'pdf_filename' => basename($gen_pdf['path']),
+        'docx_path' => $gen_docx['path'],
+        'error' => null,
+    ];
+}
+
+/**
+ * Salvează o înregistrare în istoricul documentelor generate per membru.
+ */
+function documente_inregistreaza_generare(PDO $pdo, array $data) {
+    documente_ensure_generated_table($pdo);
+    $membru_id = (int)($data['membru_id'] ?? 0);
+    $fisier_pdf = trim((string)($data['fisier_pdf'] ?? ''));
+    if ($membru_id <= 0 || $fisier_pdf === '') {
+        return null;
+    }
+    try {
+        $stmt = $pdo->prepare("INSERT INTO documente_generate
+            (membru_id, template_id, template_nume, tip_template, fisier_pdf, fisier_docx, nr_inregistrare, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
+            $membru_id,
+            !empty($data['template_id']) ? (int)$data['template_id'] : null,
+            $data['template_nume'] ?? null,
+            $data['tip_template'] ?? null,
+            $fisier_pdf,
+            $data['fisier_docx'] ?? null,
+            $data['nr_inregistrare'] ?? null,
+            $data['created_by'] ?? ($_SESSION['utilizator'] ?? 'Sistem'),
+        ]);
+        return (int)$pdo->lastInsertId();
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+/**
+ * Marchează acțiuni ulterioare pe documentul generat (email/whatsapp).
+ */
+function documente_marcheaza_actiune(PDO $pdo, $document_generat_id, $actiune) {
+    documente_ensure_generated_table($pdo);
+    $id = (int)$document_generat_id;
+    $actiune = strtolower(trim((string)$actiune));
+    if ($id <= 0) return false;
+    $camp = null;
+    if ($actiune === 'email') $camp = 'trimis_email_at';
+    if ($actiune === 'whatsapp') $camp = 'trimis_whatsapp_at';
+    if ($camp === null) return false;
+    try {
+        $stmt = $pdo->prepare("UPDATE documente_generate SET {$camp} = NOW() WHERE id = ?");
+        return $stmt->execute([$id]);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Lista documentelor generate pentru profilul membrului.
+ */
+function documente_lista_generate_membru(PDO $pdo, $membru_id) {
+    documente_ensure_generated_table($pdo);
+    $membru_id = (int)$membru_id;
+    if ($membru_id <= 0) return [];
+    try {
+        $stmt = $pdo->prepare("SELECT id, template_nume, fisier_pdf, nr_inregistrare, created_by, created_at
+                               FROM documente_generate
+                               WHERE membru_id = ?
+                               ORDER BY created_at DESC, id DESC
+                               LIMIT 200");
+        $stmt->execute([$membru_id]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return [];
+    }
+
+    $list = [];
+    foreach ($rows as $r) {
+        $pdf = (string)($r['fisier_pdf'] ?? '');
+        $token = $pdf !== '' ? base64_encode($pdf) : '';
+        $list[] = [
+            'id' => (int)$r['id'],
+            'nume' => trim((string)($r['template_nume'] ?? '')) !== '' ? (string)$r['template_nume'] : $pdf,
+            'data' => $r['created_at'] ?? null,
+            'utilizator' => $r['created_by'] ?? '',
+            'nr_inregistrare' => $r['nr_inregistrare'] ?? null,
+            'url' => $token !== '' ? ('/util/descarca-document.php?token=' . rawurlencode($token) . '&type=pdf') : null,
+            'fisier_pdf' => $pdf,
+        ];
+    }
+    return $list;
 }

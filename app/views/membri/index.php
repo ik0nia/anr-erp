@@ -339,6 +339,9 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     <button type="button"
                                             data-action="generare-document"
                                             data-membru-id="<?php echo $m['id']; ?>"
+                                            data-membru-nume="<?php echo htmlspecialchars($m['nume'] . ' ' . $m['prenume']); ?>"
+                                            data-membru-telefon="<?php echo htmlspecialchars((string)($m['telefonnev'] ?? '')); ?>"
+                                            data-membru-email="<?php echo htmlspecialchars((string)($m['email'] ?? '')); ?>"
                                             class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-blue-600 dark:border-blue-500 bg-blue-700 dark:bg-blue-700 text-white hover:bg-blue-600 dark:hover:bg-blue-600 font-medium"
                                             aria-label="Genereaza document pentru <?php echo htmlspecialchars($m['nume'] . ' ' . $m['prenume']); ?>">
                                         <i data-lucide="file-text" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
