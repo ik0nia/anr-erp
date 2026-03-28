@@ -17,6 +17,13 @@ if (!isset($templates_active)) {
 $doc_api_base = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
 if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
 ?>
+<style>
+#modal-generare-document::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+</style>
 <dialog id="modal-generare-document" class="rounded-lg shadow-xl p-0 max-w-2xl w-full bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700"
         data-document-api-base="<?php echo htmlspecialchars($doc_api_base); ?>"
         aria-labelledby="modal-doc-titlu" aria-modal="true">
