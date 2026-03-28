@@ -76,6 +76,15 @@ try {
     if (!file_exists($template_path)) {
         $sendJson(['success' => false, 'error' => 'Fișierul template nu există pe disc.']);
     }
+    $template_ext = documente_template_extension($template['nume_fisier'] ?? '');
+    $integrity = documente_validate_template_integrity($template_path, $template_ext);
+    if (empty($integrity['ok'])) {
+        $sendJson(documente_api_error_payload(
+            $integrity['error'] ?? '',
+            'Template-ul selectat este invalid sau gol. Reincarcati template-ul si incercati din nou.',
+            'TEMPLATE_INTEGRITY_ERROR'
+        ));
+    }
 
     // Director pentru documente generate (DOCX/PDF) descărcabile și arhivate
     $generated_dir = __DIR__ . '/../uploads/documente_generate/';
@@ -89,7 +98,6 @@ try {
     $timestamp = date('Ymd_His');
     $base_name = $timestamp . '-' . $membru_nume_simplu . '-' . $template_simplu;
 
-    $template_ext = documente_template_extension($template['nume_fisier'] ?? '');
     $docx_filename = null;
     $docx_target_filename = null;
     $docx_target_path = null;
