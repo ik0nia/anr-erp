@@ -79,6 +79,37 @@ function documente_save_generated(PDO $pdo, array $payload): ?int {
 }
 
 /**
+ * Normalizează mesaje tehnice în erori clare pentru UI/API.
+ */
+function documente_normalize_error_message($rawMessage, $default = 'A aparut o eroare la generarea documentului.') {
+    $msg = trim((string)$rawMessage);
+    if ($msg === '') return (string)$default;
+    $l = strtolower($msg);
+
+    if (strpos($l, 'domdocument::loadxml') !== false && strpos($l, 'must not be empty') !== false) {
+        return 'Template-ul Word contine XML gol sau invalid (body/header/footer). Reincarcati template-ul.';
+    }
+    if (strpos($l, 'templateprocessor') !== false && strpos($l, 'clone') !== false) {
+        return 'Template-ul Word are structura incompatibila cu tagurile definite. Verificati placeholder-ele si reincarcati template-ul.';
+    }
+    if (strpos($l, 'ziparchive') !== false || strpos($l, 'extensia php zip') !== false) {
+        return 'Serverul nu poate procesa fisierele Word in acest moment (Zip indisponibil).';
+    }
+    if (strpos($l, 'autoload') !== false || strpos($l, 'composer') !== false) {
+        return 'Componentele server necesare generarii nu sunt disponibile.';
+    }
+    if (strpos($l, 'documentul rezultat este gol') !== false) {
+        return 'Documentul rezultat este gol. Verificati template-ul (continut in body) si tagurile folosite.';
+    }
+    if (strpos($l, 'failed to open stream') !== false) {
+        return 'Serverul nu poate accesa template-ul sau fisierul generat.';
+    }
+
+    if (strlen($msg) > 240) return (string)$default;
+    return $msg;
+}
+
+/**
  * Marchează înregistrarea unui document generat ca trimisă pe un canal (email/whatsapp).
  */
 function documente_mark_generated_action(PDO $pdo, int $document_generat_id, string $channel): void {
@@ -94,6 +125,41 @@ function documente_mark_generated_action(PDO $pdo, int $document_generat_id, str
     } catch (PDOException $e) {
         // Ignorăm fără a bloca fluxul principal.
     }
+}
+
+/**
+ * Pregătește în siguranță un DOCX pentru procesare fără a modifica template-ul sursă.
+ * Dacă detectează XML problematic în body/header/footer, creează o copie temporară și aplică repair pe copie.
+ *
+ * @return array{path:string,temp_path:?string,error:?string}
+ */
+function documente_docx_prepare_template_for_processing($template_path) {
+    $template_path = (string)$template_path;
+    if ($template_path === '' || !file_exists($template_path)) {
+        return ['path' => $template_path, 'temp_path' => null, 'error' => 'Template-ul Word nu exista pe disc.'];
+    }
+    if (!class_exists('ZipArchive')) {
+        // Lăsăm fluxul existent să gestioneze cazul Zip indisponibil.
+        return ['path' => $template_path, 'temp_path' => null, 'error' => null];
+    }
+
+    // Dacă structură minimă este sănătoasă, folosim fișierul original.
+    if (documente_docx_valideaza_structura_minima($template_path)) {
+        return ['path' => $template_path, 'temp_path' => null, 'error' => null];
+    }
+
+    $tmp = rtrim((string)sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'erp_doc_tpl_' . uniqid('', true) . '.docx';
+    if (!@copy($template_path, $tmp)) {
+        return ['path' => $template_path, 'temp_path' => null, 'error' => 'Template-ul Word nu poate fi pregatit pentru procesare.'];
+    }
+
+    documente_docx_repara_xml_goale($tmp);
+    if (!documente_docx_valideaza_structura_minima($tmp)) {
+        @unlink($tmp);
+        return ['path' => $template_path, 'temp_path' => null, 'error' => 'Template-ul Word contine XML invalid in body/header/footer. Reincarcati template-ul.'];
+    }
+
+    return ['path' => $tmp, 'temp_path' => $tmp, 'error' => null];
 }
 
 /**
@@ -797,9 +863,14 @@ function genereaza_document_din_valori($template_path, array $valori, $output_fi
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Composer autoload lipsă.'];
     }
     require_once $classFile;
+    $prepared = documente_docx_prepare_template_for_processing($template_path);
+    if (!empty($prepared['error'])) {
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($prepared['error'])];
+    }
+    $runtimeTemplatePath = $prepared['path'] ?? $template_path;
+    $runtimeTempPath = $prepared['temp_path'] ?? null;
     try {
-        // Nu modificăm template-ul sursă. Reparăm doar ieșirea, dacă este necesar.
-        $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($template_path);
+        $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($runtimeTemplatePath);
         $templateProcessor->setMacroOpeningChars('[');
         $templateProcessor->setMacroClosingChars(']');
         foreach ($valori as $tag => $valoare) {
@@ -813,7 +884,11 @@ function genereaza_document_din_valori($template_path, array $valori, $output_fi
         }
         return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
     } catch (Exception $e) {
-        return ['success' => false, 'path' => null, 'filename' => null, 'error' => $e->getMessage()];
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($e->getMessage())];
+    } finally {
+        if (!empty($runtimeTempPath) && file_exists($runtimeTempPath)) {
+            @unlink($runtimeTempPath);
+        }
     }
 }
 
@@ -880,11 +955,17 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
     }
 
     $classFile = __DIR__ . '/../vendor/autoload.php';
+    $prepared = documente_docx_prepare_template_for_processing($template_path);
+    if (!empty($prepared['error'])) {
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($prepared['error'])];
+    }
+    $runtimeTemplatePath = $prepared['path'] ?? $template_path;
+    $runtimeTempPath = $prepared['temp_path'] ?? null;
+
     if (file_exists($classFile)) {
         require_once $classFile;
         try {
-            // Nu modificăm template-ul sursă. Reparăm doar ieșirea, dacă este necesar.
-            $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($template_path);
+            $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($runtimeTemplatePath);
             $templateProcessor->setMacroOpeningChars('[');
             $templateProcessor->setMacroClosingChars(']');
             foreach ($valori as $tag => $valoare) {
@@ -898,7 +979,11 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
             }
             return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
         } catch (Exception $e) {
-            return ['success' => false, 'path' => null, 'filename' => null, 'error' => $e->getMessage()];
+            return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($e->getMessage())];
+        } finally {
+            if (!empty($runtimeTempPath) && file_exists($runtimeTempPath)) {
+                @unlink($runtimeTempPath);
+            }
         }
     }
 
@@ -908,7 +993,7 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
     }
     try {
         $zip = new ZipArchive();
-        if ($zip->open($template_path) !== true) {
+        if ($zip->open($runtimeTemplatePath) !== true) {
             return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Nu s-a putut deschide șablonul.'];
         }
         $xml = $zip->getFromName('word/document.xml');
@@ -953,7 +1038,11 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
         }
         return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
     } catch (Exception $e) {
-        return ['success' => false, 'path' => null, 'filename' => null, 'error' => $e->getMessage()];
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($e->getMessage())];
+    } finally {
+        if (!empty($runtimeTempPath) && file_exists($runtimeTempPath)) {
+            @unlink($runtimeTempPath);
+        }
     }
 }
 
