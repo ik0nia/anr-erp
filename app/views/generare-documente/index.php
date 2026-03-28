@@ -23,6 +23,7 @@
             <?php
             if ($_GET['succes'] == '2') echo 'Template actualizat cu succes.';
             elseif ($_GET['succes'] == '3') echo 'Template sters cu succes.';
+            elseif ($_GET['succes'] == '4') echo 'Maparile manuale PDF au fost salvate cu succes.';
             else echo 'Template incarcat cu succes.';
             ?>
         </div>
@@ -133,6 +134,30 @@
                                         </div>
                                     </form>
                                 </dialog>
+                                <?php if (strtolower((string)pathinfo((string)$t['nume_fisier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
+                                <button type="button" onclick="document.getElementById('map-<?php echo $t['id']; ?>').showModal()"
+                                        class="px-3 py-1.5 text-sm bg-indigo-100 dark:bg-indigo-800/70 text-indigo-900 dark:text-indigo-100 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-700"
+                                        aria-label="Configureaza mapari PDF pentru template: <?php echo htmlspecialchars($t['nume_afisare']); ?>">
+                                    <i data-lucide="map-pinned" class="w-4 h-4 inline" aria-hidden="true"></i> Mapari PDF
+                                </button>
+                                <dialog id="map-<?php echo $t['id']; ?>" class="rounded-lg shadow-xl p-0 max-w-2xl w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto">
+                                    <form method="post" class="p-6">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="salveaza_mapari_pdf" value="1">
+                                        <input type="hidden" name="template_id_map" value="<?php echo (int)$t['id']; ?>">
+                                        <h3 class="text-lg font-semibold mb-3">Fallback coordonat PDF: <?php echo htmlspecialchars($t['nume_afisare']); ?></h3>
+                                        <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">Format linie: <code>[tag]|pagina|x_mm|y_mm|font_pt</code></p>
+                                        <p class="text-sm text-slate-600 dark:text-gray-400 mb-3">Exemplu: <code>[nume]|1|35|78|11</code></p>
+                                        <textarea name="mapari_pdf" rows="10"
+                                                  class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg font-mono text-sm dark:bg-gray-700 dark:text-white"
+                                                  placeholder="[nume]|1|35|78|11&#10;[prenume]|1|70|78|11"><?php echo htmlspecialchars((string)($t['mapari_pdf'] ?? '')); ?></textarea>
+                                        <div class="flex gap-2 mt-4">
+                                            <button type="button" onclick="this.closest('dialog').close()" class="px-4 py-2 border rounded-lg" aria-label="Anuleaza mapare PDF">Anulare</button>
+                                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg" aria-label="Salveaza mapari PDF">Salveaza mapari</button>
+                                        </div>
+                                    </form>
+                                </dialog>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -155,7 +180,7 @@
                 Tagurile fara date in profilul membrului si <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[datagenerare]</code> (daca nu este bifata optiunea la generare) vor aparea ca spatiu in documentul generat; nu se afiseaza textul <code class="bg-slate-100 dark:bg-gray-700 px-1 rounded">[tag]</code>.
             </p>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
-                Pentru template-urile PDF este necesara configurarea caii LibreOffice in <strong>Setari</strong> (campul <em>Cale LibreOffice</em>) pentru conversie si pastrarea formatarii.
+                Pentru template-urile PDF: sistemul incearca detectia automata a tagurilor in streamul PDF. Pentru layout-uri complexe, folositi butonul <strong>Mapari PDF</strong> si configurati coordonate manuale per tag.
             </p>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
                 <?php foreach ($taguri as $tag): ?>

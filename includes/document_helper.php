@@ -79,6 +79,40 @@ function documente_save_generated(PDO $pdo, array $payload): ?int {
 }
 
 /**
+ * Normalizează mesaje de eroare interne în mesaje unitare pentru UI/API.
+ */
+function documente_normalize_error_message($rawMessage, $default = 'A aparut o eroare la generarea documentului.') {
+    $msg = trim((string)$rawMessage);
+    if ($msg === '') return $default;
+    $l = strtolower($msg);
+
+    if (strpos($l, 'domdocument::loadxml') !== false && strpos($l, 'must not be empty') !== false) {
+        return 'Template-ul documentului are continut XML invalid sau gol. Reincarcati template-ul.';
+    }
+    if (strpos($l, 'token csrf') !== false || strpos($l, 'csrf') !== false) {
+        return 'Sesiunea a expirat. Reincarcati pagina si incercati din nou.';
+    }
+    if (strpos($l, 'template') !== false && strpos($l, 'nu exist') !== false) {
+        return 'Template-ul selectat nu mai este disponibil.';
+    }
+    if (strpos($l, 'autoload') !== false || strpos($l, 'composer') !== false) {
+        return 'Componentele server necesare pentru generare nu sunt disponibile.';
+    }
+    if (strpos($l, 'zip') !== false && strpos($l, 'extensia') !== false) {
+        return 'Serverul nu are activata extensia necesara pentru procesarea documentelor.';
+    }
+    if (strpos($l, 'pdf') !== false && strpos($l, 'procesare') !== false) {
+        return 'Nu s-a putut procesa template-ul PDF. Verificati formatul documentului.';
+    }
+
+    // Curățare mesaje prea tehnice, păstrăm fallback prietenos.
+    if (strlen($msg) > 220) {
+        return $default;
+    }
+    return $msg;
+}
+
+/**
  * Marchează înregistrarea unui document generat ca trimisă pe un canal (email/whatsapp).
  */
 function documente_mark_generated_action(PDO $pdo, int $document_generat_id, string $channel): void {
@@ -94,6 +128,21 @@ function documente_mark_generated_action(PDO $pdo, int $document_generat_id, str
     } catch (PDOException $e) {
         // Ignorăm fără a bloca fluxul principal.
     }
+}
+
+/**
+ * Compatibilitate API existent: alias către documente_save_generated().
+ */
+function documente_inregistreaza_generare(PDO $pdo, array $data) {
+    return documente_save_generated($pdo, $data);
+}
+
+/**
+ * Compatibilitate API existent: alias către documente_mark_generated_action().
+ */
+function documente_marcheaza_actiune(PDO $pdo, $document_generat_id, $actiune) {
+    documente_mark_generated_action($pdo, (int)$document_generat_id, (string)$actiune);
+    return true;
 }
 
 /**
@@ -1079,10 +1128,81 @@ function documente_template_extension($template_filename) {
 }
 
 /**
+ * Validează structura de bază a unui template încărcat (.docx/.pdf).
+ * Returnează ['ok'=>bool, 'error'=>string|null].
+ */
+function documente_validate_template_integrity($path, $ext) {
+    $path = (string)$path;
+    $ext = strtolower(trim((string)$ext));
+    if ($path === '' || !is_file($path) || filesize($path) === 0) {
+        return ['ok' => false, 'error' => 'Fișierul încărcat este gol sau indisponibil.'];
+    }
+
+    if ($ext === 'docx') {
+        if (!class_exists('ZipArchive')) {
+            return ['ok' => false, 'error' => 'Serverul nu poate valida template-ul Word (extensia Zip lipsește).'];
+        }
+        $zip = new ZipArchive();
+        if ($zip->open($path) !== true) {
+            return ['ok' => false, 'error' => 'Template-ul Word este invalid (arhivă DOCX coruptă).'];
+        }
+        $contentTypes = $zip->getFromName('[Content_Types].xml');
+        $docXml = $zip->getFromName('word/document.xml');
+        $zip->close();
+
+        if ($contentTypes === false || trim((string)$contentTypes) === '') {
+            return ['ok' => false, 'error' => 'Template-ul Word este invalid ([Content_Types].xml lipsește).'];
+        }
+        if ($docXml === false || trim((string)$docXml) === '') {
+            return ['ok' => false, 'error' => 'Template-ul Word este invalid (word/document.xml gol sau lipsă).'];
+        }
+        if (class_exists('DOMDocument')) {
+            $dom = new DOMDocument('1.0', 'UTF-8');
+            $prev = libxml_use_internal_errors(true);
+            $ok = $dom->loadXML((string)$docXml);
+            libxml_clear_errors();
+            libxml_use_internal_errors($prev);
+            if (!$ok) {
+                return ['ok' => false, 'error' => 'Template-ul Word conține XML invalid în body-ul documentului.'];
+            }
+        }
+        return ['ok' => true, 'error' => null];
+    }
+
+    if ($ext === 'pdf') {
+        $head = @file_get_contents($path, false, null, 0, 1024);
+        if ($head === false || strpos($head, '%PDF-') !== 0) {
+            return ['ok' => false, 'error' => 'Template-ul PDF este invalid (header PDF lipsă).'];
+        }
+        $size = filesize($path);
+        $tailOffset = max(0, $size - 2048);
+        $tailLen = min(2048, $size);
+        $tail = @file_get_contents($path, false, null, $tailOffset, $tailLen);
+        if ($tail === false || strpos($tail, '%%EOF') === false) {
+            return ['ok' => false, 'error' => 'Template-ul PDF este invalid (marker EOF lipsă).'];
+        }
+        $all = @file_get_contents($path);
+        if ($all === false || (strpos($all, '/Type /Page') === false && strpos($all, '/Pages') === false)) {
+            return ['ok' => false, 'error' => 'Template-ul PDF nu pare să conțină pagini valide.'];
+        }
+        return ['ok' => true, 'error' => null];
+    }
+
+    return ['ok' => false, 'error' => 'Format template neacceptat.'];
+}
+
+/**
  * Conversie puncte PDF -> mm (unitatea implicită FPDF/FPDI).
  */
 function documente_pdf_pt_to_mm($pt) {
     return ((float)$pt) * 25.4 / 72.0;
+}
+
+/**
+ * Conversie mm -> puncte PDF.
+ */
+function documente_pdf_mm_to_pt($mm) {
+    return ((float)$mm) * 72.0 / 25.4;
 }
 
 /**
@@ -1493,6 +1613,55 @@ function documente_pdf_detect_tag_positions($stream, array $tagValues, $pageInde
 }
 
 /**
+ * Parsează maparea manuală introdusă în template.
+ * Format linii: [tag]|pagina|x_mm|y_mm|font_pt
+ */
+function documente_pdf_parse_manual_map($raw) {
+    $map = [];
+    $lines = preg_split('/\r\n|\r|\n/', (string)$raw);
+    foreach ($lines as $line) {
+        $line = trim((string)$line);
+        if ($line === '' || strpos($line, '#') === 0) continue;
+        $parts = array_map('trim', explode('|', $line));
+        if (count($parts) < 4) continue;
+        $tagRaw = $parts[0];
+        if (!preg_match('/^\[([a-zA-Z0-9_]+)\]$/', $tagRaw, $mTag)) continue;
+        $tag = $mTag[1];
+        $page = max(1, (int)($parts[1] ?? 1));
+        $x = (float)($parts[2] ?? 0);
+        $y = (float)($parts[3] ?? 0);
+        $font = isset($parts[4]) && $parts[4] !== '' ? (float)$parts[4] : 11.0;
+        if (!isset($map[$page])) $map[$page] = [];
+        $map[$page][] = [
+            'page' => $page,
+            'tag' => $tag,
+            'x_mm' => $x,
+            'y_mm' => $y,
+            'font_pt' => max(7.0, min(16.0, $font)),
+        ];
+    }
+    return $map;
+}
+
+/**
+ * Returnează maparea manuală a coordonatelor PDF pentru un template (dacă există).
+ */
+function documente_pdf_manual_map_for_template(PDO $pdo, $template_id) {
+    $template_id = (int)$template_id;
+    if ($template_id <= 0) return [];
+    try {
+        $stmt = $pdo->prepare("SELECT mapari_text FROM documente_template_pdf_mapari WHERE template_id = ? LIMIT 1");
+        $stmt->execute([$template_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $raw = trim((string)($row['mapari_text'] ?? ''));
+        if ($raw === '') return [];
+        return documente_pdf_parse_manual_map($raw);
+    } catch (PDOException $e) {
+        return [];
+    }
+}
+
+/**
  * Generează PDF final pornind din template PDF:
  * păstrează fișierul PDF, detectează tagurile în stream și scrie valorile peste ele.
  */
@@ -1529,6 +1698,32 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
         $p = documente_pdf_detect_tag_positions($stream, $tagValues, $idx + 1);
         if (!empty($p)) {
             $placementsByPage[$idx + 1] = $p;
+        }
+    }
+
+    // Fallback hibrid: mapare manuală coordonate pe template.
+    if (empty($placementsByPage) && $pdo && !empty($opts['template_id'])) {
+        $manualMap = documente_pdf_manual_map_for_template($pdo, (int)$opts['template_id']);
+        if (!empty($manualMap)) {
+            foreach ($manualMap as $pg => $rows) {
+                foreach ($rows as $row) {
+                    $tag = (string)($row['tag'] ?? '');
+                    if ($tag === '' || !array_key_exists($tag, $tagValues)) continue;
+                    if (!isset($placementsByPage[$pg])) $placementsByPage[$pg] = [];
+                    $xMm = (float)($row['x_mm'] ?? 0);
+                    $yMm = (float)($row['y_mm'] ?? 0);
+                    $fontPt = (float)($row['font_pt'] ?? 11.0);
+                    $placementsByPage[$pg][] = [
+                        'page' => (int)$pg,
+                        'tag' => $tag,
+                        'value' => (string)$tagValues[$tag],
+                        'x_pt' => $xMm * 72.0 / 25.4,
+                        'y_pt' => $yMm * 72.0 / 25.4,
+                        'font_pt' => $fontPt,
+                        'tag_width_pt' => max(12.0, strlen('[' . $tag . ']') * max(2.8, $fontPt * 0.50)),
+                    ];
+                }
+            }
         }
     }
 
@@ -1591,7 +1786,7 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
         }
         $pdf->Output('F', $output_path);
     } catch (Exception $e) {
-        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Eroare procesare PDF nativ: ' . $e->getMessage()];
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => documente_normalize_error_message($e->getMessage(), 'Eroare procesare PDF nativ.')];
     }
 
     if (!file_exists($output_path)) {
@@ -1599,56 +1794,6 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
     }
 
     return ['success' => true, 'pdf_path' => $output_path, 'pdf_filename' => $output_filename, 'docx_path' => null, 'error' => null];
-}
-
-/**
- * Salvează o înregistrare în istoricul documentelor generate per membru.
- */
-function documente_inregistreaza_generare(PDO $pdo, array $data) {
-    documente_ensure_generated_table($pdo);
-    $membru_id = (int)($data['membru_id'] ?? 0);
-    $fisier_pdf = trim((string)($data['fisier_pdf'] ?? ''));
-    if ($membru_id <= 0 || $fisier_pdf === '') {
-        return null;
-    }
-    try {
-        $stmt = $pdo->prepare("INSERT INTO documente_generate
-            (membru_id, template_id, template_nume, tip_template, fisier_pdf, fisier_docx, nr_inregistrare, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $membru_id,
-            !empty($data['template_id']) ? (int)$data['template_id'] : null,
-            $data['template_nume'] ?? null,
-            $data['tip_template'] ?? null,
-            $fisier_pdf,
-            $data['fisier_docx'] ?? null,
-            $data['nr_inregistrare'] ?? null,
-            $data['created_by'] ?? ($_SESSION['utilizator'] ?? 'Sistem'),
-        ]);
-        return (int)$pdo->lastInsertId();
-    } catch (PDOException $e) {
-        return null;
-    }
-}
-
-/**
- * Marchează acțiuni ulterioare pe documentul generat (email/whatsapp).
- */
-function documente_marcheaza_actiune(PDO $pdo, $document_generat_id, $actiune) {
-    documente_ensure_generated_table($pdo);
-    $id = (int)$document_generat_id;
-    $actiune = strtolower(trim((string)$actiune));
-    if ($id <= 0) return false;
-    $camp = null;
-    if ($actiune === 'email') $camp = 'trimis_email_at';
-    if ($actiune === 'whatsapp') $camp = 'trimis_whatsapp_at';
-    if ($camp === null) return false;
-    try {
-        $stmt = $pdo->prepare("UPDATE documente_generate SET {$camp} = NOW() WHERE id = ?");
-        return $stmt->execute([$id]);
-    } catch (PDOException $e) {
-        return false;
-    }
 }
 
 /**

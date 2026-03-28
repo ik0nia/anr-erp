@@ -55,10 +55,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_template
     $eroare = $result;
 }
 
+// --- POST: Salvare mapari manuale PDF ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_mapari_pdf'])) {
+    csrf_require_valid();
+    $template_id_map = (int)($_POST['template_id_map'] ?? 0);
+    $mapari_pdf = trim((string)($_POST['mapari_pdf'] ?? ''));
+    $updated_by = (string)($_SESSION['utilizator'] ?? 'Sistem');
+    $result = documente_save_pdf_mapari($pdo, $template_id_map, $mapari_pdf, $updated_by);
+    if ($result === null) {
+        header('Location: /generare-documente?succes=4');
+        exit;
+    }
+    $eroare = $result;
+}
+
 // --- GET: Date pentru view ---
 $templates = [];
 try {
     $templates = documente_list_templates($pdo);
+    foreach ($templates as &$tpl) {
+        $tpl['mapari_pdf'] = documente_get_pdf_mapari($pdo, (int)($tpl['id'] ?? 0));
+    }
+    unset($tpl);
 } catch (PDOException $e) {
     $eroare = 'Eroare la incarcarea templateurilor.';
 }

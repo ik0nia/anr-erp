@@ -11,6 +11,17 @@ require_once __DIR__ . '/../includes/log_helper.php';
 require_once __DIR__ . '/../includes/document_helper.php';
 require_once __DIR__ . '/../includes/registratura_helper.php';
 
+function documente_api_error_payload($rawMessage, $fallback = 'Nu am putut genera documentul. Verificati datele si incercati din nou.', $code = 'DOC_GENERATION_ERROR') {
+    $message = function_exists('documente_normalize_error_message')
+        ? documente_normalize_error_message($rawMessage, $fallback)
+        : ($fallback ?: 'Eroare la procesarea documentului.');
+    return [
+        'success' => false,
+        'error' => $message,
+        'error_code' => $code,
+    ];
+}
+
 // Asigură tabel și director pentru templateuri (dacă nu au fost create din Management Documente)
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS documente_template (
@@ -100,9 +111,10 @@ try {
         $pdfFlow = documente_genereaza_pdf_din_template_pdf($template_path, $membru, [
             'include_data_generare' => $include_data_generare,
             'nume_template' => $template['nume_afisare'],
+            'template_id' => (int)$template_id,
         ], $pdo);
         if (!$pdfFlow['success']) {
-            $sendJson(['success' => false, 'error' => $pdfFlow['error'] ?? 'Eroare la generarea documentului PDF.']);
+            $sendJson(documente_api_error_payload($pdfFlow['error'] ?? '', 'Nu am putut genera documentul PDF pe baza template-ului selectat.', 'PDF_TEMPLATE_PROCESSING_ERROR'));
         }
 
         if (!empty($pdfFlow['docx_path']) && file_exists($pdfFlow['docx_path'])) {
@@ -125,7 +137,7 @@ try {
             'nume_template' => $template['nume_afisare'],
         ]);
         if (!$result['success']) {
-            $sendJson(['success' => false, 'error' => $result['error'] ?? 'Eroare la generare.']);
+            $sendJson(documente_api_error_payload($result['error'] ?? '', 'Nu am putut genera documentul din template-ul Word.', 'DOCX_TEMPLATE_PROCESSING_ERROR'));
         }
 
         $docx_filename = $result['filename'];
@@ -154,7 +166,7 @@ try {
     }
 
     if (empty($pdf_filename)) {
-        $sendJson(['success' => false, 'error' => 'Documentul a fost generat, dar conversia/salvarea PDF a eșuat.']);
+        $sendJson(documente_api_error_payload('Documentul a fost generat, dar conversia/salvarea PDF a eșuat.', 'Documentul a fost generat partial, dar fisierul PDF final nu a putut fi creat.', 'PDF_OUTPUT_ERROR'));
     }
 
     $nr_inregistrare = null;
@@ -212,7 +224,7 @@ try {
         'member_email' => trim((string)($membru['email'] ?? '')),
     ]);
 } catch (PDOException $e) {
-    $sendJson(['success' => false, 'error' => 'Eroare bază de date. Încercați din nou.']);
+    $sendJson(documente_api_error_payload($e->getMessage(), 'Eroare baza de date la generarea documentului. Incercati din nou.', 'DB_ERROR'));
 } catch (Throwable $e) {
-    $sendJson(['success' => false, 'error' => 'Eroare server: ' . $e->getMessage()]);
+    $sendJson(documente_api_error_payload($e->getMessage(), 'Eroare server la generarea documentului.', 'SERVER_ERROR'));
 }
