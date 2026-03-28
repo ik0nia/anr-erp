@@ -980,73 +980,422 @@ function documente_template_extension($template_filename) {
 }
 
 /**
- * Citește calea către LibreOffice din setări.
+ * Conversie puncte PDF -> mm (unitatea implicită FPDF/FPDI).
  */
-function documente_get_libreoffice_path($pdo = null) {
-    if ($pdo === null && isset($GLOBALS['pdo'])) {
-        $pdo = $GLOBALS['pdo'];
-    }
-    if (!$pdo) return '';
-    try {
-        $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'cale_libreoffice' LIMIT 1");
-        $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return trim((string)($row['valoare'] ?? ''));
-    } catch (Exception $e) {
-        return '';
-    }
+function documente_pdf_pt_to_mm($pt) {
+    return ((float)$pt) * 25.4 / 72.0;
 }
 
 /**
- * Conversie generică cu LibreOffice (headless): docx<->pdf.
+ * Decodează un string literal PDF "(...)"
+ * și aplică secvențele escape uzuale.
  */
-function documente_convert_with_libreoffice($input_path, $output_ext, $pdo = null) {
-    $input_path = realpath((string)$input_path);
-    if (!$input_path || !file_exists($input_path)) {
-        return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Fișierul sursă nu există pentru conversie.'];
+function documente_pdf_decode_literal_string($literal) {
+    $s = (string)$literal;
+    if (strlen($s) >= 2 && $s[0] === '(' && substr($s, -1) === ')') {
+        $s = substr($s, 1, -1);
     }
 
-    $output_ext = strtolower(trim((string)$output_ext));
-    if (!in_array($output_ext, ['docx', 'pdf'], true)) {
-        return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Format de ieșire neacceptat pentru conversie.'];
+    $out = '';
+    $len = strlen($s);
+    for ($i = 0; $i < $len; $i++) {
+        $ch = $s[$i];
+        if ($ch !== '\\') {
+            $out .= $ch;
+            continue;
+        }
+
+        $i++;
+        if ($i >= $len) {
+            break;
+        }
+        $esc = $s[$i];
+        if ($esc === 'n') { $out .= "\n"; continue; }
+        if ($esc === 'r') { $out .= "\r"; continue; }
+        if ($esc === 't') { $out .= "\t"; continue; }
+        if ($esc === 'b') { $out .= "\x08"; continue; }
+        if ($esc === 'f') { $out .= "\x0C"; continue; }
+        if ($esc === '(' || $esc === ')' || $esc === '\\') { $out .= $esc; continue; }
+
+        // octal \ddd
+        if ($esc >= '0' && $esc <= '7') {
+            $oct = $esc;
+            for ($k = 0; $k < 2 && ($i + 1) < $len; $k++) {
+                $n = $s[$i + 1];
+                if ($n >= '0' && $n <= '7') {
+                    $oct .= $n;
+                    $i++;
+                } else {
+                    break;
+                }
+            }
+            $out .= chr(octdec($oct));
+            continue;
+        }
+
+        $out .= $esc;
+    }
+    return $out;
+}
+
+/**
+ * Parsează simplificat stream-ul de conținut PDF în tokeni.
+ * Suficient pentru a localiza textul-tag și poziția (Tm/Tj/TJ).
+ */
+function documente_pdf_tokenize_stream($content) {
+    $tokens = [];
+    $s = (string)$content;
+    $len = strlen($s);
+    $i = 0;
+
+    $isDelim = static function ($c) {
+        return $c === '' || ctype_space($c) || strpos('()<>[]{}/%', $c) !== false;
+    };
+
+    while ($i < $len) {
+        $ch = $s[$i];
+
+        if (ctype_space($ch)) { $i++; continue; }
+        if ($ch === '%') {
+            while ($i < $len && $s[$i] !== "\n" && $s[$i] !== "\r") $i++;
+            continue;
+        }
+
+        // Literal string (...), cu nested paranteze
+        if ($ch === '(') {
+            $start = $i;
+            $depth = 1;
+            $i++;
+            while ($i < $len && $depth > 0) {
+                $c = $s[$i];
+                if ($c === '\\') { $i += 2; continue; }
+                if ($c === '(') $depth++;
+                elseif ($c === ')') $depth--;
+                $i++;
+            }
+            $tokens[] = ['type' => 'string', 'value' => substr($s, $start, $i - $start)];
+            continue;
+        }
+
+        // Array [...]
+        if ($ch === '[') {
+            $start = $i;
+            $depth = 1;
+            $i++;
+            while ($i < $len && $depth > 0) {
+                $c = $s[$i];
+                if ($c === '\\') { $i += 2; continue; }
+                if ($c === '(') {
+                    // sărim peste string literal din array
+                    $strStart = $i;
+                    $strDepth = 1;
+                    $i++;
+                    while ($i < $len && $strDepth > 0) {
+                        $cc = $s[$i];
+                        if ($cc === '\\') { $i += 2; continue; }
+                        if ($cc === '(') $strDepth++;
+                        elseif ($cc === ')') $strDepth--;
+                        $i++;
+                    }
+                    continue;
+                }
+                if ($c === '[') $depth++;
+                elseif ($c === ']') $depth--;
+                $i++;
+            }
+            $tokens[] = ['type' => 'array', 'value' => substr($s, $start, $i - $start)];
+            continue;
+        }
+
+        // Name /F1
+        if ($ch === '/') {
+            $start = $i;
+            $i++;
+            while ($i < $len && !$isDelim($s[$i])) $i++;
+            $tokens[] = ['type' => 'name', 'value' => substr($s, $start, $i - $start)];
+            continue;
+        }
+
+        // word/number/operator
+        $start = $i;
+        while ($i < $len && !$isDelim($s[$i])) $i++;
+        $raw = substr($s, $start, $i - $start);
+        if ($raw === '') continue;
+        if (preg_match('/^[+-]?(?:\d+\.?\d*|\.\d+)$/', $raw)) {
+            $tokens[] = ['type' => 'number', 'value' => (float)$raw, 'raw' => $raw];
+        } else {
+            $tokens[] = ['type' => 'word', 'value' => $raw];
+        }
+    }
+    return $tokens;
+}
+
+/**
+ * Parsează elementele din array-ul TJ: string-uri + ajustări de kerning.
+ */
+function documente_pdf_parse_tj_array($arrayRaw) {
+    $raw = trim((string)$arrayRaw);
+    if (strlen($raw) >= 2 && $raw[0] === '[' && substr($raw, -1) === ']') {
+        $raw = substr($raw, 1, -1);
+    }
+    return documente_pdf_tokenize_stream($raw);
+}
+
+/**
+ * Extrage obiectele PDF și stream-urile de conținut per pagină.
+ * Implementare tolerantă pentru PDF-uri standard (fără object streams avansate).
+ */
+function documente_pdf_extract_page_streams($pdf_path) {
+    $bin = @file_get_contents($pdf_path);
+    if ($bin === false || $bin === '') return [];
+
+    $objects = [];
+    $ordered = [];
+    if (!preg_match_all('/(\d+)\s+(\d+)\s+obj(.*?)endobj/s', $bin, $m, PREG_SET_ORDER)) {
+        return [];
+    }
+    foreach ($m as $match) {
+        $objNo = (int)$match[1];
+        $body = (string)$match[3];
+        $objects[$objNo] = $body;
+        $ordered[] = $objNo;
     }
 
-    $libreoffice = documente_get_libreoffice_path($pdo);
-    if ($libreoffice === '') {
-        return [
-            'success' => false,
-            'path' => null,
-            'filename' => null,
-            'error' => 'Pentru template-urile PDF este necesar LibreOffice. Configurați calea în Setări > Documente.'
-        ];
+    $extractStream = static function ($objBody) {
+        $objBody = (string)$objBody;
+        $p = strpos($objBody, 'stream');
+        if ($p === false) return ['', ''];
+        $dict = substr($objBody, 0, $p);
+        $stream = substr($objBody, $p + 6);
+        if (strpos($stream, "\r\n") === 0) $stream = substr($stream, 2);
+        elseif (strpos($stream, "\n") === 0 || strpos($stream, "\r") === 0) $stream = substr($stream, 1);
+        $e = strrpos($stream, 'endstream');
+        if ($e === false) return ['', $dict];
+        return [substr($stream, 0, $e), $dict];
+    };
+
+    $decodeStream = static function ($raw, $dict) {
+        $raw = (string)$raw;
+        $dict = (string)$dict;
+        if ($raw === '') return '';
+        if (stripos($dict, '/FlateDecode') === false) return $raw;
+        $decoded = @gzuncompress($raw);
+        if ($decoded !== false) return $decoded;
+        $decoded = @gzinflate($raw);
+        if ($decoded !== false) return $decoded;
+        if (strlen($raw) > 6) {
+            $decoded = @gzinflate(substr($raw, 2));
+            if ($decoded !== false) return $decoded;
+        }
+        return '';
+    };
+
+    $pages = [];
+    foreach ($ordered as $objNo) {
+        $body = $objects[$objNo] ?? '';
+        if ($body === '') continue;
+        if (!preg_match('/\/Type\s*\/Page\b/', $body) || preg_match('/\/Type\s*\/Pages\b/', $body)) {
+            continue;
+        }
+        $contentRefs = [];
+        if (preg_match('/\/Contents\s+(\d+)\s+\d+\s+R/s', $body, $mc)) {
+            $contentRefs[] = (int)$mc[1];
+        } elseif (preg_match('/\/Contents\s*\[(.*?)\]/s', $body, $mc)) {
+            if (preg_match_all('/(\d+)\s+\d+\s+R/', $mc[1], $mr)) {
+                foreach ($mr[1] as $r) $contentRefs[] = (int)$r;
+            }
+        }
+
+        $pageStream = '';
+        foreach ($contentRefs as $refNo) {
+            if (!isset($objects[$refNo])) continue;
+            [$rawStream, $dict] = $extractStream($objects[$refNo]);
+            $decoded = $decodeStream($rawStream, $dict);
+            if ($decoded !== '') {
+                $pageStream .= "\n" . $decoded;
+            }
+        }
+        $pages[] = $pageStream;
+    }
+    return $pages;
+}
+
+/**
+ * Localizează pozițiile tagurilor într-un stream PDF (Tm/Tj/TJ).
+ * Returnează coordonate în puncte (sistem PDF, origine jos-stânga).
+ */
+function documente_pdf_detect_tag_positions($stream, array $tagValues, $pageIndex = 1) {
+    $tokens = documente_pdf_tokenize_stream((string)$stream);
+    $stack = [];
+    $placements = [];
+
+    $x = 0.0;
+    $y = 0.0;
+    $fontSize = 11.0;
+    $leading = 13.0;
+
+    $collectFromText = static function ($text, $baseX, $baseY, $fontPt, array $values, $pg) use (&$placements) {
+        $decoded = (string)$text;
+        if ($decoded === '' || strpos($decoded, '[') === false) return;
+        if (!preg_match_all('/\[([a-zA-Z0-9_]+)\]/', $decoded, $mm, PREG_OFFSET_CAPTURE)) return;
+        $charWidth = max(2.8, ((float)$fontPt) * 0.50); // estimare pragmatică pentru Helvetica
+        foreach ($mm[1] as $idx => $tagItem) {
+            $tag = (string)$tagItem[0];
+            if (!array_key_exists($tag, $values)) continue;
+            $fullTag = (string)$mm[0][$idx][0];
+            $offset = (int)$mm[0][$idx][1];
+            $prefix = substr($decoded, 0, $offset);
+            $prefixLen = strlen($prefix);
+            $tagLen = strlen($fullTag);
+            $placements[] = [
+                'page' => (int)$pg,
+                'tag' => $tag,
+                'value' => (string)$values[$tag],
+                'x_pt' => (float)$baseX + ($prefixLen * $charWidth),
+                'y_pt' => (float)$baseY,
+                'font_pt' => (float)$fontPt,
+                'tag_width_pt' => max(8.0, $tagLen * $charWidth),
+            ];
+        }
+    };
+
+    $advanceText = static function ($text, $fontPt) {
+        $charWidth = max(2.8, ((float)$fontPt) * 0.50);
+        return strlen((string)$text) * $charWidth;
+    };
+
+    foreach ($tokens as $token) {
+        if ($token['type'] !== 'word') {
+            $stack[] = $token;
+            continue;
+        }
+        $op = (string)$token['value'];
+
+        switch ($op) {
+            case 'BT':
+                $stack = [];
+                break;
+
+            case 'ET':
+                $stack = [];
+                break;
+
+            case 'Tf':
+                if (count($stack) >= 2) {
+                    $last = $stack[count($stack) - 1];
+                    if (($last['type'] ?? '') === 'number') {
+                        $fontSize = max(6.0, (float)$last['value']);
+                    }
+                }
+                $stack = [];
+                break;
+
+            case 'TL':
+                if (!empty($stack)) {
+                    $last = $stack[count($stack) - 1];
+                    if (($last['type'] ?? '') === 'number') {
+                        $leading = (float)$last['value'];
+                    }
+                }
+                $stack = [];
+                break;
+
+            case 'Tm':
+                if (count($stack) >= 6) {
+                    $x = (float)($stack[count($stack) - 2]['value'] ?? 0.0);
+                    $y = (float)($stack[count($stack) - 1]['value'] ?? 0.0);
+                }
+                $stack = [];
+                break;
+
+            case 'Td':
+            case 'TD':
+                if (count($stack) >= 2) {
+                    $x += (float)($stack[count($stack) - 2]['value'] ?? 0.0);
+                    $dy = (float)($stack[count($stack) - 1]['value'] ?? 0.0);
+                    $y += $dy;
+                    if ($op === 'TD') {
+                        $leading = -$dy;
+                    }
+                }
+                $stack = [];
+                break;
+
+            case 'T*':
+                $y -= $leading;
+                $stack = [];
+                break;
+
+            case 'Tj':
+                if (!empty($stack)) {
+                    $s = $stack[count($stack) - 1];
+                    if (($s['type'] ?? '') === 'string') {
+                        $text = documente_pdf_decode_literal_string($s['value']);
+                        $collectFromText($text, $x, $y, $fontSize, $tagValues, $pageIndex);
+                        $x += $advanceText($text, $fontSize);
+                    }
+                }
+                $stack = [];
+                break;
+
+            case 'TJ':
+                if (!empty($stack)) {
+                    $a = $stack[count($stack) - 1];
+                    if (($a['type'] ?? '') === 'array') {
+                        $elements = documente_pdf_parse_tj_array($a['value']);
+                        foreach ($elements as $el) {
+                            if (($el['type'] ?? '') === 'string') {
+                                $text = documente_pdf_decode_literal_string($el['value']);
+                                $collectFromText($text, $x, $y, $fontSize, $tagValues, $pageIndex);
+                                $x += $advanceText($text, $fontSize);
+                            } elseif (($el['type'] ?? '') === 'number') {
+                                // ajustare kerning (unități text-space)
+                                $x += -((float)$el['value']) * ($fontSize / 1000.0);
+                            }
+                        }
+                    }
+                }
+                $stack = [];
+                break;
+
+            case "'":
+                $y -= $leading;
+                if (!empty($stack)) {
+                    $s = $stack[count($stack) - 1];
+                    if (($s['type'] ?? '') === 'string') {
+                        $text = documente_pdf_decode_literal_string($s['value']);
+                        $collectFromText($text, $x, $y, $fontSize, $tagValues, $pageIndex);
+                        $x += $advanceText($text, $fontSize);
+                    }
+                }
+                $stack = [];
+                break;
+
+            case '"':
+                $y -= $leading;
+                if (count($stack) >= 3) {
+                    $s = $stack[count($stack) - 1];
+                    if (($s['type'] ?? '') === 'string') {
+                        $text = documente_pdf_decode_literal_string($s['value']);
+                        $collectFromText($text, $x, $y, $fontSize, $tagValues, $pageIndex);
+                        $x += $advanceText($text, $fontSize);
+                    }
+                }
+                $stack = [];
+                break;
+
+            default:
+                // păstrăm stack-ul; operatorul curent poate fi parte din alt context.
+                break;
+        }
     }
 
-    $out_dir = dirname($input_path);
-    $expected = preg_replace('/\.[a-z0-9]+$/i', '.' . $output_ext, $input_path);
-    $cmd = escapeshellarg($libreoffice)
-        . ' --headless --convert-to ' . escapeshellarg($output_ext)
-        . ' --outdir ' . escapeshellarg($out_dir)
-        . ' ' . escapeshellarg($input_path) . ' 2>&1';
-
-    $output = [];
-    $status = 1;
-    exec($cmd, $output, $status);
-
-    if ($status === 0 && file_exists($expected)) {
-        return ['success' => true, 'path' => $expected, 'filename' => basename($expected), 'error' => null];
-    }
-
-    return [
-        'success' => false,
-        'path' => null,
-        'filename' => null,
-        'error' => 'Conversia cu LibreOffice a eșuat: ' . trim(implode(' ', array_slice($output, 0, 4)))
-    ];
+    return $placements;
 }
 
 /**
  * Generează PDF final pornind din template PDF:
- * PDF template -> DOCX (LibreOffice) -> înlocuire taguri -> PDF.
+ * păstrează fișierul PDF, detectează tagurile în stream și scrie valorile peste ele.
  */
 function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $membru, array $opts = [], $pdo = null) {
     $template_pdf_path = realpath((string)$template_pdf_path);
@@ -1058,43 +1407,102 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
         @mkdir(UPLOAD_GENERATE_DIR, 0755, true);
     }
 
-    $tmp_prefix = 'pdf_tpl_' . (int)($membru['id'] ?? 0) . '_' . uniqid();
-    $tmp_pdf_template = UPLOAD_GENERATE_DIR . $tmp_prefix . '.pdf';
-    if (!@copy($template_pdf_path, $tmp_pdf_template)) {
-        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Nu s-a putut copia template-ul PDF.'];
+    $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd.m.Y';
+    $tagValues = membru_la_valori_tag($membru);
+    $tagValues['datagenerare'] = !empty($opts['include_data_generare']) ? date($formatDate) : ' ';
+    foreach (get_toate_numele_tagurilor() as $numeTag) {
+        if (!array_key_exists($numeTag, $tagValues)) {
+            $tagValues[$numeTag] = ' ';
+        }
     }
 
-    $converted_tpl = documente_convert_with_libreoffice($tmp_pdf_template, 'docx', $pdo);
-    if (!$converted_tpl['success']) {
-        @unlink($tmp_pdf_template);
-        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => $converted_tpl['error'] ?? 'Conversie PDF->DOCX eșuată.'];
+    $streams = documente_pdf_extract_page_streams($template_pdf_path);
+    if (empty($streams)) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Nu s-au putut citi stream-urile PDF pentru localizarea tagurilor.'];
     }
 
-    $gen_docx = genereaza_document_docx($converted_tpl['path'], $membru, null, [
-        'include_data_generare' => !empty($opts['include_data_generare']),
-        'nume_template' => $opts['nume_template'] ?? 'Document PDF',
-    ]);
-    if (!$gen_docx['success']) {
-        @unlink($tmp_pdf_template);
-        @unlink($converted_tpl['path']);
-        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => $gen_docx['error'] ?? 'Generarea DOCX intermediar a eșuat.'];
+    $placementsByPage = [];
+    $tagFoundInRawText = false;
+    foreach ($streams as $idx => $stream) {
+        if (preg_match('/\[[a-zA-Z0-9_]+\]/', (string)$stream)) {
+            $tagFoundInRawText = true;
+        }
+        $p = documente_pdf_detect_tag_positions($stream, $tagValues, $idx + 1);
+        if (!empty($p)) {
+            $placementsByPage[$idx + 1] = $p;
+        }
     }
 
-    $gen_pdf = converteste_docx_la_pdf($gen_docx['path'], $pdo);
-    @unlink($tmp_pdf_template);
-    @unlink($converted_tpl['path']);
-
-    if (!$gen_pdf['success'] || empty($gen_pdf['path']) || !file_exists($gen_pdf['path'])) {
-        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => $gen_docx['path'], 'error' => $gen_pdf['error'] ?? 'Conversia finală la PDF a eșuat.'];
+    if (empty($placementsByPage)) {
+        $msg = $tagFoundInRawText
+            ? 'Tagurile din template-ul PDF au fost găsite, dar nu s-au putut localiza coordonatele de scriere.'
+            : 'Template-ul PDF nu conține taguri detectabile de forma [nume_tag].';
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => $msg];
     }
 
-    return [
-        'success' => true,
-        'pdf_path' => $gen_pdf['path'],
-        'pdf_filename' => basename($gen_pdf['path']),
-        'docx_path' => $gen_docx['path'],
-        'error' => null,
-    ];
+    $autoload = __DIR__ . '/../vendor/autoload.php';
+    if (!file_exists($autoload)) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Composer autoload lipsă. Rulați: composer install'];
+    }
+    require_once $autoload;
+    if (!class_exists('\setasign\Fpdi\Fpdi')) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'FPDI nu este disponibil pentru procesarea PDF.'];
+    }
+
+    $output_filename = nume_fisier_document_generat($membru, $opts['nume_template'] ?? 'Document PDF', 'pdf');
+    $output_path = UPLOAD_GENERATE_DIR . $output_filename;
+    if (file_exists($output_path)) {
+        $base = pathinfo($output_filename, PATHINFO_FILENAME);
+        $output_filename = $base . '_' . date('His') . '.pdf';
+        $output_path = UPLOAD_GENERATE_DIR . $output_filename;
+    }
+
+    try {
+        $pdf = new \setasign\Fpdi\Fpdi();
+        $pageCount = $pdf->setSourceFile($template_pdf_path);
+        for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+            $tpl = $pdf->importPage($pageNo);
+            $size = $pdf->getTemplateSize($tpl);
+            if ($size && isset($size['width'], $size['height'], $size['orientation'])) {
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            } else {
+                $pdf->AddPage();
+            }
+            $pdf->useTemplate($tpl);
+
+            $pageHeightMm = (float)($size['height'] ?? 297.0);
+            $placements = $placementsByPage[$pageNo] ?? [];
+            foreach ($placements as $pl) {
+                $value = (string)($pl['value'] ?? '');
+                $fontPt = max(7.0, min(16.0, (float)($pl['font_pt'] ?? 11.0)));
+                $xMm = documente_pdf_pt_to_mm((float)($pl['x_pt'] ?? 0.0));
+                $yMm = $pageHeightMm - documente_pdf_pt_to_mm((float)($pl['y_pt'] ?? 0.0));
+                $tagWidthMm = documente_pdf_pt_to_mm((float)($pl['tag_width_pt'] ?? 20.0));
+                $fontMm = documente_pdf_pt_to_mm($fontPt);
+
+                // Curățăm vizual tagul original și scriem valoarea în același loc.
+                $pdf->SetFillColor(255, 255, 255);
+                $pdf->Rect(max(0.0, $xMm - 0.5), max(0.0, $yMm - ($fontMm * 0.95)), max(2.0, $tagWidthMm + 1.5), max(1.8, $fontMm * 1.35), 'F');
+
+                $enc = @iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $value);
+                if ($enc === false) $enc = $value;
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->SetFont('Helvetica', '', $fontPt);
+                if (trim((string)$enc) !== '') {
+                    $pdf->Text($xMm, $yMm, $enc);
+                }
+            }
+        }
+        $pdf->Output('F', $output_path);
+    } catch (Exception $e) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Eroare procesare PDF nativ: ' . $e->getMessage()];
+    }
+
+    if (!file_exists($output_path)) {
+        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Nu s-a putut salva PDF-ul final.'];
+    }
+
+    return ['success' => true, 'pdf_path' => $output_path, 'pdf_filename' => $output_filename, 'docx_path' => null, 'error' => null];
 }
 
 /**
