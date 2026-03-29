@@ -27,8 +27,14 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
 <dialog id="modal-generare-document" class="rounded-lg shadow-xl p-0 max-w-2xl w-full bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700"
         data-document-api-base="<?php echo htmlspecialchars($doc_api_base); ?>"
         aria-labelledby="modal-doc-titlu" aria-modal="true">
-    <div class="p-6">
-        <h2 id="modal-doc-titlu" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Generează document</h2>
+    <div class="p-6 relative">
+        <button type="button"
+                id="doc-btn-close-x"
+                class="absolute top-3 right-3 inline-flex items-center justify-center w-8 h-8 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                aria-label="Închide fereastra de generare document">
+            <span aria-hidden="true">×</span>
+        </button>
+        <h2 id="modal-doc-titlu" class="text-lg font-semibold text-slate-900 dark:text-white mb-4 pr-10">Generează document</h2>
         <input type="hidden" id="doc-membru-id" value="">
         <input type="hidden" id="doc-member-phone" value="">
         <input type="hidden" id="doc-member-email" value="">
@@ -69,23 +75,23 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
         </div>
         <div id="doc-etapa-2" class="hidden">
             <p id="doc-rezultat-msg" class="text-green-600 dark:text-green-400 mb-4"></p>
-            <div class="flex flex-wrap gap-2 mb-4">
-                <a id="doc-link-download-pdf" href="#" target="_blank" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg" aria-label="Descarcă documentul în format PDF">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+                <a id="doc-link-download-pdf" href="#" target="_blank" class="inline-flex w-full items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg" aria-label="Descarcă documentul în format PDF">
                     <i data-lucide="file-down" class="w-4 h-4 mr-2" aria-hidden="true"></i> Descarcă PDF
                 </a>
-                <a id="doc-link-download-docx" href="#" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg" aria-label="Descarcă documentul în format Word DOCX">
+                <a id="doc-link-download-docx" href="#" target="_blank" class="inline-flex w-full items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg" aria-label="Descarcă documentul în format Word DOCX">
                     <i data-lucide="file-down" class="w-4 h-4 mr-2" aria-hidden="true"></i> Descarcă DOCX
                 </a>
-                <a id="doc-btn-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg hidden" aria-label="Trimite documentul pe WhatsApp">
+                <a id="doc-btn-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex w-full items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg hidden" aria-label="Trimite documentul pe WhatsApp">
                     <i data-lucide="message-circle" class="w-4 h-4 mr-2" aria-hidden="true"></i> Trimite pe WhatsApp
                 </a>
-                <button type="button" id="doc-btn-email" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg" aria-label="Trimite documentul pe email">
+                <button type="button" id="doc-btn-email" class="inline-flex w-full items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg" aria-label="Trimite documentul pe email">
                     <i data-lucide="mail" class="w-4 h-4 mr-2" aria-hidden="true"></i> Trimite Email
                 </button>
-                <button type="button" id="doc-btn-print" class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg" aria-label="Printează documentul PDF">
+                <button type="button" id="doc-btn-print" class="inline-flex w-full items-center justify-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg" aria-label="Printează documentul PDF">
                     <i data-lucide="printer" class="w-4 h-4 mr-2" aria-hidden="true"></i> Print
                 </button>
-                <button type="button" id="doc-btn-renunta-2" class="inline-flex items-center px-4 py-2 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500" aria-label="Renunță și închide fereastra">
+                <button type="button" id="doc-btn-renunta-2" class="inline-flex w-full items-center justify-center px-4 py-2 border border-slate-700 dark:border-slate-500 rounded-lg bg-slate-700 dark:bg-slate-600 text-white hover:bg-slate-600 dark:hover:bg-slate-500" aria-label="Renunță și închide fereastra">
                     Renunță
                 </button>
             </div>
@@ -186,6 +192,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
 
     document.getElementById('doc-btn-renunta-1').addEventListener('click', resetModal);
     document.getElementById('doc-btn-renunta-2').addEventListener('click', resetModal);
+    document.getElementById('doc-btn-close-x').addEventListener('click', resetModal);
 
     document.getElementById('doc-btn-genereaza').addEventListener('click', function() {
         const mid = membruIdInput.value;
