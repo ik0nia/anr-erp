@@ -20,7 +20,12 @@ if ($init_err) $eroare = $init_err;
 // --- POST: Upload template ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_template'])) {
     csrf_require_valid();
-    $result = documente_upload_template($pdo, trim($_POST['nume_afisare'] ?? ''), $_FILES['fisier_template'] ?? ['error' => UPLOAD_ERR_NO_FILE]);
+    $result = documente_upload_template(
+        $pdo,
+        trim($_POST['nume_afisare'] ?? ''),
+        $_FILES['fisier_template'] ?? ['error' => UPLOAD_ERR_NO_FILE],
+        !empty($_POST['foloseste_antet_platforma_erp']) ? 1 : 0
+    );
     if ($result === null) {
         header('Location: /generare-documente?succes=1');
         exit;

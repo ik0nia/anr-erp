@@ -84,6 +84,7 @@ try {
     }
 
     $template_path = UPLOAD_TEMPLATE_DIR . $template['nume_fisier'];
+    $foloseste_antet_platforma_erp = !empty($template['foloseste_antet_platforma_erp']) ? 1 : 0;
     if (!file_exists($template_path)) {
         $sendJson(['success' => false, 'error' => 'Fișierul template nu există pe disc.']);
     }
@@ -131,6 +132,7 @@ try {
             'nume_template' => $template['nume_afisare'],
             'template_id' => (int)$template_id,
             'nrregistratura' => (string)($nr_inregistrare ?? ''),
+            'apply_erp_header_overlay' => $foloseste_antet_platforma_erp === 1,
         ], $pdo);
         if (!$pdfFlow['success']) {
             $sendJson(documente_api_error_payload($pdfFlow['error'] ?? '', 'Nu am putut genera documentul PDF pe baza template-ului selectat.', 'PDF_TEMPLATE_PROCESSING_ERROR'));
@@ -170,7 +172,9 @@ try {
         $docx_filename = $docx_target_filename;
 
         // Conversie și salvare PDF în același director cu nume prietenos
-        $pdf_result = converteste_docx_la_pdf($docx_path, $pdo);
+        $pdf_result = converteste_docx_la_pdf($docx_path, $pdo, [
+            'apply_erp_header_overlay' => $foloseste_antet_platforma_erp === 1,
+        ]);
         if ($pdf_result['success']) {
             // Dacă tool-ul de conversie a salvat altundeva, copiem rezultatul în directorul standard
             $pdf_source_path = $pdf_result['path'] ?? ($generated_dir . $pdf_result['filename']);

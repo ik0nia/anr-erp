@@ -40,6 +40,20 @@ $doc_error_message = $eroare_documente ?? $eroare ?? '';
             <input type="file" id="fisier_template" name="fisier_template" accept=".docx,.pdf" required
                    class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-900 dark:text-white dark:bg-gray-700">
         </div>
+        <div class="min-w-[280px]">
+            <label class="inline-flex items-center gap-2 mt-6 cursor-pointer text-sm text-slate-700 dark:text-gray-300">
+                <input type="checkbox"
+                       id="foloseste_antet_platforma_erp"
+                       name="foloseste_antet_platforma_erp"
+                       value="1"
+                       class="h-4 w-4 rounded border-slate-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500"
+                       aria-describedby="foloseste-antet-erp-help">
+                <span>Foloseste antetul platformei ERP</span>
+            </label>
+            <p id="foloseste-antet-erp-help" class="text-xs text-slate-500 dark:text-gray-400 mt-1">
+                Daca este bifat, documentul generat va folosi antetul platformei; altfel ramane antetul din template.
+            </p>
+        </div>
         <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Incarca template-ul selectat">
             Incarca
         </button>
@@ -57,13 +71,14 @@ $doc_error_message = $eroare_documente ?? $eroare ?? '';
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Fisier</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Tip</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Activ</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Antet ERP</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Actiuni</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                 <?php if (empty($templates)): ?>
                 <tr>
-                    <td colspan="5" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista templateuri.</td>
+                    <td colspan="6" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista templateuri.</td>
                 </tr>
                 <?php else: ?>
                 <?php foreach ($templates as $t): ?>
@@ -84,6 +99,13 @@ $doc_error_message = $eroare_documente ?? $eroare ?? '';
                                        aria-label="Template activ">
                             </label>
                         </form>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <?php if (!empty($t['foloseste_antet_platforma_erp'])): ?>
+                            <span class="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">Da</span>
+                        <?php else: ?>
+                            <span class="inline-flex items-center rounded px-2 py-1 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">Nu</span>
+                        <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 flex flex-wrap gap-2 items-center">
                         <button type="button" onclick="document.getElementById('edit-<?php echo $t['id']; ?>').showModal()"
