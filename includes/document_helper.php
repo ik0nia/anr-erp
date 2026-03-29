@@ -1227,7 +1227,6 @@ function docx_la_pdf_phpword_mpdf($docx_path) {
     }
     try {
         require_once $autoload;
-        $hf = docx_extrage_antet_subsol($docx_path);
         $phpWord = \PhpOffice\PhpWord\IOFactory::load($docx_path);
         \PhpOffice\PhpWord\Settings::setPdfRendererName(\PhpOffice\PhpWord\Settings::PDF_RENDERER_MPDF);
         \PhpOffice\PhpWord\Settings::setPdfRendererPath($mpdfPath);
@@ -1235,16 +1234,32 @@ function docx_la_pdf_phpword_mpdf($docx_path) {
         $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
         $writer->save($pdf_path);
         if (file_exists($pdf_path)) {
-            // PhpWord+mPDF poate pierde antet/subsol; le reaplicăm ca fallback minim.
-            if (!empty($hf['header']) || !empty($hf['footer'])) {
-                @pdf_adauga_antet_subsol($pdf_path, (string)$hf['header'], (string)$hf['footer']);
-            }
             return ['success' => true, 'path' => $pdf_path, 'filename' => basename($pdf_path), 'error' => null];
         }
     } catch (Exception $e) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => $e->getMessage()];
     }
     return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Conversia PDF a eșuat.'];
+}
+
+/**
+ * Conversie DOCX->PDF cu fidelitate ridicată (header/footer/logo/layout intact) folosind LibreOffice.
+ */
+function docx_la_pdf_libreoffice($docx_path, $binaryPath = '') {
+    $docx_path = realpath((string)$docx_path);
+    if (!$docx_path || !file_exists($docx_path)) {
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Fișierul DOCX nu există.'];
+    }
+    $pdf_path = preg_replace('/\.docx$/i', '.pdf', $docx_path);
+    $output_dir = dirname($docx_path);
+    $bin = trim((string)$binaryPath);
+    if ($bin === '') $bin = 'soffice';
+    $cmd = sprintf('"%s" --headless --convert-to pdf --outdir "%s" "%s" 2>&1', $bin, $output_dir, $docx_path);
+    @exec($cmd, $out, $code);
+    if (file_exists($pdf_path)) {
+        return ['success' => true, 'path' => $pdf_path, 'filename' => basename($pdf_path), 'error' => null];
+    }
+    return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Conversia LibreOffice a eșuat.'];
 }
 
 /**
@@ -1271,19 +1286,19 @@ function converteste_docx_la_pdf($docx_path, $pdo = null) {
             $libreoffice = '';
         }
         if (!empty($libreoffice)) {
-            $output_dir = dirname($docx_path);
-            $cmd = sprintf('"%s" --headless --convert-to pdf --outdir "%s" "%s" 2>&1', $libreoffice, $output_dir, $docx_path);
-            exec($cmd, $output, $return_var);
-            if (file_exists($pdf_path)) {
-                $hf = docx_extrage_antet_subsol($docx_path);
-                if (!empty($hf['header']) || !empty($hf['footer'])) {
-                    @pdf_adauga_antet_subsol($pdf_path, (string)$hf['header'], (string)$hf['footer']);
-                }
-                return ['success' => true, 'path' => $pdf_path, 'filename' => $filename, 'error' => null];
-            }
+            $res = docx_la_pdf_libreoffice($docx_path, $libreoffice);
+            if (!empty($res['success'])) return $res;
         }
     }
 
+    // Fallback auto-detect LibreOffice dacă nu este configurat explicit.
+    $candidates = ['soffice', '/usr/bin/soffice', '/usr/local/bin/soffice'];
+    foreach ($candidates as $candidate) {
+        $res = docx_la_pdf_libreoffice($docx_path, $candidate);
+        if (!empty($res['success'])) return $res;
+    }
+
+    // Ultim fallback (poate pierde fidelitatea header/footer la template-uri complexe).
     return docx_la_pdf_phpword_mpdf($docx_path);
 }
 
