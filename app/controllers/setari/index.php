@@ -395,7 +395,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_template'])) {
     $result = documente_upload_template(
         $pdo,
         trim((string)($_POST['nume_afisare'] ?? '')),
-        $_FILES['fisier_template'] ?? ['error' => UPLOAD_ERR_NO_FILE]
+        $_FILES['fisier_template'] ?? ['error' => UPLOAD_ERR_NO_FILE],
+        !empty($_POST['foloseste_antet_platforma_erp']) ? 1 : 0
     );
     if ($result === null) {
         header('Location: /setari?tab=generare-documente&succes_doc_tpl=1');

@@ -7,7 +7,7 @@ if (!isset($templates_active)) {
     $templates_active = [];
     try {
         if (isset($pdo)) {
-            $stmt = $pdo->query("SELECT id, nume_afisare FROM documente_template WHERE activ = 1 ORDER BY nume_afisare");
+            $stmt = $pdo->query("SELECT id, nume_afisare, foloseste_antet_platforma_erp FROM documente_template WHERE activ = 1 ORDER BY nume_afisare");
             $templates_active = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
     } catch (PDOException $e) {}
@@ -47,12 +47,18 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                     aria-required="true">
                 <option value="">— Alegeți template —</option>
                 <?php foreach ($templates_active as $t): ?>
-                <option value="<?php echo $t['id']; ?>"><?php echo htmlspecialchars($t['nume_afisare']); ?></option>
+                <option value="<?php echo $t['id']; ?>"
+                        data-erp-header="<?php echo !empty($t['foloseste_antet_platforma_erp']) ? '1' : '0'; ?>">
+                    <?php echo htmlspecialchars($t['nume_afisare']); ?>
+                </option>
                 <?php endforeach; ?>
             </select>
             <?php if (empty($templates_active)): ?>
-            <p class="text-amber-600 dark:text-amber-400 text-sm mb-4">Nu există templateuri active. Adăugați templateuri în <a href="/generare-documente" class="underline">Management Generare Documente</a>.</p>
+            <p class="text-amber-600 dark:text-amber-400 text-sm mb-4">Nu există templateuri active. Adăugați templateuri în <a href="/setari?tab=generare-documente" class="underline">Setări &gt; Generare documente</a>.</p>
             <?php endif; ?>
+            <p id="doc-template-erp-header-indicator" class="hidden mt-2 text-xs text-amber-700 dark:text-amber-300" aria-live="polite">
+                Pentru acest template este activată opțiunea „Folosește antetul platformei ERP”.
+            </p>
             <div class="mb-4">
                 <label class="inline-flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="doc-include-data-generare" name="include_data_generare" value="1"
@@ -138,6 +144,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
     const etapaEmail = document.getElementById('doc-etapa-email');
     const loading = document.getElementById('doc-loading');
     const errorDiv = document.getElementById('doc-error');
+    const erpHeaderIndicator = document.getElementById('doc-template-erp-header-indicator');
     const rezultatMsg = document.getElementById('doc-rezultat-msg');
     const linkDocx = document.getElementById('doc-link-download-docx');
     const linkPdf = document.getElementById('doc-link-download-pdf');
@@ -153,6 +160,13 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
     let currentMembruNume = '';
     let currentPhone = '';
     let currentEmail = '';
+
+    function updateErpHeaderIndicator() {
+        if (!erpHeaderIndicator || !templateSelect) return;
+        const opt = templateSelect.options[templateSelect.selectedIndex];
+        const isErpHeader = !!(opt && opt.getAttribute('data-erp-header') === '1');
+        erpHeaderIndicator.classList.toggle('hidden', !isErpHeader);
+    }
 
     document.querySelectorAll('[data-action="generare-document"]').forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -175,16 +189,22 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
             loading.classList.add('hidden');
             errorDiv.classList.add('hidden');
             templateSelect.value = '';
+            updateErpHeaderIndicator();
             modal.showModal();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         });
     });
+
+    if (templateSelect) {
+        templateSelect.addEventListener('change', updateErpHeaderIndicator);
+    }
 
     function resetModal() {
         modal.close();
         etapa1.classList.remove('hidden');
         etapa2.classList.add('hidden');
         etapaEmail.classList.add('hidden');
+        updateErpHeaderIndicator();
         currentDocumentGeneratId = 0;
         if (btnWhatsapp) btnWhatsapp.classList.add('hidden');
         if (btnEmail) btnEmail.classList.remove('hidden');

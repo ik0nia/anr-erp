@@ -54,6 +54,14 @@
                     <input type="file" id="fisier_template" name="fisier_template" accept=".docx,.pdf" required
                            class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-900 dark:text-white dark:bg-gray-700">
                 </div>
+                <div class="min-w-[280px]">
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300">
+                        <input type="checkbox" name="foloseste_antet_platforma_erp" value="1"
+                               class="h-4 w-4 text-amber-600 focus:ring-amber-500 rounded border-slate-300 dark:border-gray-600"
+                               aria-label="Folosește antetul platformei ERP pentru documentele generate din acest template">
+                        <span>Folosește antetul platformei ERP</span>
+                    </label>
+                </div>
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Incarca template-ul selectat">
                     Incarca
                 </button>
@@ -70,6 +78,7 @@
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Nume</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Fisier</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Tip</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Antet ERP</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Activ</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Actiuni</th>
                         </tr>
@@ -77,7 +86,7 @@
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                         <?php if (empty($templates)): ?>
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista templateuri.</td>
+                            <td colspan="6" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista templateuri.</td>
                         </tr>
                         <?php else: ?>
                         <?php foreach ($templates as $t): ?>
@@ -85,6 +94,13 @@
                             <td class="px-4 py-3 text-sm text-slate-900 dark:text-white"><?php echo htmlspecialchars($t['nume_afisare']); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($t['nume_fisier']); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo strtoupper(pathinfo((string)$t['nume_fisier'], PATHINFO_EXTENSION)); ?></td>
+                            <td class="px-4 py-3">
+                                <?php if (!empty($t['foloseste_antet_platforma_erp'])): ?>
+                                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200">Da</span>
+                                <?php else: ?>
+                                    <span class="inline-flex px-2 py-1 text-xs font-medium rounded bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">Nu</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="px-4 py-3">
                                 <form method="post" class="inline">
                                     <?php echo csrf_field(); ?>

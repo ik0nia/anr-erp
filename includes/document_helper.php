@@ -468,6 +468,25 @@ function documente_antet_render($pdo = null) {
 }
 
 /**
+ * Returneaza configuratia antetului ERP per template document.
+ * true  => se foloseste antetul platformei ERP in fluxul de generare documente
+ * false => se pastreaza strict antetul/subsolul din template.
+ */
+function documente_template_uses_erp_header(PDO $pdo, int $template_id): bool {
+    if ($template_id <= 0) {
+        return false;
+    }
+    try {
+        $stmt = $pdo->prepare('SELECT foloseste_antet_platforma_erp FROM documente_template WHERE id = ? LIMIT 1');
+        $stmt->execute([$template_id]);
+        $value = $stmt->fetchColumn();
+        return ((int)$value) === 1;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
  * Lista tagurilor disponibile cu descriere
  */
 function get_taguri_disponibile() {
@@ -1215,9 +1234,9 @@ function pdf_adauga_antet_subsol($pdf_path, $headerText, $footerText) {
 
 /**
  * Convertește DOCX în PDF folosind PhpWord + mPDF (fără LibreOffice).
- * Extrage antet/subsol din DOCX și îi adaugă pe PDF (PhpWord nu le păstrează la export).
+ * Optiune: ['apply_erp_header_overlay' => bool, 'pdo' => PDO|null]
  */
-function docx_la_pdf_phpword_mpdf($docx_path) {
+function docx_la_pdf_phpword_mpdf($docx_path, array $opts = []) {
     $docx_path = realpath($docx_path);
     if (!$docx_path || !file_exists($docx_path)) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Fișierul DOCX nu există.'];
@@ -1239,6 +1258,12 @@ function docx_la_pdf_phpword_mpdf($docx_path) {
         $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
         $writer->save($pdf_path);
         if (file_exists($pdf_path)) {
+            if (!empty($opts['apply_erp_header_overlay'])) {
+                $overlay = documente_pdf_overlay_erp_header($pdf_path, ($opts['pdo'] ?? null));
+                if (empty($overlay['success'])) {
+                    return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($overlay['error'] ?? 'Nu s-a putut aplica antetul ERP pe PDF.')];
+                }
+            }
             return ['success' => true, 'path' => $pdf_path, 'filename' => basename($pdf_path), 'error' => null];
         }
     } catch (Exception $e) {
@@ -1273,13 +1298,14 @@ function docx_la_pdf_libreoffice($docx_path, $binaryPath = '') {
 /**
  * Convertește DOCX în PDF: încearcă LibreOffice (dacă este configurat), apoi PhpWord + mPDF.
  */
-function converteste_docx_la_pdf($docx_path, $pdo = null) {
+function converteste_docx_la_pdf($docx_path, $pdo = null, array $opts = []) {
     $docx_path = realpath($docx_path);
     if (!$docx_path || !file_exists($docx_path)) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Fișierul DOCX nu există.'];
     }
     $pdf_path = preg_replace('/\.docx$/i', '.pdf', $docx_path);
     $filename = basename($pdf_path);
+    $applyErpHeaderOverlay = !empty($opts['apply_erp_header_overlay']);
 
     if ($pdo === null && isset($GLOBALS['pdo'])) {
         $pdo = $GLOBALS['pdo'];
@@ -1296,7 +1322,15 @@ function converteste_docx_la_pdf($docx_path, $pdo = null) {
         }
         if (!empty($libreoffice)) {
             $res = docx_la_pdf_libreoffice($docx_path, $libreoffice);
-            if (!empty($res['success'])) return $res;
+            if (!empty($res['success'])) {
+                if ($applyErpHeaderOverlay) {
+                    $overlay = documente_pdf_overlay_erp_header($res['path'] ?? '', $pdo);
+                    if (empty($overlay['success'])) {
+                        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($overlay['error'] ?? 'Nu s-a putut aplica antetul ERP pe PDF.')];
+                    }
+                }
+                return $res;
+            }
         }
     }
 
@@ -1305,12 +1339,104 @@ function converteste_docx_la_pdf($docx_path, $pdo = null) {
         $candidates = ['soffice', '/usr/bin/soffice', '/usr/local/bin/soffice'];
         foreach ($candidates as $candidate) {
             $res = docx_la_pdf_libreoffice($docx_path, $candidate);
-            if (!empty($res['success'])) return $res;
+            if (!empty($res['success'])) {
+                if ($applyErpHeaderOverlay) {
+                    $overlay = documente_pdf_overlay_erp_header($res['path'] ?? '', $pdo);
+                    if (empty($overlay['success'])) {
+                        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($overlay['error'] ?? 'Nu s-a putut aplica antetul ERP pe PDF.')];
+                    }
+                }
+                return $res;
+            }
         }
     }
 
     // Ultim fallback (poate pierde fidelitatea header/footer la template-uri complexe).
-    return docx_la_pdf_phpword_mpdf($docx_path);
+    return docx_la_pdf_phpword_mpdf($docx_path, [
+        'apply_erp_header_overlay' => $applyErpHeaderOverlay,
+        'pdo' => $pdo,
+    ]);
+}
+
+/**
+ * Suprapune antetul ERP pe fiecare pagină dintr-un PDF existent.
+ * Folosit ca fallback temporar pentru template-urile care cer explicit antet ERP.
+ */
+function documente_pdf_overlay_erp_header($pdf_path, PDO $pdo = null) {
+    $pdf_path = realpath((string)$pdf_path);
+    if (!$pdf_path || !file_exists($pdf_path)) {
+        return ['success' => false, 'error' => 'PDF sursa indisponibil pentru suprapunerea antetului ERP.'];
+    }
+    $autoload = __DIR__ . '/../vendor/autoload.php';
+    if (!file_exists($autoload)) {
+        return ['success' => false, 'error' => 'Composer autoload lipsa pentru suprapunere antet ERP.'];
+    }
+    require_once $autoload;
+    if (!class_exists('\setasign\Fpdi\Fpdi')) {
+        return ['success' => false, 'error' => 'FPDI nu este disponibil pentru antetul ERP.'];
+    }
+    if ($pdo === null && isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) {
+        $pdo = $GLOBALS['pdo'];
+    }
+
+    $tempPath = $pdf_path . '.erp-header.' . uniqid('', true) . '.tmp';
+    try {
+        $headerText = "ASOCIATIA NEVAZATORILOR DIN ROMANIA\nFILIALA BIHOR\nORGANIZATIE DE UTILITATE PUBLICA";
+        if ($pdo) {
+            try {
+                $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_source' LIMIT 1");
+                $stmt->execute();
+                $source = trim((string)$stmt->fetchColumn());
+                if ($source === 'html') {
+                    $stmtHtml = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_html' LIMIT 1");
+                    $stmtHtml->execute();
+                    $savedHtml = (string)$stmtHtml->fetchColumn();
+                    $plain = trim(preg_replace('/\s+/u', ' ', strip_tags(html_entity_decode($savedHtml, ENT_QUOTES | ENT_HTML5, 'UTF-8'))));
+                    if ($plain !== '') {
+                        $headerText = mb_substr($plain, 0, 180);
+                    }
+                }
+            } catch (Exception $e) {
+                // fallback text implicit
+            }
+        }
+
+        $pdf = new class extends \setasign\Fpdi\Fpdi {
+            public $erpHeader = '';
+            public function Header() {
+                $this->SetY(8);
+                $this->SetFont('Helvetica', '', 8);
+                $this->SetTextColor(30, 30, 30);
+                if (trim((string)$this->erpHeader) !== '') {
+                    $this->MultiCell(0, 3.5, $this->erpHeader, 0, 'C');
+                }
+                $this->SetDrawColor(140, 140, 140);
+                $this->Line(10, 22, $this->GetPageWidth() - 10, 22);
+            }
+        };
+        $pdf->erpHeader = (string)$headerText;
+        $pageCount = $pdf->setSourceFile($pdf_path);
+        for ($i = 1; $i <= $pageCount; $i++) {
+            $tpl = $pdf->importPage($i);
+            $size = $pdf->getTemplateSize($tpl);
+            if ($size && isset($size['width'], $size['height'], $size['orientation'])) {
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            } else {
+                $pdf->AddPage();
+            }
+            $pdf->useTemplate($tpl, 0, 0, null, null, true);
+        }
+        $pdf->Output('F', $tempPath);
+        if (!file_exists($tempPath) || @filesize($tempPath) <= 0) {
+            @unlink($tempPath);
+            return ['success' => false, 'error' => 'Nu s-a putut genera PDF-ul cu antet ERP suprapus.'];
+        }
+        @rename($tempPath, $pdf_path);
+        return ['success' => true, 'error' => null];
+    } catch (Exception $e) {
+        if (file_exists($tempPath)) @unlink($tempPath);
+        return ['success' => false, 'error' => $e->getMessage()];
+    }
 }
 
 /**
@@ -1885,6 +2011,7 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
         $output_path = UPLOAD_GENERATE_DIR . $output_filename;
     }
 
+    $applyErpHeaderOverlay = !empty($opts['apply_erp_header_overlay']);
     try {
         $pdf = new \setasign\Fpdi\Fpdi();
         $pageCount = $pdf->setSourceFile($template_pdf_path);
@@ -1928,6 +2055,13 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
 
     if (!file_exists($output_path)) {
         return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Nu s-a putut salva PDF-ul final.'];
+    }
+
+    if ($applyErpHeaderOverlay) {
+        $overlay = documente_pdf_overlay_erp_header($output_path, ($pdo instanceof PDO ? $pdo : null));
+        if (empty($overlay['success'])) {
+            return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => documente_normalize_error_message($overlay['error'] ?? 'Nu s-a putut aplica antetul ERP pe PDF.')];
+        }
     }
     return ['success' => true, 'pdf_path' => $output_path, 'pdf_filename' => $output_filename, 'docx_path' => null, 'error' => null];
 }

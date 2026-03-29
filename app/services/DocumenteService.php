@@ -8,6 +8,19 @@ require_once APP_ROOT . '/includes/document_helper.php';
 require_once APP_ROOT . '/includes/log_helper.php';
 
 /**
+ * Verifică dacă o coloană există în tabel.
+ */
+function documente_table_has_column(PDO $pdo, string $table, string $column): bool {
+    try {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+        $stmt->execute([$table, $column]);
+        return ((int)$stmt->fetchColumn()) > 0;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
  * Asigura existenta tabelei si directorului pentru templateuri
  */
 function documente_ensure_table(PDO $pdo): ?string {
@@ -16,11 +29,15 @@ function documente_ensure_table(PDO $pdo): ?string {
             id INT AUTO_INCREMENT PRIMARY KEY,
             nume_afisare VARCHAR(255) NOT NULL,
             nume_fisier VARCHAR(255) NOT NULL,
+            foloseste_antet_platforma_erp TINYINT(1) NOT NULL DEFAULT 0,
             activ TINYINT(1) NOT NULL DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_activ (activ)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        if (!documente_table_has_column($pdo, 'documente_template', 'foloseste_antet_platforma_erp')) {
+            $pdo->exec("ALTER TABLE documente_template ADD COLUMN foloseste_antet_platforma_erp TINYINT(1) NOT NULL DEFAULT 0 AFTER nume_fisier");
+        }
         // Mapare manuală coordonate taguri pentru template-uri PDF (fallback hibrid).
         $pdo->exec("CREATE TABLE IF NOT EXISTS documente_template_pdf_mapari (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -53,7 +70,7 @@ function documente_list_templates(PDO $pdo): array {
  * Upload template nou: valideaza, muta fisierul, insereaza in DB
  * @return string|null — mesaj eroare sau null daca succes
  */
-function documente_upload_template(PDO $pdo, string $nume_afisare, array $file_info): ?string {
+function documente_upload_template(PDO $pdo, string $nume_afisare, array $file_info, int $foloseste_antet_platforma_erp = 0): ?string {
     if (empty($nume_afisare)) {
         return 'Numele afisat este obligatoriu.';
     }
@@ -83,14 +100,15 @@ function documente_upload_template(PDO $pdo, string $nume_afisare, array $file_i
 
     $filename = 'tpl_' . time() . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $nume_afisare) . '.' . $ext;
     $filepath = UPLOAD_TEMPLATE_DIR . $filename;
+    $foloseste_antet_platforma_erp = $foloseste_antet_platforma_erp ? 1 : 0;
 
     if (!move_uploaded_file($file_info['tmp_name'], $filepath)) {
         return 'Eroare la incarcarea fisierului.';
     }
 
     try {
-        $stmt = $pdo->prepare('INSERT INTO documente_template (nume_afisare, nume_fisier, activ) VALUES (?, ?, 1)');
-        $stmt->execute([$nume_afisare, $filename]);
+        $stmt = $pdo->prepare('INSERT INTO documente_template (nume_afisare, nume_fisier, foloseste_antet_platforma_erp, activ) VALUES (?, ?, ?, 1)');
+        $stmt->execute([$nume_afisare, $filename, $foloseste_antet_platforma_erp]);
         log_activitate($pdo, 'Template document adaugat: ' . $nume_afisare);
         return null;
     } catch (PDOException $e) {
@@ -128,16 +146,20 @@ function documente_delete_template(PDO $pdo, int $id): ?string {
  * Actualizeaza nume si status activ al unui template
  * @return string|null — mesaj eroare sau null daca succes
  */
-function documente_update_template(PDO $pdo, int $id, string $nume_afisare, int $activ): ?string {
+function documente_update_template(PDO $pdo, int $id, string $nume_afisare, int $activ, ?int $foloseste_antet_platforma_erp = null): ?string {
     if ($id <= 0 || empty($nume_afisare)) return 'Date invalide.';
 
     try {
-        $stmt_old = $pdo->prepare('SELECT nume_afisare, activ FROM documente_template WHERE id = ?');
+        $stmt_old = $pdo->prepare('SELECT nume_afisare, activ, foloseste_antet_platforma_erp FROM documente_template WHERE id = ?');
         $stmt_old->execute([$id]);
         $template_vechi = $stmt_old->fetch(PDO::FETCH_ASSOC);
+        if ($foloseste_antet_platforma_erp === null) {
+            $foloseste_antet_platforma_erp = (int)($template_vechi['foloseste_antet_platforma_erp'] ?? 0);
+        }
+        $foloseste_antet_platforma_erp = $foloseste_antet_platforma_erp ? 1 : 0;
 
-        $stmt = $pdo->prepare('UPDATE documente_template SET nume_afisare = ?, activ = ? WHERE id = ?');
-        $stmt->execute([$nume_afisare, $activ, $id]);
+        $stmt = $pdo->prepare('UPDATE documente_template SET nume_afisare = ?, activ = ?, foloseste_antet_platforma_erp = ? WHERE id = ?');
+        $stmt->execute([$nume_afisare, $activ, $foloseste_antet_platforma_erp, $id]);
 
         $modificari = [];
         if ($template_vechi) {
@@ -146,6 +168,13 @@ function documente_update_template(PDO $pdo, int $id, string $nume_afisare, int 
             }
             if (($template_vechi['activ'] ?? 0) != $activ) {
                 $modificari[] = log_format_modificare('Status activ', ($template_vechi['activ'] ?? 0) ? 'Activ' : 'Inactiv', $activ ? 'Activ' : 'Inactiv');
+            }
+            if ((int)($template_vechi['foloseste_antet_platforma_erp'] ?? 0) !== $foloseste_antet_platforma_erp) {
+                $modificari[] = log_format_modificare(
+                    'Antet ERP',
+                    ((int)($template_vechi['foloseste_antet_platforma_erp'] ?? 0) === 1) ? 'Da' : 'Nu',
+                    ($foloseste_antet_platforma_erp === 1) ? 'Da' : 'Nu'
+                );
             }
         }
 
