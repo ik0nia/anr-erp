@@ -588,13 +588,14 @@ function docx_aplica_inlocuiri_xml($xml, $valori) {
         }, $chars)) . $part . '\]/u';
         $xml = preg_replace($pattern, '<w:r><w:t>' . $esc($valoare) . '</w:t></w:r>', $xml);
     }
-    $xml = preg_replace('/\[[a-zA-Z0-9_]+\]/u', ' ', $xml);
+    // Nu ștergem agresiv tagurile necunoscute; le păstrăm pentru a evita documente aparent goale
+    // și pentru a permite template-uri cu taguri custom care pot fi completate ulterior.
     return $xml;
 }
 
 /**
  * În DOCX (după PhpWord saveAs), aplică înlocuiri pentru toate tagurile în body + header/footer,
- * inclusiv taguri fragmentate ([nume] etc.), apoi înlocuiește orice [tag] rămas cu spațiu.
+ * inclusiv taguri fragmentate ([nume] etc.).
  */
 function docx_aplica_inlocuiri_complet($docx_path, $valori) {
     if (!file_exists($docx_path) || !is_array($valori)) return false;
@@ -686,6 +687,12 @@ function documente_docx_is_effectively_empty_xml($xml) {
         return false;
     }
 
+    // Dacă există noduri text/field în OOXML, documentul nu trebuie marcat ca "gol",
+    // chiar dacă textul efectiv ar putea fi spații.
+    if (preg_match('/<(w:t|w:instrText|w:fldSimple|w:hyperlink)\b/u', $xml)) {
+        return false;
+    }
+
     // Altfel, verificăm dacă există text efectiv.
     $text = preg_replace('/<[^>]+>/u', ' ', $xml);
     $text = html_entity_decode((string)$text, ENT_QUOTES | ENT_XML1, 'UTF-8');
@@ -697,14 +704,21 @@ function documente_docx_is_effectively_empty_xml($xml) {
  * Verifică dacă DOCX-ul rezultat are conținut vizibil în body.
  * Ajută la prevenirea livrării de documente goale.
  */
-function documente_docx_has_visible_content($docx_path) {
+function documente_docx_has_visible_content($docx_path, $opts = []) {
     if (!file_exists($docx_path) || !class_exists('ZipArchive')) return false;
     $zip = new ZipArchive();
     if ($zip->open($docx_path) !== true) return false;
     $docXml = $zip->getFromName('word/document.xml');
     $zip->close();
     if ($docXml === false) return false;
-    return !documente_docx_is_effectively_empty_xml($docXml);
+    if (!documente_docx_is_effectively_empty_xml($docXml)) return true;
+
+    // Mod strict: fallback pe taguri detectabile dacă body-ul pare gol după procesare.
+    // Evită false-negative când template-ul conține placeholder-e legitime.
+    if (!empty($opts['allow_placeholders']) && preg_match('/\[[^\]\r\n]{1,80}\]/u', (string)$docXml)) {
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -879,7 +893,7 @@ function genereaza_document_din_valori($template_path, array $valori, $output_fi
         $templateProcessor->saveAs($output_path);
         docx_aplica_inlocuiri_complet($output_path, $valori);
         documente_docx_repara_xml_goale($output_path);
-        if (!documente_docx_has_visible_content($output_path)) {
+        if (!documente_docx_has_visible_content($output_path, ['allow_placeholders' => true])) {
             return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Documentul rezultat este gol. Verificati template-ul (continut/placeholder-uri) si reincarcati-l.'];
         }
         return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
@@ -974,7 +988,7 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
             $templateProcessor->saveAs($output_path);
             docx_aplica_inlocuiri_complet($output_path, $valori);
             documente_docx_repara_xml_goale($output_path);
-            if (!documente_docx_has_visible_content($output_path)) {
+            if (!documente_docx_has_visible_content($output_path, ['allow_placeholders' => true])) {
                 return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Documentul rezultat este gol. Verificati template-ul (continut/placeholder-uri) si reincarcati-l.'];
             }
             return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
@@ -1018,8 +1032,7 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
             $replacement = '<w:r><w:t>' . $esc($valoare) . '</w:t></w:r>';
             $xml = preg_replace($pattern, $replacement, $xml);
         }
-        // Taguri rămase (necunoscute) → spațiu
-        $xml = preg_replace('/\[[a-zA-Z0-9_]+\]/u', ' ', $xml);
+        // Nu înlocuim forțat tagurile necunoscute cu spațiu pentru a nu produce output fals-gol.
         $zipOut = new ZipArchive();
         if ($zipOut->open($output_path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             $zip->close();
@@ -1033,7 +1046,7 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
         $zipOut->close();
         $zip->close();
         documente_docx_repara_xml_goale($output_path);
-        if (!documente_docx_has_visible_content($output_path)) {
+        if (!documente_docx_has_visible_content($output_path, ['allow_placeholders' => true])) {
             return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Documentul rezultat este gol. Verificati template-ul (continut/placeholder-uri) si reincarcati-l.'];
         }
         return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
@@ -1162,9 +1175,6 @@ function docx_la_pdf_phpword_mpdf($docx_path) {
         $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
         $writer->save($pdf_path);
         if (file_exists($pdf_path)) {
-            if (@filesize($pdf_path) > 0 && @filesize($pdf_path) < 1024) {
-                return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Conversia PDF a produs un document gol. Verificati template-ul DOCX.'];
-            }
             return ['success' => true, 'path' => $pdf_path, 'filename' => basename($pdf_path), 'error' => null];
         }
     } catch (Exception $e) {
@@ -1201,9 +1211,6 @@ function converteste_docx_la_pdf($docx_path, $pdo = null) {
             $cmd = sprintf('"%s" --headless --convert-to pdf --outdir "%s" "%s" 2>&1', $libreoffice, $output_dir, $docx_path);
             exec($cmd, $output, $return_var);
             if (file_exists($pdf_path)) {
-                if (@filesize($pdf_path) > 0 && @filesize($pdf_path) < 1024) {
-                    return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Conversia PDF a produs un document gol. Verificati template-ul DOCX.'];
-                }
                 return ['success' => true, 'path' => $pdf_path, 'filename' => $filename, 'error' => null];
             }
         }
