@@ -104,9 +104,23 @@ function documente_normalize_error_message($rawMessage, $default = 'A aparut o e
     if (strpos($l, 'failed to open stream') !== false) {
         return 'Serverul nu poate accesa template-ul sau fisierul generat.';
     }
+    if (strpos($l, 'undefined function exec') !== false || strpos($l, 'call to undefined function exec') !== false) {
+        return 'Conversia DOCX->PDF prin comanda de sistem nu este disponibila pe server. Modulul a trecut pe fallback intern.';
+    }
 
     if (strlen($msg) > 240) return (string)$default;
     return $msg;
+}
+
+/**
+ * Verifică dacă apelul exec() este disponibil în runtime.
+ */
+function documente_exec_available() {
+    if (!function_exists('exec')) return false;
+    $disabled = (string)ini_get('disable_functions');
+    if ($disabled === '') return true;
+    $list = array_map('trim', explode(',', $disabled));
+    return !in_array('exec', $list, true);
 }
 
 /**
@@ -1254,6 +1268,9 @@ function docx_la_pdf_libreoffice($docx_path, $binaryPath = '') {
     $output_dir = dirname($docx_path);
     $bin = trim((string)$binaryPath);
     if ($bin === '') $bin = 'soffice';
+    if (!documente_exec_available()) {
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'exec indisponibil'];
+    }
     $cmd = sprintf('"%s" --headless --convert-to pdf --outdir "%s" "%s" 2>&1', $bin, $output_dir, $docx_path);
     @exec($cmd, $out, $code);
     if (file_exists($pdf_path)) {
@@ -1276,7 +1293,8 @@ function converteste_docx_la_pdf($docx_path, $pdo = null) {
     if ($pdo === null && isset($GLOBALS['pdo'])) {
         $pdo = $GLOBALS['pdo'];
     }
-    if ($pdo) {
+    $canExec = documente_exec_available();
+    if ($canExec && $pdo) {
         try {
             $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'cale_libreoffice'");
             $stmt->execute();
@@ -1292,10 +1310,12 @@ function converteste_docx_la_pdf($docx_path, $pdo = null) {
     }
 
     // Fallback auto-detect LibreOffice dacă nu este configurat explicit.
-    $candidates = ['soffice', '/usr/bin/soffice', '/usr/local/bin/soffice'];
-    foreach ($candidates as $candidate) {
-        $res = docx_la_pdf_libreoffice($docx_path, $candidate);
-        if (!empty($res['success'])) return $res;
+    if ($canExec) {
+        $candidates = ['soffice', '/usr/bin/soffice', '/usr/local/bin/soffice'];
+        foreach ($candidates as $candidate) {
+            $res = docx_la_pdf_libreoffice($docx_path, $candidate);
+            if (!empty($res['success'])) return $res;
+        }
     }
 
     // Ultim fallback (poate pierde fidelitatea header/footer la template-uri complexe).
