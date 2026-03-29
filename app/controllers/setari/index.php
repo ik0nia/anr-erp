@@ -2,11 +2,12 @@
 /**
  * Controller: Setari — All settings tabs + POST actions
  *
- * Tabs: general, dashboard, email, cotizatii, incasari
+ * Tabs: general, dashboard, email, cotizatii, incasari, antet-documente, generare-documente, tickete
  * Handles all POST actions, loads data, includes layout + view.
  */
 require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/app/services/SetariService.php';
+require_once APP_ROOT . '/app/services/DocumenteService.php';
 require_once APP_ROOT . '/includes/document_helper.php';
 
 $eroare = '';
@@ -20,7 +21,7 @@ setari_ensure_table($pdo);
 // Tab detection (needed early for some POST redirects)
 // ---------------------------------------------------------------------------
 $tab_setari = 'general';
-$valid_tabs = ['general', 'dashboard', 'email', 'cotizatii', 'incasari', 'antet-documente', 'tickete'];
+$valid_tabs = ['general', 'dashboard', 'email', 'cotizatii', 'incasari', 'antet-documente', 'generare-documente', 'tickete'];
 if (isset($_GET['tab']) && in_array($_GET['tab'], $valid_tabs)) {
     $tab_setari = $_GET['tab'];
 }
@@ -386,6 +387,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_document
 }
 
 // ---------------------------------------------------------------------------
+// POST: Management Generare Documente (din tab Setari)
+// ---------------------------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_template'])) {
+    csrf_require_valid();
+    $tab_setari = 'generare-documente';
+    $result = documente_upload_template(
+        $pdo,
+        trim((string)($_POST['nume_afisare'] ?? '')),
+        $_FILES['fisier_template'] ?? ['error' => UPLOAD_ERR_NO_FILE]
+    );
+    if ($result === null) {
+        header('Location: /setari?tab=generare-documente&succes_doc_tpl=1');
+        exit;
+    }
+    $eroare = $result;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_template'])) {
+    csrf_require_valid();
+    $tab_setari = 'generare-documente';
+    $result = documente_delete_template($pdo, (int)($_POST['id'] ?? 0));
+    if ($result === null) {
+        header('Location: /setari?tab=generare-documente&succes_doc_tpl=3');
+        exit;
+    }
+    $eroare = $result;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_template'])) {
+    csrf_require_valid();
+    $tab_setari = 'generare-documente';
+    $result = documente_update_template(
+        $pdo,
+        (int)($_POST['id'] ?? 0),
+        trim((string)($_POST['nume_afisare'] ?? '')),
+        isset($_POST['activ']) ? 1 : 0
+    );
+    if ($result === null) {
+        header('Location: /setari?tab=generare-documente&succes_doc_tpl=2');
+        exit;
+    }
+    $eroare = $result;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_mapari_pdf'])) {
+    csrf_require_valid();
+    $tab_setari = 'generare-documente';
+    $template_id_map = (int)($_POST['template_id_map'] ?? 0);
+    $mapari_pdf = trim((string)($_POST['mapari_pdf'] ?? ''));
+    $updated_by = (string)($_SESSION['utilizator'] ?? 'Sistem');
+    $result = documente_save_pdf_mapari($pdo, $template_id_map, $mapari_pdf, $updated_by);
+    if ($result === null) {
+        header('Location: /setari?tab=generare-documente&succes_doc_tpl=4');
+        exit;
+    }
+    $eroare = $result;
+}
+
+// ---------------------------------------------------------------------------
 // Load user list (admin only)
 // ---------------------------------------------------------------------------
 if (!empty($_SESSION['user_id']) && is_admin()) {
@@ -482,6 +542,27 @@ if ($tab_setari === 'incasari') {
     $incasari_serie_incasari = $incasari_data['serie_incasari'];
     $lista_donatii_incasate = $incasari_data['donatii'];
     $incasari_setari_design = $incasari_data['design'];
+}
+
+$templates = [];
+$taguri = [];
+$eroare_documente = '';
+if ($tab_setari === 'generare-documente') {
+    $init_err = documente_ensure_table($pdo);
+    if ($init_err) {
+        $eroare_documente = $init_err;
+    } else {
+        try {
+            $templates = documente_list_templates($pdo);
+            foreach ($templates as &$tpl) {
+                $tpl['mapari_pdf'] = documente_get_pdf_mapari($pdo, (int)($tpl['id'] ?? 0));
+            }
+            unset($tpl);
+        } catch (PDOException $e) {
+            $eroare_documente = 'Eroare la incarcarea templateurilor.';
+        }
+    }
+    $taguri = get_taguri_disponibile();
 }
 
 $lista_departamente_tickete = [];
