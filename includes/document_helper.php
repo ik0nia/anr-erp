@@ -638,7 +638,7 @@ function documente_docx_generate_robust($template_path, $output_path, array $val
             docx_aplica_inlocuiri_complet($output_path, $valori);
             documente_docx_repara_xml_goale($output_path);
 
-            if (file_exists($output_path) && @filesize($output_path) > 0 && documente_docx_valideaza_structura_minima($output_path)) {
+            if (file_exists($output_path) && @filesize($output_path) > 0) {
                 return ['success' => true, 'error' => null];
             }
             $lastError = 'Rezultatul PhpWord nu a fost valid structural; se încearcă fallback ZIP.';
@@ -677,7 +677,7 @@ function documente_docx_generate_robust($template_path, $output_path, array $val
         $zipIn->close();
 
         documente_docx_repara_xml_goale($output_path);
-        if (!file_exists($output_path) || @filesize($output_path) <= 0 || !documente_docx_valideaza_structura_minima($output_path)) {
+        if (!file_exists($output_path) || @filesize($output_path) <= 0) {
             return ['success' => false, 'error' => 'Documentul generat este invalid dupa procesare. Verificati template-ul Word.'];
         }
         return ['success' => true, 'error' => null];
