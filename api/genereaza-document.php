@@ -109,6 +109,16 @@ try {
     $timestamp = date('Ymd_His');
     $base_name = $timestamp . '-' . $membru_nume_simplu . '-' . $template_simplu;
 
+    // Alocăm devreme numărul din Registratură pentru a putea înlocui [nrregistratura] în document.
+    $nr_inregistrare = null;
+    try {
+        ensure_registratura_table($pdo);
+        $nr_intern_alloc = registratura_urmatorul_nr($pdo);
+        $nr_inregistrare = (string)$nr_intern_alloc;
+    } catch (PDOException $e) {
+        $nr_inregistrare = null; // nu blocăm generarea; vom continua fără tag completat
+    }
+
     $docx_filename = null;
     $docx_target_filename = null;
     $docx_target_path = null;
@@ -120,6 +130,7 @@ try {
             'include_data_generare' => $include_data_generare,
             'nume_template' => $template['nume_afisare'],
             'template_id' => (int)$template_id,
+            'nrregistratura' => (string)($nr_inregistrare ?? ''),
         ], $pdo);
         if (!$pdfFlow['success']) {
             $sendJson(documente_api_error_payload($pdfFlow['error'] ?? '', 'Nu am putut genera documentul PDF pe baza template-ului selectat.', 'PDF_TEMPLATE_PROCESSING_ERROR'));
@@ -143,6 +154,7 @@ try {
         $result = genereaza_document_docx($template_path, $membru, null, [
             'include_data_generare' => $include_data_generare,
             'nume_template' => $template['nume_afisare'],
+            'nrregistratura' => (string)($nr_inregistrare ?? ''),
         ]);
         if (!$result['success']) {
             $sendJson(documente_api_error_payload($result['error'] ?? '', 'Nu am putut genera documentul din template-ul Word.', 'DOCX_TEMPLATE_PROCESSING_ERROR'));
@@ -177,11 +189,11 @@ try {
         $sendJson(documente_api_error_payload('Documentul a fost generat, dar conversia/salvarea PDF a eșuat.', 'Documentul a fost generat partial, dar fisierul PDF final nu a putut fi creat.', 'PDF_OUTPUT_ERROR'));
     }
 
-    $nr_inregistrare = null;
+    // Persistăm în Registratură folosind numărul deja alocat (dacă există).
     try {
         ensure_registratura_table($pdo);
-        $nr_intern = registratura_urmatorul_nr($pdo);
-        $nr_inregistrare = (string) $nr_intern;
+        $nr_intern = is_numeric($nr_inregistrare ?? null) ? (int)$nr_inregistrare : registratura_urmatorul_nr($pdo);
+        $nr_inregistrare = (string)$nr_intern;
         $utilizator = $_SESSION['utilizator'] ?? 'Sistem';
         $detalii = 'Generare document: ' . $template['nume_afisare'] . ' - ' . trim($membru['nume'] . ' ' . $membru['prenume']);
         $stmt = $pdo->prepare('INSERT INTO registratura (nr_intern, nr_inregistrare, utilizator, tip_act, detalii, nr_document, data_document, continut_document, destinatar_document, membru_id, document_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');

@@ -1070,9 +1070,11 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
 
     $include_data_generare = !empty($opts['include_data_generare']);
     $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd.m.Y';
+    $nrRegistratura = trim((string)($opts['nrregistratura'] ?? ''));
 
     $valori = membru_la_valori_tag($membru);
     $valori['datagenerare'] = $include_data_generare ? date($formatDate) : ' ';
+    $valori['nrregistratura'] = $nrRegistratura !== '' ? $nrRegistratura : ' ';
 
     // Asigură că toate tagurile cunoscute există în $valori (lipsă = spațiu)
     foreach (get_toate_numele_tagurilor() as $numeTag) {
@@ -1225,6 +1227,7 @@ function docx_la_pdf_phpword_mpdf($docx_path) {
     }
     try {
         require_once $autoload;
+        $hf = docx_extrage_antet_subsol($docx_path);
         $phpWord = \PhpOffice\PhpWord\IOFactory::load($docx_path);
         \PhpOffice\PhpWord\Settings::setPdfRendererName(\PhpOffice\PhpWord\Settings::PDF_RENDERER_MPDF);
         \PhpOffice\PhpWord\Settings::setPdfRendererPath($mpdfPath);
@@ -1232,6 +1235,10 @@ function docx_la_pdf_phpword_mpdf($docx_path) {
         $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
         $writer->save($pdf_path);
         if (file_exists($pdf_path)) {
+            // PhpWord+mPDF poate pierde antet/subsol; le reaplicăm ca fallback minim.
+            if (!empty($hf['header']) || !empty($hf['footer'])) {
+                @pdf_adauga_antet_subsol($pdf_path, (string)$hf['header'], (string)$hf['footer']);
+            }
             return ['success' => true, 'path' => $pdf_path, 'filename' => basename($pdf_path), 'error' => null];
         }
     } catch (Exception $e) {
@@ -1268,6 +1275,10 @@ function converteste_docx_la_pdf($docx_path, $pdo = null) {
             $cmd = sprintf('"%s" --headless --convert-to pdf --outdir "%s" "%s" 2>&1', $libreoffice, $output_dir, $docx_path);
             exec($cmd, $output, $return_var);
             if (file_exists($pdf_path)) {
+                $hf = docx_extrage_antet_subsol($docx_path);
+                if (!empty($hf['header']) || !empty($hf['footer'])) {
+                    @pdf_adauga_antet_subsol($pdf_path, (string)$hf['header'], (string)$hf['footer']);
+                }
                 return ['success' => true, 'path' => $pdf_path, 'filename' => $filename, 'error' => null];
             }
         }
@@ -1800,6 +1811,7 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
     $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd.m.Y';
     $tagValues = membru_la_valori_tag($membru);
     $tagValues['datagenerare'] = !empty($opts['include_data_generare']) ? date($formatDate) : ' ';
+    $tagValues['nrregistratura'] = trim((string)($opts['nrregistratura'] ?? '')) ?: ' ';
     foreach (get_toate_numele_tagurilor() as $numeTag) {
         if (!array_key_exists($numeTag, $tagValues)) {
             $tagValues[$numeTag] = ' ';
