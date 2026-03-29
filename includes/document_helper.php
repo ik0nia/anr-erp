@@ -582,8 +582,7 @@ function membru_la_valori_tag($membru) {
 }
 
 /**
- * Aplică înlocuiri de taguri pe conținut XML (document.xml sau header/footer).
- * Folosit pentru a remedia taguri neînlocuite de PhpWord (ex. [nume] fragmentat în run-uri).
+ * Aplică înlocuiri de taguri pe un conținut XML OOXML dat.
  */
 function docx_aplica_inlocuiri_xml($xml, $valori) {
     if ($xml === false || $xml === '') return $xml;
@@ -602,26 +601,17 @@ function docx_aplica_inlocuiri_xml($xml, $valori) {
 }
 
 /**
- * În DOCX (după PhpWord saveAs), aplică înlocuiri pentru toate tagurile în body + header/footer,
- * inclusiv taguri fragmentate ([nume] etc.).
+ * În DOCX (după saveAs), aplică înlocuiri DOAR în word/document.xml (body),
+ * fără modificarea header/footer.
  */
 function docx_aplica_inlocuiri_complet($docx_path, $valori) {
     if (!file_exists($docx_path) || !is_array($valori)) return false;
     if (!class_exists('ZipArchive')) return false;
     $zip = new ZipArchive();
     if ($zip->open($docx_path, ZipArchive::CREATE) !== true) return false;
-    $parti = ['word/document.xml'];
-    for ($i = 0; $i < $zip->numFiles; $i++) {
-        $name = $zip->getNameIndex($i);
-        if (preg_match('#^word/(header\d*|footer\d*)\.xml$#', $name)) {
-            $parti[] = $name;
-        }
-    }
-    foreach ($parti as $part) {
-        $xml = $zip->getFromName($part);
-        if ($xml !== false) {
-            $zip->addFromString($part, docx_aplica_inlocuiri_xml($xml, $valori));
-        }
+    $xml = $zip->getFromName('word/document.xml');
+    if ($xml !== false) {
+        $zip->addFromString('word/document.xml', docx_aplica_inlocuiri_xml($xml, $valori));
     }
     $zip->close();
     return true;
@@ -663,7 +653,8 @@ function documente_docx_generate_robust($template_path, $output_path, array $val
         $lastError = 'Composer autoload lipsă.';
     }
 
-    // Fallback ZIP: reface DOCX-ul și înlocuiește doar taguri exacte în body/header/footer.
+    // Fallback ZIP: reface DOCX-ul și înlocuiește doar taguri exacte în body.
+    // Header/footer se păstrează integral din template.
     if (!class_exists('ZipArchive')) {
         return ['success' => false, 'error' => documente_normalize_error_message($lastError ?: 'Extensia PHP Zip nu este activă.')];
     }
@@ -682,7 +673,7 @@ function documente_docx_generate_robust($template_path, $output_path, array $val
             $name = $zipIn->getNameIndex($i);
             $content = $zipIn->getFromIndex($i);
             if ($content === false) continue;
-            if (preg_match('#^word/(document|header\d*|footer\d*)\.xml$#', (string)$name)) {
+            if ((string)$name === 'word/document.xml') {
                 $content = docx_aplica_inlocuiri_xml($content, $valori);
             }
             $zipOut->addFromString($name, $content);
