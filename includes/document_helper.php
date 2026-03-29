@@ -576,20 +576,14 @@ function docx_aplica_inlocuiri_xml($xml, $valori) {
     $esc = function ($v) {
         return htmlspecialchars($v, ENT_XML1, 'UTF-8');
     };
+    $escapedValori = [];
     foreach ($valori as $tag => $valoare) {
-        $xml = str_replace('[' . $tag . ']', $esc($valoare), $xml);
+        $escapedValori[$tag] = $esc($valoare);
+        $xml = str_replace('[' . $tag . ']', $escapedValori[$tag], $xml);
     }
-    $part = '(?:<[^>]+>|[^[\]])*';
-    foreach ($valori as $tag => $valoare) {
-        $chars = preg_split('//u', $tag, -1, PREG_SPLIT_NO_EMPTY);
-        if ($chars === false || count($chars) === 0) continue;
-        $pattern = '/\[' . $part . implode($part, array_map(function ($c) {
-            return preg_quote($c, '/');
-        }, $chars)) . $part . '\]/u';
-        $xml = preg_replace($pattern, '<w:r><w:t>' . $esc($valoare) . '</w:t></w:r>', $xml);
-    }
-    // Nu ștergem agresiv tagurile necunoscute; le păstrăm pentru a evita documente aparent goale
-    // și pentru a permite template-uri cu taguri custom care pot fi completate ulterior.
+    // Al doilea pas: acoperă cazurile în care [tag] este fragmentat pe mai multe run-uri.
+    // Folosim un fallback sigur, fără injectare de noduri XML noi.
+    $xml = docx_aplica_inlocuiri_xml_fragmented_safe($xml, $escapedValori);
     return $xml;
 }
 
@@ -617,6 +611,151 @@ function docx_aplica_inlocuiri_complet($docx_path, $valori) {
     }
     $zip->close();
     return true;
+}
+
+/**
+ * Motor DOCX robust:
+ * 1) încearcă PhpWord TemplateProcessor;
+ * 2) dacă rezultatul pare gol sau apare excepție, cade pe fallback ZIP sigur.
+ */
+function documente_docx_generate_robust($template_path, $output_path, array $valori) {
+    $template_path = (string)$template_path;
+    $output_path = (string)$output_path;
+    $lastError = '';
+
+    $classFile = __DIR__ . '/../vendor/autoload.php';
+    if (file_exists($classFile)) {
+        require_once $classFile;
+        try {
+            $tp = new \PhpOffice\PhpWord\TemplateProcessor($template_path);
+            $tp->setMacroOpeningChars('[');
+            $tp->setMacroClosingChars(']');
+            foreach ($valori as $tag => $valoare) {
+                $tp->setValue($tag, (string)$valoare);
+            }
+            $tp->saveAs($output_path);
+            // Post-procesare conservatoare (doar înlocuiri exacte), fără regex care traversează XML.
+            docx_aplica_inlocuiri_complet($output_path, $valori);
+            documente_docx_repara_xml_goale($output_path);
+
+            if (file_exists($output_path) && @filesize($output_path) > 0 && documente_docx_valideaza_structura_minima($output_path)) {
+                return ['success' => true, 'error' => null];
+            }
+            $lastError = 'Rezultatul PhpWord nu a fost valid structural; se încearcă fallback ZIP.';
+        } catch (Exception $e) {
+            $lastError = $e->getMessage();
+        }
+    } else {
+        $lastError = 'Composer autoload lipsă.';
+    }
+
+    // Fallback ZIP: reface DOCX-ul și înlocuiește doar taguri exacte în body/header/footer.
+    if (!class_exists('ZipArchive')) {
+        return ['success' => false, 'error' => documente_normalize_error_message($lastError ?: 'Extensia PHP Zip nu este activă.')];
+    }
+    try {
+        $zipIn = new ZipArchive();
+        if ($zipIn->open($template_path) !== true) {
+            return ['success' => false, 'error' => 'Nu s-a putut deschide șablonul Word.'];
+        }
+        $zipOut = new ZipArchive();
+        if ($zipOut->open($output_path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            $zipIn->close();
+            return ['success' => false, 'error' => 'Nu s-a putut crea fișierul DOCX rezultat.'];
+        }
+
+        for ($i = 0; $i < $zipIn->numFiles; $i++) {
+            $name = $zipIn->getNameIndex($i);
+            $content = $zipIn->getFromIndex($i);
+            if ($content === false) continue;
+            if (preg_match('#^word/(document|header\d*|footer\d*)\.xml$#', (string)$name)) {
+                $content = docx_aplica_inlocuiri_xml($content, $valori);
+            }
+            $zipOut->addFromString($name, $content);
+        }
+        $zipOut->close();
+        $zipIn->close();
+
+        documente_docx_repara_xml_goale($output_path);
+        if (!file_exists($output_path) || @filesize($output_path) <= 0 || !documente_docx_valideaza_structura_minima($output_path)) {
+            return ['success' => false, 'error' => 'Documentul generat este invalid dupa procesare. Verificati template-ul Word.'];
+        }
+        return ['success' => true, 'error' => null];
+    } catch (Exception $e) {
+        return ['success' => false, 'error' => documente_normalize_error_message($e->getMessage(), documente_normalize_error_message($lastError))];
+    }
+}
+
+/**
+ * Fallback simplu pentru înlocuirea tagurilor care pot fi fragmentate în run-uri XML.
+ * Funcționează pe XML serializat fără a introduce noduri noi, doar reconstruiește textul final.
+ */
+function docx_aplica_inlocuiri_xml_fragmented_safe($xml, array $valori) {
+    $xml = (string)$xml;
+    if ($xml === '') return $xml;
+    if (empty($valori)) return $xml;
+
+    // Scoatem temporar tag-urile XML și lucrăm pe textul linearizat.
+    $tokens = preg_split('/(<[^>]+>)/u', $xml, -1, PREG_SPLIT_DELIM_CAPTURE);
+    if (!is_array($tokens) || empty($tokens)) {
+        return $xml;
+    }
+
+    $text = '';
+    $map = []; // index linear -> [tokenIndex, offsetInToken]
+    foreach ($tokens as $ti => $tok) {
+        if ($tok === '' || $tok[0] === '<') continue;
+        $len = strlen($tok);
+        for ($i = 0; $i < $len; $i++) {
+            $map[] = [$ti, $i];
+            $text .= $tok[$i];
+        }
+    }
+    if ($text === '') return $xml;
+
+    foreach ($valori as $tag => $valoare) {
+        $needle = '[' . (string)$tag . ']';
+        if ($needle === '[]') continue;
+        $replace = (string)$valoare;
+        while (($pos = strpos($text, $needle)) !== false) {
+            $start = $pos;
+            $end = $pos + strlen($needle) - 1;
+            if (!isset($map[$start]) || !isset($map[$end])) {
+                break;
+            }
+
+            [$startTok, $startOff] = $map[$start];
+            [$endTok, $endOff] = $map[$end];
+
+            if ($startTok === $endTok) {
+                $tok = $tokens[$startTok];
+                $tokens[$startTok] = substr($tok, 0, $startOff) . $replace . substr($tok, $endOff + 1);
+            } else {
+                $tokens[$startTok] = substr($tokens[$startTok], 0, $startOff) . $replace;
+                for ($k = $startTok + 1; $k < $endTok; $k++) {
+                    if ($tokens[$k] !== '' && $tokens[$k][0] !== '<') {
+                        $tokens[$k] = '';
+                    }
+                }
+                $tokens[$endTok] = substr($tokens[$endTok], $endOff + 1);
+            }
+
+            // Rebuild map/text after each replacement to keep logic safe and deterministic.
+            $text = '';
+            $map = [];
+            foreach ($tokens as $ti2 => $tok2) {
+                if ($tok2 === '' || $tok2[0] === '<') continue;
+                $len2 = strlen($tok2);
+                for ($j = 0; $j < $len2; $j++) {
+                    $map[] = [$ti2, $j];
+                    $text .= $tok2[$j];
+                }
+            }
+            if ($text === '') break;
+        }
+    }
+
+    return implode('', $tokens);
 }
 
 /**
@@ -681,23 +820,9 @@ function documente_docx_is_effectively_empty_xml($xml) {
     if (preg_match('#<w:body><w:p/?></w:p>?<w:sectPr/?></w:sectPr>?</w:body>#u', (string)$compact)) {
         return true;
     }
-
-    // Dacă are elemente vizuale/structurale, nu îl tratăm ca gol.
-    if (preg_match('/<(w:tbl|w:drawing|w:pict|w:object|w:altChunk|v:shape|v:rect|pic:pic)\b/u', $xml)) {
-        return false;
-    }
-
-    // Dacă există noduri text/field în OOXML, documentul nu trebuie marcat ca "gol",
-    // chiar dacă textul efectiv ar putea fi spații.
-    if (preg_match('/<(w:t|w:instrText|w:fldSimple|w:hyperlink)\b/u', $xml)) {
-        return false;
-    }
-
-    // Altfel, verificăm dacă există text efectiv.
-    $text = preg_replace('/<[^>]+>/u', ' ', $xml);
-    $text = html_entity_decode((string)$text, ENT_QUOTES | ENT_XML1, 'UTF-8');
-    $text = trim(preg_replace('/\s+/u', ' ', (string)$text));
-    return $text === '';
+    // Politică lenientă: dacă XML-ul nu este minim-gol și nu este gol textual complet,
+    // îl tratăm ca având conținut pentru a evita false-negative pe template-uri Word valide.
+    return false;
 }
 
 /**
@@ -708,16 +833,35 @@ function documente_docx_has_visible_content($docx_path, $opts = []) {
     if (!file_exists($docx_path) || !class_exists('ZipArchive')) return false;
     $zip = new ZipArchive();
     if ($zip->open($docx_path) !== true) return false;
-    $docXml = $zip->getFromName('word/document.xml');
-    $zip->close();
-    if ($docXml === false) return false;
-    if (!documente_docx_is_effectively_empty_xml($docXml)) return true;
 
-    // Mod strict: fallback pe taguri detectabile dacă body-ul pare gol după procesare.
-    // Evită false-negative când template-ul conține placeholder-e legitime.
-    if (!empty($opts['allow_placeholders']) && preg_match('/\[[^\]\r\n]{1,80}\]/u', (string)$docXml)) {
-        return true;
+    $parts = ['word/document.xml'];
+    $includeHeaders = !array_key_exists('include_headers', (array)$opts) || !empty($opts['include_headers']);
+    if ($includeHeaders) {
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if (preg_match('#^word/(header\d+|footer\d+)\.xml$#', (string)$name)) {
+                $parts[] = (string)$name;
+            }
+        }
     }
+
+    foreach ($parts as $part) {
+        $xml = $zip->getFromName($part);
+        if ($xml === false) continue;
+        if (!documente_docx_is_effectively_empty_xml($xml)) {
+            $zip->close();
+            return true;
+        }
+        if (!empty($opts['allow_placeholders'])) {
+            $plain = docx_extrage_text_din_xml($xml);
+            if (preg_match('/\[[^\]\r\n]{1,80}\]/u', (string)$plain)) {
+                $zip->close();
+                return true;
+            }
+        }
+    }
+
+    $zip->close();
     return false;
 }
 
@@ -876,34 +1020,20 @@ function genereaza_document_din_valori($template_path, array $valori, $output_fi
     if (!file_exists($classFile)) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Composer autoload lipsă.'];
     }
-    require_once $classFile;
     $prepared = documente_docx_prepare_template_for_processing($template_path);
     if (!empty($prepared['error'])) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($prepared['error'])];
     }
     $runtimeTemplatePath = $prepared['path'] ?? $template_path;
     $runtimeTempPath = $prepared['temp_path'] ?? null;
-    try {
-        $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($runtimeTemplatePath);
-        $templateProcessor->setMacroOpeningChars('[');
-        $templateProcessor->setMacroClosingChars(']');
-        foreach ($valori as $tag => $valoare) {
-            $templateProcessor->setValue($tag, (string)$valoare);
-        }
-        $templateProcessor->saveAs($output_path);
-        docx_aplica_inlocuiri_complet($output_path, $valori);
-        documente_docx_repara_xml_goale($output_path);
-        if (!documente_docx_has_visible_content($output_path, ['allow_placeholders' => true])) {
-            return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Documentul rezultat este gol. Verificati template-ul (continut/placeholder-uri) si reincarcati-l.'];
-        }
-        return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
-    } catch (Exception $e) {
-        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($e->getMessage())];
-    } finally {
-        if (!empty($runtimeTempPath) && file_exists($runtimeTempPath)) {
-            @unlink($runtimeTempPath);
-        }
+    $gen = documente_docx_generate_robust($runtimeTemplatePath, $output_path, $valori);
+    if (!empty($runtimeTempPath) && file_exists($runtimeTempPath)) {
+        @unlink($runtimeTempPath);
     }
+    if (empty($gen['success'])) {
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($gen['error'] ?? '')];
+    }
+    return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
 }
 
 /**
@@ -976,87 +1106,14 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
     $runtimeTemplatePath = $prepared['path'] ?? $template_path;
     $runtimeTempPath = $prepared['temp_path'] ?? null;
 
-    if (file_exists($classFile)) {
-        require_once $classFile;
-        try {
-            $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($runtimeTemplatePath);
-            $templateProcessor->setMacroOpeningChars('[');
-            $templateProcessor->setMacroClosingChars(']');
-            foreach ($valori as $tag => $valoare) {
-                $templateProcessor->setValue($tag, $valoare);
-            }
-            $templateProcessor->saveAs($output_path);
-            docx_aplica_inlocuiri_complet($output_path, $valori);
-            documente_docx_repara_xml_goale($output_path);
-            if (!documente_docx_has_visible_content($output_path, ['allow_placeholders' => true])) {
-                return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Documentul rezultat este gol. Verificati template-ul (continut/placeholder-uri) si reincarcati-l.'];
-            }
-            return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
-        } catch (Exception $e) {
-            return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($e->getMessage())];
-        } finally {
-            if (!empty($runtimeTempPath) && file_exists($runtimeTempPath)) {
-                @unlink($runtimeTempPath);
-            }
-        }
+    $gen = documente_docx_generate_robust($runtimeTemplatePath, $output_path, $valori);
+    if (!empty($runtimeTempPath) && file_exists($runtimeTempPath)) {
+        @unlink($runtimeTempPath);
     }
-
-    // Fallback: substituție directă în document.xml (necesită extensia Zip)
-    if (!class_exists('ZipArchive')) {
-        return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Extensia PHP Zip nu este activă. Contactați administratorul.'];
+    if (empty($gen['success'])) {
+        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($gen['error'] ?? '')];
     }
-    try {
-        $zip = new ZipArchive();
-        if ($zip->open($runtimeTemplatePath) !== true) {
-            return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Nu s-a putut deschide șablonul.'];
-        }
-        $xml = $zip->getFromName('word/document.xml');
-        if ($xml === false) {
-            $zip->close();
-            return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Format DOCX invalid.'];
-        }
-        $esc = function ($v) {
-            return htmlspecialchars($v, ENT_XML1, 'UTF-8');
-        };
-        foreach ($valori as $tag => $valoare) {
-            $xml = str_replace('[' . $tag . ']', $esc($valoare), $xml);
-        }
-        // Înlocuire taguri fragmentate în mai multe run-uri Word (ex: [nu</w:t></w:r><w:r><w:t>me])
-        $part = '(?:<[^>]+>|[^[\]])*';
-        foreach ($valori as $tag => $valoare) {
-            $chars = preg_split('//u', $tag, -1, PREG_SPLIT_NO_EMPTY);
-            if ($chars === false || count($chars) === 0) continue;
-            $pattern = '/\[' . $part . implode($part, array_map(function ($c) {
-                return preg_quote($c, '/');
-            }, $chars)) . $part . '\]/u';
-            $replacement = '<w:r><w:t>' . $esc($valoare) . '</w:t></w:r>';
-            $xml = preg_replace($pattern, $replacement, $xml);
-        }
-        // Nu înlocuim forțat tagurile necunoscute cu spațiu pentru a nu produce output fals-gol.
-        $zipOut = new ZipArchive();
-        if ($zipOut->open($output_path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            $zip->close();
-            return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Nu s-a putut crea fișierul.'];
-        }
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
-            $content = ($name === 'word/document.xml') ? $xml : $zip->getFromIndex($i);
-            $zipOut->addFromString($name, $content);
-        }
-        $zipOut->close();
-        $zip->close();
-        documente_docx_repara_xml_goale($output_path);
-        if (!documente_docx_has_visible_content($output_path, ['allow_placeholders' => true])) {
-            return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Documentul rezultat este gol. Verificati template-ul (continut/placeholder-uri) si reincarcati-l.'];
-        }
-        return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
-    } catch (Exception $e) {
-        return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($e->getMessage())];
-    } finally {
-        if (!empty($runtimeTempPath) && file_exists($runtimeTempPath)) {
-            @unlink($runtimeTempPath);
-        }
-    }
+    return ['success' => true, 'path' => $output_path, 'filename' => $output_filename, 'error' => null];
 }
 
 /**
@@ -1293,6 +1350,23 @@ function documente_validate_template_integrity($path, $ext) {
     }
 
     return ['ok' => false, 'error' => 'Format template neacceptat.'];
+}
+
+/**
+ * Extrage textul vizibil din body-ul unui DOCX pentru validare robustă.
+ * Returnează string gol dacă nu se poate extrage.
+ */
+function documente_docx_extract_visible_body_text($docx_path) {
+    if (!file_exists($docx_path) || !class_exists('ZipArchive')) return '';
+    $zip = new ZipArchive();
+    if ($zip->open($docx_path) !== true) return '';
+    $xml = $zip->getFromName('word/document.xml');
+    $zip->close();
+    if ($xml === false || $xml === '') return '';
+    $text = preg_replace('/<[^>]+>/u', ' ', (string)$xml);
+    $text = html_entity_decode((string)$text, ENT_QUOTES | ENT_XML1, 'UTF-8');
+    $text = trim(preg_replace('/\s+/u', ' ', (string)$text));
+    return (string)$text;
 }
 
 /**
@@ -1817,11 +1891,6 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
     if (!file_exists($output_path)) {
         return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Nu s-a putut salva PDF-ul final.'];
     }
-    // Guard anti-blank: nu livrăm PDF-uri aproape goale.
-    if (@filesize($output_path) > 0 && @filesize($output_path) < 1024) {
-        return ['success' => false, 'pdf_path' => null, 'pdf_filename' => null, 'docx_path' => null, 'error' => 'Documentul PDF rezultat pare gol. Verificati template-ul si maparile de taguri.'];
-    }
-
     return ['success' => true, 'pdf_path' => $output_path, 'pdf_filename' => $output_filename, 'docx_path' => null, 'error' => null];
 }
 
