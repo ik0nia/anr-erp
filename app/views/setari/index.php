@@ -61,6 +61,10 @@
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_setari === 'antet-documente' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Antet documente
             </a>
+            <a href="/setari?tab=generare-documente" role="tab" aria-selected="<?php echo $tab_setari === 'generare-documente' ? 'true' : 'false'; ?>"
+               class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_setari === 'generare-documente' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
+                Generare documente
+            </a>
             <a href="/setari?tab=tickete" role="tab" aria-selected="<?php echo $tab_setari === 'tickete' ? 'true' : 'false'; ?>"
                class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab_setari === 'tickete' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
                 Tickete
@@ -821,6 +825,11 @@
                 </table>
             </div>
         </section>
+        <?php elseif ($tab_setari === 'generare-documente'): ?>
+        <!-- Tab Generare documente: administrare template-uri -->
+        <div class="space-y-6">
+            <?php include APP_ROOT . '/app/views/generare-documente/_management_content.php'; ?>
+        </div>
         <?php elseif ($tab_setari === 'tickete'): ?>
         <!-- Tab Tickete: administrare departamente -->
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 max-w-2xl" aria-labelledby="tickete-departamente-heading">
@@ -885,16 +894,6 @@
 
         <?php else: ?>
         <!-- Tab General: setări platformă (3 coloane) -->
-        <!-- Buton Management Generare Documente -->
-        <div class="mb-6">
-            <a href="/generare-documente"
-               class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition"
-               aria-label="Deschide Management Generare Documente">
-                <i data-lucide="file-text" class="mr-2 w-4 h-4" aria-hidden="true"></i>
-                Management Generare Documente
-            </a>
-        </div>
-
         <!-- Secțiune Antet asociație (DOCX) -->
         <section class="mb-8 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="antet-asociatie-heading">
             <h2 id="antet-asociatie-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-2 flex items-center">
