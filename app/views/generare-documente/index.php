@@ -8,7 +8,7 @@
 ?>
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
-    <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2"><meta charset="utf-8">
+    <header class="bg-white dark:bg-gray-800 shadow p-4 flex flex-wrap justify-between items-center gap-2">
         <div class="flex items-center gap-2">
             <a href="/setari" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded">
                 <i data-lucide="arrow-left" class="w-5 h-5 inline" aria-hidden="true"></i> Inapoi
@@ -19,7 +19,7 @@
 
     <div class="p-6 overflow-y-auto flex-1 space-y-6">
         <?php if (isset($_GET['succes'])): ?>
-        <div class="p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg" role="status">
+        <div class="p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg" role="status" aria-live="polite">
             <?php
             if ($_GET['succes'] == '2') echo 'Template actualizat cu succes.';
             elseif ($_GET['succes'] == '3') echo 'Template sters cu succes.';
@@ -29,7 +29,7 @@
         </div>
         <?php endif; ?>
         <?php if (!empty($eroare)): ?>
-        <div class="p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-lg" role="alert">
+        <div class="p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-lg" role="alert" aria-live="assertive">
             <?php echo htmlspecialchars($eroare); ?>
         </div>
         <?php endif; ?>
@@ -55,12 +55,18 @@
                            class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-900 dark:text-white dark:bg-gray-700">
                 </div>
                 <div class="min-w-[280px]">
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300">
-                        <input type="checkbox" name="foloseste_antet_platforma_erp" value="1"
-                               class="h-4 w-4 text-amber-600 focus:ring-amber-500 rounded border-slate-300 dark:border-gray-600"
-                               aria-label="Folosește antetul platformei ERP pentru documentele generate din acest template">
-                        <span>Folosește antetul platformei ERP</span>
+                    <label class="inline-flex items-center gap-2 mt-6 cursor-pointer text-sm text-slate-700 dark:text-gray-300">
+                        <input type="checkbox"
+                               id="foloseste_antet_platforma_erp"
+                               name="foloseste_antet_platforma_erp"
+                               value="1"
+                               class="h-4 w-4 rounded border-slate-300 dark:border-gray-600 text-amber-600 focus:ring-amber-500"
+                               aria-describedby="foloseste-antet-erp-help">
+                        <span>Foloseste antetul platformei ERP</span>
                     </label>
+                    <p id="foloseste-antet-erp-help" class="text-xs text-slate-500 dark:text-gray-400 mt-1">
+                        Daca este bifat, documentul generat va folosi antetul platformei; altfel ramane antetul din template.
+                    </p>
                 </div>
                 <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium" aria-label="Incarca template-ul selectat">
                     Incarca
@@ -75,12 +81,12 @@
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table">
                     <thead class="bg-slate-100 dark:bg-gray-700">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Nume</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Fisier</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Tip</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Antet ERP</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Activ</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Actiuni</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Nume</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Fisier</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Tip</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Antet ERP</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Activ</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Actiuni</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
@@ -111,14 +117,15 @@
                                         <input type="hidden" name="activ" value="0">
                                         <input type="checkbox" name="activ" value="1" <?php echo $t['activ'] ? 'checked' : ''; ?>
                                                onchange="this.form.submit()"
-                                               aria-label="Template activ">
+                                               aria-label="Template activ: <?php echo htmlspecialchars($t['nume_afisare']); ?>">
                                     </label>
                                 </form>
                             </td>
                             <td class="px-4 py-3 flex flex-wrap gap-2 items-center">
                                 <button type="button" onclick="document.getElementById('edit-<?php echo $t['id']; ?>').showModal()"
                                         class="px-3 py-1.5 text-sm bg-amber-100 dark:bg-amber-800/70 text-amber-900 dark:text-amber-100 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-700"
-                                        aria-label="Editeaza template: <?php echo htmlspecialchars($t['nume_afisare']); ?>">
+                                        aria-label="Editeaza template: <?php echo htmlspecialchars($t['nume_afisare']); ?>"
+                                        aria-haspopup="dialog">
                                     <i data-lucide="edit" class="w-4 h-4 inline" aria-hidden="true"></i> Editeaza
                                 </button>
                                 <form method="post" class="inline" onsubmit="return confirm('Stergeti acest template? Fisierul va fi sters de pe server.');">
@@ -130,19 +137,24 @@
                                         <i data-lucide="trash-2" class="w-4 h-4 inline" aria-hidden="true"></i> Sterge documentul
                                     </button>
                                 </form>
-                                <dialog id="edit-<?php echo $t['id']; ?>" class="rounded-lg shadow-xl p-0 max-w-md w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto">
+                                <dialog id="edit-<?php echo $t['id']; ?>" class="rounded-lg shadow-xl p-0 max-w-md w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto" aria-labelledby="edit-title-<?php echo $t['id']; ?>">
                                     <form method="post" class="p-6">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="actualizeaza_template" value="1">
                                         <input type="hidden" name="id" value="<?php echo $t['id']; ?>">
-                                        <h3 class="text-lg font-semibold mb-4">Editeaza template</h3>
-                                        <label class="block text-sm font-medium mb-2">Nume afisat</label>
-                                        <input type="text" name="nume_afisare" value="<?php echo htmlspecialchars($t['nume_afisare']); ?>" required
+                                        <h3 id="edit-title-<?php echo $t['id']; ?>" class="text-lg font-semibold mb-4">Editeaza template</h3>
+                                        <label for="nume-afisare-<?php echo $t['id']; ?>" class="block text-sm font-medium mb-2">Nume afisat</label>
+                                        <input type="text" id="nume-afisare-<?php echo $t['id']; ?>" name="nume_afisare" value="<?php echo htmlspecialchars($t['nume_afisare']); ?>" required
                                                class="w-full px-3 py-2 border rounded-lg mb-4 dark:bg-gray-700 dark:text-white">
                                         <label class="flex items-center gap-2 mb-4">
                                             <input type="hidden" name="activ" value="0">
                                             <input type="checkbox" name="activ" value="1" <?php echo $t['activ'] ? 'checked' : ''; ?>>
                                             <span>Activ (apare in lista)</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 mb-4">
+                                            <input type="hidden" name="foloseste_antet_platforma_erp" value="0">
+                                            <input type="checkbox" name="foloseste_antet_platforma_erp" value="1" <?php echo !empty($t['foloseste_antet_platforma_erp']) ? 'checked' : ''; ?>>
+                                            <span>Foloseste antetul platformei ERP</span>
                                         </label>
                                         <div class="flex gap-2">
                                             <button type="button" onclick="this.closest('dialog').close()" class="px-4 py-2 border rounded-lg" aria-label="Anuleaza editare template">Anulare</button>
@@ -153,18 +165,20 @@
                                 <?php if (strtolower((string)pathinfo((string)$t['nume_fisier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
                                 <button type="button" onclick="document.getElementById('map-<?php echo $t['id']; ?>').showModal()"
                                         class="px-3 py-1.5 text-sm bg-indigo-100 dark:bg-indigo-800/70 text-indigo-900 dark:text-indigo-100 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-700"
-                                        aria-label="Configureaza mapari PDF pentru template: <?php echo htmlspecialchars($t['nume_afisare']); ?>">
+                                        aria-label="Configureaza mapari PDF pentru template: <?php echo htmlspecialchars($t['nume_afisare']); ?>"
+                                        aria-haspopup="dialog">
                                     <i data-lucide="map-pinned" class="w-4 h-4 inline" aria-hidden="true"></i> Mapari PDF
                                 </button>
-                                <dialog id="map-<?php echo $t['id']; ?>" class="rounded-lg shadow-xl p-0 max-w-2xl w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto">
+                                <dialog id="map-<?php echo $t['id']; ?>" class="rounded-lg shadow-xl p-0 max-w-2xl w-[calc(100%-2rem)] sm:w-full mx-4 sm:mx-auto" aria-labelledby="map-title-<?php echo $t['id']; ?>">
                                     <form method="post" class="p-6">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="salveaza_mapari_pdf" value="1">
                                         <input type="hidden" name="template_id_map" value="<?php echo (int)$t['id']; ?>">
-                                        <h3 class="text-lg font-semibold mb-3">Fallback coordonat PDF: <?php echo htmlspecialchars($t['nume_afisare']); ?></h3>
+                                        <h3 id="map-title-<?php echo $t['id']; ?>" class="text-lg font-semibold mb-3">Fallback coordonat PDF: <?php echo htmlspecialchars($t['nume_afisare']); ?></h3>
                                         <p class="text-sm text-slate-600 dark:text-gray-400 mb-2">Format linie: <code>[tag]|pagina|x_mm|y_mm|font_pt</code></p>
                                         <p class="text-sm text-slate-600 dark:text-gray-400 mb-3">Exemplu: <code>[nume]|1|35|78|11</code></p>
-                                        <textarea name="mapari_pdf" rows="10"
+                                        <label for="mapari-pdf-<?php echo $t['id']; ?>" class="sr-only">Mapari PDF</label>
+                                        <textarea id="mapari-pdf-<?php echo $t['id']; ?>" name="mapari_pdf" rows="10"
                                                   class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg font-mono text-sm dark:bg-gray-700 dark:text-white"
                                                   placeholder="[nume]|1|35|78|11&#10;[prenume]|1|70|78|11"><?php echo htmlspecialchars((string)($t['mapari_pdf'] ?? '')); ?></textarea>
                                         <div class="flex gap-2 mt-4">

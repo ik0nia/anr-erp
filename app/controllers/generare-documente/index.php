@@ -51,7 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_template
         $pdo,
         (int)($_POST['id'] ?? 0),
         trim($_POST['nume_afisare'] ?? ''),
-        isset($_POST['activ']) ? 1 : 0
+        isset($_POST['activ']) ? 1 : 0,
+        !empty($_POST['foloseste_antet_platforma_erp']) ? 1 : 0
     );
     if ($result === null) {
         header('Location: /generare-documente?succes=2');
