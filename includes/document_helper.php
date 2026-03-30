@@ -380,7 +380,8 @@ function documente_antet_sanitize_html($html) {
 /**
  * Returnează HTML-ul antetului documente din setări (sau fallback implicit).
  */
-function documente_antet_html($pdo = null) {
+function documente_antet_html($pdo = null, array $opts = []) {
+    $force_editor_html = !empty($opts['force_editor_html']);
     if ($pdo === null && isset($GLOBALS['pdo'])) {
         $pdo = $GLOBALS['pdo'];
     }
@@ -396,7 +397,7 @@ function documente_antet_html($pdo = null) {
             $source = 'image';
         }
 
-        if ($source === 'image') {
+        if (!$force_editor_html && $source === 'image') {
             $stmtImg = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_image_path' LIMIT 1");
             $stmtImg->execute();
             $rowImg = $stmtImg->fetch(PDO::FETCH_ASSOC);
@@ -427,6 +428,91 @@ function documente_antet_html($pdo = null) {
     } catch (Exception $e) {
         return documente_antet_implicit_html($pdo);
     }
+}
+
+/**
+ * Returneaza antetul documente strict din editorul HTML din Setari.
+ * Ignora sursa "image" pentru a mentine consistenta intre fluxuri.
+ */
+function documente_antet_html_editor($pdo = null) {
+    return documente_antet_html($pdo, ['force_editor_html' => true]);
+}
+
+/**
+ * Extrage primul src de imagine din HTML-ul antetului.
+ */
+function documente_extract_first_image_src_from_html($html) {
+    $html = trim((string)$html);
+    if ($html === '') return '';
+    if (preg_match('/<img[^>]+src\s*=\s*([\'"])(.*?)\1/i', $html, $m)) {
+        return trim((string)($m[2] ?? ''));
+    }
+    return '';
+}
+
+/**
+ * Rezolva un src de imagine (din antet HTML) catre o cale folosibila de FPDF.
+ * Returneaza ['path'=>string, 'cleanup'=>string].
+ */
+function documente_resolve_local_or_public_image_path($src) {
+    $src = trim((string)$src);
+    if ($src === '') return ['path' => '', 'cleanup' => ''];
+
+    // data URI -> scriem temporar pe disc
+    if (stripos($src, 'data:image/') === 0) {
+        if (preg_match('#^data:image/(png|jpe?g|gif|webp);base64,(.+)$#is', $src, $m)) {
+            $ext = strtolower((string)$m[1]);
+            if ($ext === 'jpeg') $ext = 'jpg';
+            $bin = base64_decode((string)$m[2], true);
+            if ($bin !== false && $bin !== '') {
+                $tmp = rtrim((string)sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'erp_antet_' . uniqid('', true) . '.' . $ext;
+                if (@file_put_contents($tmp, $bin) !== false) {
+                    return ['path' => $tmp, 'cleanup' => $tmp];
+                }
+            }
+        }
+        return ['path' => '', 'cleanup' => ''];
+    }
+
+    // URL absolut(ă) http/https - încercăm direct (allow_url_fopen poate decide)
+    $scheme = strtolower((string)parse_url($src, PHP_URL_SCHEME));
+    if (in_array($scheme, ['http', 'https'], true)) {
+        return ['path' => $src, 'cleanup' => ''];
+    }
+
+    // Căi locale/relative
+    $candidate = $src;
+    if (strpos($candidate, '/') === 0) {
+        $candidate = APP_ROOT . '/' . ltrim($candidate, '/');
+    } else {
+        $candidate = APP_ROOT . '/' . ltrim($candidate, '/');
+    }
+    if (is_file($candidate)) {
+        return ['path' => $candidate, 'cleanup' => ''];
+    }
+    return ['path' => '', 'cleanup' => ''];
+}
+
+/**
+ * Decide dacă suprapunerea antetului ERP pe PDF trebuie aplicată.
+ * Implicit, dacă DOCX-ul are deja antet, evităm suprapunerea pentru consistență WORD/PDF.
+ */
+function documente_pdf_should_overlay_erp_header($docx_path, array $opts = []) {
+    $enabled = !empty($opts['enabled']);
+    if (!$enabled) return false;
+
+    $force = !empty($opts['force']);
+    if ($force) return true;
+
+    $skipIfDocxHasHeader = !array_key_exists('skip_if_docx_has_header', $opts) || !empty($opts['skip_if_docx_has_header']);
+    if ($skipIfDocxHasHeader) {
+        $hdr = docx_extrage_antet_subsol((string)$docx_path);
+        $hasHeader = trim((string)($hdr['header'] ?? '')) !== '';
+        if ($hasHeader) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -1234,7 +1320,11 @@ function pdf_adauga_antet_subsol($pdf_path, $headerText, $footerText) {
 
 /**
  * Convertește DOCX în PDF folosind PhpWord + mPDF (fără LibreOffice).
- * Optiune: ['apply_erp_header_overlay' => bool, 'pdo' => PDO|null]
+ * Opțiuni:
+ *  - apply_erp_header_overlay (bool)
+ *  - force_erp_header_overlay (bool)
+ *  - skip_erp_header_overlay_if_docx_has_header (bool, implicit true)
+ *  - pdo (PDO|null)
  */
 function docx_la_pdf_phpword_mpdf($docx_path, array $opts = []) {
     $docx_path = realpath($docx_path);
@@ -1258,7 +1348,13 @@ function docx_la_pdf_phpword_mpdf($docx_path, array $opts = []) {
         $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'PDF');
         $writer->save($pdf_path);
         if (file_exists($pdf_path)) {
-            if (!empty($opts['apply_erp_header_overlay'])) {
+            $shouldOverlay = documente_pdf_should_overlay_erp_header($docx_path, [
+                'enabled' => !empty($opts['apply_erp_header_overlay']),
+                'force' => !empty($opts['force_erp_header_overlay']),
+                'skip_if_docx_has_header' => !array_key_exists('skip_erp_header_overlay_if_docx_has_header', $opts)
+                    || !empty($opts['skip_erp_header_overlay_if_docx_has_header']),
+            ]);
+            if ($shouldOverlay) {
                 $overlay = documente_pdf_overlay_erp_header($pdf_path, ($opts['pdo'] ?? null));
                 if (empty($overlay['success'])) {
                     return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($overlay['error'] ?? 'Nu s-a putut aplica antetul ERP pe PDF.')];
@@ -1297,6 +1393,7 @@ function docx_la_pdf_libreoffice($docx_path, $binaryPath = '') {
 
 /**
  * Convertește DOCX în PDF: încearcă LibreOffice (dacă este configurat), apoi PhpWord + mPDF.
+ * Menține consistența WORD/PDF evitând overlay-ul antet ERP când DOCX are deja antet.
  */
 function converteste_docx_la_pdf($docx_path, $pdo = null, array $opts = []) {
     $docx_path = realpath($docx_path);
@@ -1306,6 +1403,12 @@ function converteste_docx_la_pdf($docx_path, $pdo = null, array $opts = []) {
     $pdf_path = preg_replace('/\.docx$/i', '.pdf', $docx_path);
     $filename = basename($pdf_path);
     $applyErpHeaderOverlay = !empty($opts['apply_erp_header_overlay']);
+    $shouldOverlay = documente_pdf_should_overlay_erp_header($docx_path, [
+        'enabled' => $applyErpHeaderOverlay,
+        'force' => !empty($opts['force_erp_header_overlay']),
+        'skip_if_docx_has_header' => !array_key_exists('skip_erp_header_overlay_if_docx_has_header', $opts)
+            || !empty($opts['skip_erp_header_overlay_if_docx_has_header']),
+    ]);
 
     if ($pdo === null && isset($GLOBALS['pdo'])) {
         $pdo = $GLOBALS['pdo'];
@@ -1323,7 +1426,7 @@ function converteste_docx_la_pdf($docx_path, $pdo = null, array $opts = []) {
         if (!empty($libreoffice)) {
             $res = docx_la_pdf_libreoffice($docx_path, $libreoffice);
             if (!empty($res['success'])) {
-                if ($applyErpHeaderOverlay) {
+                if ($shouldOverlay) {
                     $overlay = documente_pdf_overlay_erp_header($res['path'] ?? '', $pdo);
                     if (empty($overlay['success'])) {
                         return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($overlay['error'] ?? 'Nu s-a putut aplica antetul ERP pe PDF.')];
@@ -1340,7 +1443,7 @@ function converteste_docx_la_pdf($docx_path, $pdo = null, array $opts = []) {
         foreach ($candidates as $candidate) {
             $res = docx_la_pdf_libreoffice($docx_path, $candidate);
             if (!empty($res['success'])) {
-                if ($applyErpHeaderOverlay) {
+                if ($shouldOverlay) {
                     $overlay = documente_pdf_overlay_erp_header($res['path'] ?? '', $pdo);
                     if (empty($overlay['success'])) {
                         return ['success' => false, 'path' => null, 'filename' => null, 'error' => documente_normalize_error_message($overlay['error'] ?? 'Nu s-a putut aplica antetul ERP pe PDF.')];
@@ -1354,6 +1457,9 @@ function converteste_docx_la_pdf($docx_path, $pdo = null, array $opts = []) {
     // Ultim fallback (poate pierde fidelitatea header/footer la template-uri complexe).
     return docx_la_pdf_phpword_mpdf($docx_path, [
         'apply_erp_header_overlay' => $applyErpHeaderOverlay,
+        'force_erp_header_overlay' => !empty($opts['force_erp_header_overlay']),
+        'skip_erp_header_overlay_if_docx_has_header' => !array_key_exists('skip_erp_header_overlay_if_docx_has_header', $opts)
+            || !empty($opts['skip_erp_header_overlay_if_docx_has_header']),
         'pdo' => $pdo,
     ]);
 }
@@ -1380,21 +1486,23 @@ function documente_pdf_overlay_erp_header($pdf_path, PDO $pdo = null) {
     }
 
     $tempPath = $pdf_path . '.erp-header.' . uniqid('', true) . '.tmp';
+    $cleanupPath = '';
     try {
         $headerText = "ASOCIATIA NEVAZATORILOR DIN ROMANIA\nFILIALA BIHOR\nORGANIZATIE DE UTILITATE PUBLICA";
+        $antetImagePath = '';
         if ($pdo) {
             try {
-                $stmt = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_source' LIMIT 1");
-                $stmt->execute();
-                $source = trim((string)$stmt->fetchColumn());
-                if ($source === 'html') {
-                    $stmtHtml = $pdo->prepare("SELECT valoare FROM setari WHERE cheie = 'documente_antet_html' LIMIT 1");
-                    $stmtHtml->execute();
-                    $savedHtml = (string)$stmtHtml->fetchColumn();
-                    $plain = trim(preg_replace('/\s+/u', ' ', strip_tags(html_entity_decode($savedHtml, ENT_QUOTES | ENT_HTML5, 'UTF-8'))));
-                    if ($plain !== '') {
-                        $headerText = mb_substr($plain, 0, 180);
-                    }
+                // Sursa antet pentru Generare Documente: strict editor HTML din Setari.
+                $savedHtml = (string)documente_antet_html_editor($pdo);
+                $plain = trim(preg_replace('/\s+/u', ' ', strip_tags(html_entity_decode($savedHtml, ENT_QUOTES | ENT_HTML5, 'UTF-8'))));
+                if ($plain !== '') {
+                    $headerText = mb_substr($plain, 0, 180);
+                }
+                $antetImageSrc = documente_extract_first_image_src_from_html($savedHtml);
+                if ($antetImageSrc !== '') {
+                    $resolved = documente_resolve_local_or_public_image_path($antetImageSrc);
+                    $antetImagePath = (string)($resolved['path'] ?? '');
+                    $cleanupPath = (string)($resolved['cleanup'] ?? '');
                 }
             } catch (Exception $e) {
                 // fallback text implicit
@@ -1403,11 +1511,23 @@ function documente_pdf_overlay_erp_header($pdf_path, PDO $pdo = null) {
 
         $pdf = new class extends \setasign\Fpdi\Fpdi {
             public $erpHeader = '';
+            public $erpHeaderImage = '';
             public function Header() {
                 $this->SetY(8);
+                if (trim((string)$this->erpHeaderImage) !== '') {
+                    try {
+                        $x = 10.0;
+                        $y = 7.0;
+                        $w = min(52.0, max(24.0, $this->GetPageWidth() * 0.28));
+                        $this->Image($this->erpHeaderImage, $x, $y, $w);
+                    } catch (Exception $e) {
+                        // fallback pe text-only dacă imaginea nu se poate încărca în runtime
+                    }
+                }
                 $this->SetFont('Helvetica', '', 8);
                 $this->SetTextColor(30, 30, 30);
                 if (trim((string)$this->erpHeader) !== '') {
+                    $this->SetY(8);
                     $this->MultiCell(0, 3.5, $this->erpHeader, 0, 'C');
                 }
                 $this->SetDrawColor(140, 140, 140);
@@ -1415,6 +1535,7 @@ function documente_pdf_overlay_erp_header($pdf_path, PDO $pdo = null) {
             }
         };
         $pdf->erpHeader = (string)$headerText;
+        $pdf->erpHeaderImage = (string)$antetImagePath;
         $pageCount = $pdf->setSourceFile($pdf_path);
         for ($i = 1; $i <= $pageCount; $i++) {
             $tpl = $pdf->importPage($i);
@@ -1429,12 +1550,15 @@ function documente_pdf_overlay_erp_header($pdf_path, PDO $pdo = null) {
         $pdf->Output('F', $tempPath);
         if (!file_exists($tempPath) || @filesize($tempPath) <= 0) {
             @unlink($tempPath);
+            if ($cleanupPath !== '' && file_exists($cleanupPath)) @unlink($cleanupPath);
             return ['success' => false, 'error' => 'Nu s-a putut genera PDF-ul cu antet ERP suprapus.'];
         }
         @rename($tempPath, $pdf_path);
+        if ($cleanupPath !== '' && file_exists($cleanupPath)) @unlink($cleanupPath);
         return ['success' => true, 'error' => null];
     } catch (Exception $e) {
         if (file_exists($tempPath)) @unlink($tempPath);
+        if ($cleanupPath !== '' && file_exists($cleanupPath)) @unlink($cleanupPath);
         return ['success' => false, 'error' => $e->getMessage()];
     }
 }

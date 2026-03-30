@@ -150,7 +150,7 @@ Schema bazei de date este organizată în mai multe fișiere SQL pentru ușurin�
 - `newsletter_email` - Email expeditor newsletter
 - `antet_asociatie_docx` - Fișier DOCX antet pentru fluxurile DOCX/PDF existente
 - `documente_antet_html` - Antet HTML configurabil pentru print-uri și tabele (cu excluderile de business definite în aplicație)
-- `documente_antet_source` - Sursa antetului documente (`html` sau `image`)
+- `documente_antet_source` - Sursa antetului documente (`html` sau `image`) pentru print-urile generale din platformă
 - `documente_antet_image_path` - Calea imaginii uploadate pentru antet documente (alternativă la editor)
 - `documente_antet_image_alt` - Text alternativ (ALT) pentru imaginea de antet (accesibilitate)
 
@@ -374,7 +374,8 @@ Schema bazei de date este organizată în mai multe fișiere SQL pentru ușurin�
 - `updated_at` - Data ultimei modificări
 
 **Notă business:**
-- Dacă `foloseste_antet_platforma_erp = 1`, la generare se suprapune antetul configurat în platformă pe PDF-ul final.
+- Dacă `foloseste_antet_platforma_erp = 1`, la generare se aplică antetul ERP din **Setări > Antet documente > editor HTML** pe PDF-ul final (sursa `image` este ignorată în acest flux).
+- Dacă documentul DOCX generat conține deja antet (din template), suprapunerea antetului ERP pe PDF este omisă implicit pentru consistență între DOCX și PDF.
 - Dacă `foloseste_antet_platforma_erp = 0`, se păstrează antetul/subsolul originale din fișierul template.
 
 ---

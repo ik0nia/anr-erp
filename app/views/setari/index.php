@@ -258,7 +258,8 @@
             <h2 id="antet-documente-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Antet documente</h2>
             <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
                 Acest antet se aplică în print-uri și documente de tip listă/tabel din platformă.
-                Excluderi: <strong>Librărie documente</strong>, <strong>Generare documente</strong>, <strong>chitanțe</strong>.
+                În modulul <strong>Generare documente</strong>, când template-ul are activă opțiunea „Folosește antetul platformei ERP”, se utilizează antetul din editorul HTML de mai jos (pentru consistență WORD/PDF/Print).
+                Excludere: <strong>chitanțe</strong>.
             </p>
 
             <form method="post" action="/setari?tab=antet-documente" class="space-y-5" enctype="multipart/form-data">
