@@ -82,16 +82,16 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
         <div id="doc-etapa-2" class="hidden">
             <p id="doc-rezultat-msg" class="text-green-600 dark:text-green-400 mb-4"></p>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-                <a id="doc-link-download-pdf" href="#" target="_blank" class="inline-flex w-full items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg" aria-label="Descarcă documentul în format PDF">
+                <a id="doc-link-download-pdf" href="#" target="_blank" class="inline-flex w-full items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg opacity-50 cursor-not-allowed pointer-events-none" aria-label="Descarcă documentul în format PDF (dezactivat)" aria-disabled="true" tabindex="-1" title="Temporar indisponibil">
                     <i data-lucide="file-down" class="w-4 h-4 mr-2" aria-hidden="true"></i> Descarcă PDF
                 </a>
                 <a id="doc-link-download-docx" href="#" target="_blank" class="inline-flex w-full items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg" aria-label="Descarcă documentul în format Word DOCX">
                     <i data-lucide="file-down" class="w-4 h-4 mr-2" aria-hidden="true"></i> Descarcă DOCX
                 </a>
-                <a id="doc-btn-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex w-full items-center justify-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg hidden" aria-label="Trimite documentul pe WhatsApp">
+                <a id="doc-btn-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex w-full items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg opacity-50 cursor-not-allowed pointer-events-none" aria-label="Trimite documentul pe WhatsApp (dezactivat)" aria-disabled="true" tabindex="-1" title="Temporar indisponibil">
                     <i data-lucide="message-circle" class="w-4 h-4 mr-2" aria-hidden="true"></i> Trimite pe WhatsApp
                 </a>
-                <button type="button" id="doc-btn-email" class="inline-flex w-full items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg" aria-label="Trimite documentul pe email">
+                <button type="button" id="doc-btn-email" class="inline-flex w-full items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg opacity-50 cursor-not-allowed" aria-label="Trimite documentul pe email (dezactivat)" title="Temporar indisponibil" disabled>
                     <i data-lucide="mail" class="w-4 h-4 mr-2" aria-hidden="true"></i> Trimite Email
                 </button>
                 <button type="button" id="doc-btn-print" class="inline-flex w-full items-center justify-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg" aria-label="Printează documentul PDF">
@@ -206,8 +206,6 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
         etapaEmail.classList.add('hidden');
         updateErpHeaderIndicator();
         currentDocumentGeneratId = 0;
-        if (btnWhatsapp) btnWhatsapp.classList.add('hidden');
-        if (btnEmail) btnEmail.classList.remove('hidden');
     }
 
     document.getElementById('doc-btn-renunta-1').addEventListener('click', resetModal);
@@ -267,9 +265,8 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                     rezultatMsg.textContent = 'Document generat. Nr. înregistrare: ' + (data.nr_inregistrare || '-');
                     if (data.pdf_token) {
                         linkPdf.href = 'util/descarca-document.php?token=' + encodeURIComponent(data.pdf_token) + '&type=pdf';
-                        linkPdf.classList.remove('hidden');
                     } else {
-                        linkPdf.classList.add('hidden');
+                        linkPdf.href = '#';
                     }
                     if (data.docx_token) {
                         linkDocx.href = 'util/descarca-document.php?token=' + encodeURIComponent(data.docx_token) + '&type=docx';
@@ -285,17 +282,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
                             var waFullText = waText + ' Link document: ' + pdfAbs;
                             btnWhatsapp.href = 'https://wa.me/' + phoneDigits + '?text=' + encodeURIComponent(waFullText);
                             btnWhatsapp.setAttribute('data-doc-id', currentDocumentGeneratId ? String(currentDocumentGeneratId) : '');
-                            btnWhatsapp.classList.remove('hidden');
-                        } else {
-                            btnWhatsapp.classList.add('hidden');
                         }
-                    } else {
-                        btnWhatsapp.classList.add('hidden');
-                    }
-                    if (currentEmail) {
-                        btnEmail.classList.remove('hidden');
-                    } else {
-                        btnEmail.classList.add('hidden');
                     }
                     etapa2.classList.remove('hidden');
                 } else {
@@ -315,6 +302,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
     });
 
     document.getElementById('doc-btn-email').addEventListener('click', function() {
+        if (this.disabled) return;
         if (!currentEmail) return;
         etapaEmail.classList.toggle('hidden');
         if (!etapaEmail.classList.contains('hidden')) {
@@ -352,6 +340,7 @@ if ($doc_api_base === '' || $doc_api_base === '.') $doc_api_base = '';
 
     if (btnWhatsapp) {
         btnWhatsapp.addEventListener('click', function() {
+            if (this.getAttribute('aria-disabled') === 'true') return;
             if (!currentMembruId) return;
             fetch('/api/log-actiune-membru', {
                 method: 'POST',
