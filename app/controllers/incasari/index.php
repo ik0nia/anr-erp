@@ -5,6 +5,7 @@
 require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/includes/incasari_helper.php';
 require_once APP_ROOT . '/includes/contacte_helper.php';
+require_once APP_ROOT . '/includes/csrf_helper.php';
 
 // --- GET: Parametri ---
 $per_page = (int)($_GET['per_page'] ?? 50);

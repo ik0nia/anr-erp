@@ -257,6 +257,7 @@
 (function(){
     var dialog = document.getElementById('modal-edit-incasare');
     var form = document.getElementById('form-edit-incasare');
+    var csrfTokenIncasari = "<?php echo htmlspecialchars(function_exists('csrf_token') ? csrf_token() : ''); ?>";
 
     // Edit
     document.addEventListener('click', function(e){
@@ -303,15 +304,32 @@
         var id = btn.getAttribute('data-id');
         var info = btn.getAttribute('data-info');
         if (!confirm('Sigur doriți să ștergeți încasarea?\n\n' + info + '\n\nNumerotarea chitanțelor va fi recalculată.')) return;
+        if (!id) {
+            alert('ID încasare invalid.');
+            return;
+        }
 
         var fd = new FormData();
         fd.append('id', id);
-        // Get CSRF token
-        var csrfInput = document.querySelector('#form-edit-incasare input[name="_csrf_token"]');
-        if (csrfInput) fd.append('_csrf_token', csrfInput.value);
+        if (csrfTokenIncasari) {
+            fd.append('_csrf_token', csrfTokenIncasari);
+        } else {
+            // Fallback la tokenul din formularul de editare (dacă există în DOM).
+            var csrfInput = document.querySelector('#form-edit-incasare input[name="_csrf_token"]');
+            if (csrfInput && csrfInput.value) fd.append('_csrf_token', csrfInput.value);
+        }
 
         fetch('/api/incasari-sterge', { method: 'POST', body: fd, credentials: 'same-origin' })
-            .then(function(r){ return r.json(); })
+            .then(function(r){
+                return r.text().then(function(text){
+                    if (!r.ok) {
+                        throw new Error(text || ('HTTP ' + r.status));
+                    }
+                    try { return JSON.parse(text); } catch (err) {
+                        throw new Error('Răspuns invalid de la server.');
+                    }
+                });
+            })
             .then(function(data){
                 if (data.ok) {
                     var row = document.getElementById('row-inc-' + id);
@@ -321,7 +339,7 @@
                     alert(data.eroare || 'Eroare la ștergere.');
                 }
             })
-            .catch(function(){ alert('Eroare de rețea.'); });
+            .catch(function(err){ alert((err && err.message) ? err.message : 'Eroare de rețea.'); });
     });
 })();
 </script>
