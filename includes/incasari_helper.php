@@ -253,7 +253,8 @@ function incasari_get($pdo, $id) {
                COALESCE(m.prenume, c.prenume) AS prenume,
                COALESCE(m.cnp, c.cnp) AS cnp,
                {$select_domloc},
-               {$select_judet}
+               {$select_judet},
+               c.notite AS contact_notite
         FROM incasari i
         LEFT JOIN membri m ON m.id = i.membru_id
         LEFT JOIN contacte c ON c.id = i.contact_id

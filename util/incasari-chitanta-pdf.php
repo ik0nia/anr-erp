@@ -48,8 +48,17 @@ $cnp = $inc['cnp'] ?? '';
 $domloc = $inc['domloc'] ?? '';
 $judet = $inc['judet_domiciliu'] ?? '';
 if ($domloc === '' && $judet === '' && !empty($inc['contact_id'])) {
-    $domloc = '-';
-    $judet = '-';
+    $notite_contact = trim((string)($inc['contact_notite'] ?? ''));
+    if ($notite_contact !== '') {
+        if (preg_match('/Localitate:\s*([^,;]+)/i', $notite_contact, $m)) {
+            $domloc = trim((string)$m[1]);
+        }
+        if (preg_match('/Judet:\s*([^,;]+)/i', $notite_contact, $m)) {
+            $judet = trim((string)$m[1]);
+        }
+    }
+    if ($domloc === '') $domloc = '-';
+    if ($judet === '') $judet = '-';
 }
 $seria = $inc['seria_chitanta'] ?? '-';
 $nr = $inc['nr_chitanta'] ?? '-';

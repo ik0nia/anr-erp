@@ -52,6 +52,15 @@ $nume = trim(($inc['nume'] ?? '') . ' ' . ($inc['prenume'] ?? ''));
 $cnp = $inc['cnp'] ?? '';
 $domloc = $inc['domloc'] ?? '';
 $judet = $inc['judet_domiciliu'] ?? '';
+if (($domloc === '' || $judet === '') && !empty($inc['contact_notite'])) {
+    $notite = (string)$inc['contact_notite'];
+    if ($domloc === '' && preg_match('/Localitate:\s*([^,]+)/iu', $notite, $mLoc)) {
+        $domloc = trim((string)$mLoc[1]);
+    }
+    if ($judet === '' && preg_match('/Judet:\s*([^,]+)/iu', $notite, $mJudet)) {
+        $judet = trim((string)$mJudet[1]);
+    }
+}
 if ($domloc === '' && $judet === '' && !empty($inc['contact_id'])) {
     $domloc = '-';
     $judet = '-';
