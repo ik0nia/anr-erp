@@ -67,9 +67,9 @@
                         Operator: <strong><?php echo htmlspecialchars($r['utilizator'] ?? 'Necunoscut'); ?></strong>
                     </div>
                     <div>
-                        <label class="flex items-center">
+                        <label for="reg-task-deschis" class="flex items-center">
                             <input type="hidden" name="task_deschis" value="0">
-                            <input type="checkbox" name="task_deschis" value="1" <?php echo (!empty($r['task_deschis']) || isset($_POST['task_deschis'])) ? 'checked' : ''; ?>
+                            <input type="checkbox" id="reg-task-deschis" name="task_deschis" value="1" <?php echo ((string)($_POST['task_deschis'] ?? ($r['task_deschis'] ?? '0')) === '1') ? 'checked' : ''; ?>
                                    class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700"
                                    aria-describedby="task-desc">
                             <span id="task-desc" class="ml-2 text-sm text-slate-800 dark:text-gray-200">Task deschis (în modulul Taskuri)</span>

@@ -54,18 +54,17 @@
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Destinatar</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Operator</th>
                             <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Task</th>
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Acțiuni</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                         <?php if (empty($inregistrari)): ?>
                         <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu există înregistrări. <a href="/registratura/adauga?redirect=registratura" class="text-amber-600 dark:text-amber-400 hover:underline">Adaugă prima înregistrare</a></td>
+                            <td colspan="9" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu există înregistrări. <a href="/registratura/adauga?redirect=registratura" class="text-amber-600 dark:text-amber-400 hover:underline">Adaugă prima înregistrare</a></td>
                         </tr>
                         <?php else: ?>
                         <?php foreach ($inregistrari as $r): ?>
-                        <tr role="button" tabindex="0" onclick="window.location.href='/registratura/edit?id=<?php echo (int)$r['id']; ?>'" onkeydown="if(event.key==='Enter'||event.key===' ') { event.preventDefault(); window.location.href='/registratura/edit?id=<?php echo (int)$r['id']; ?>'; }"
-                            class="hover:bg-slate-50 dark:hover:bg-gray-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-inset"
-                            aria-label="Editează înregistrarea nr. <?php echo htmlspecialchars($r['nr_inregistrare']); ?>">
+                        <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white"><?php echo htmlspecialchars($r['nr_inregistrare'] ?? '-'); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo date(DATE_FORMAT, strtotime($r['data_ora'])); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($r['nr_document'] ?? '-'); ?> <?php echo !empty($r['data_document']) ? '/ ' . date(DATE_FORMAT, strtotime($r['data_document'])) : ''; ?></td>
@@ -74,6 +73,11 @@
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($r['destinatar_document'] ?? '-'); ?></td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($r['utilizator'] ?? '-'); ?></td>
                             <td class="px-4 py-3 text-sm"><?php echo !empty($r['task_deschis']) ? '<span class="inline-flex px-2 py-0.5 text-xs rounded bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200">Da</span>' : '-'; ?></td>
+                            <td class="px-4 py-3 text-sm">
+                                <a href="/registratura/edit?id=<?php echo (int)$r['id']; ?>" class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500" aria-label="Editează înregistrarea nr. <?php echo htmlspecialchars($r['nr_inregistrare'] ?? '-'); ?>">
+                                    Editează
+                                </a>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                         <?php endif; ?>

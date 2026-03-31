@@ -24,14 +24,15 @@
                 <input type="hidden" name="salveaza_registratura" value="1">
                 <div class="space-y-4">
                     <!-- Butoane tip document -->
-                    <div class="flex gap-3 mb-4">
-                        <button type="button" id="btn-document-primit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors" aria-label="Document primit - completează automat destinatarul cu ANR Bihor">
+                    <div class="flex gap-3 mb-4" role="group" aria-label="Tip document">
+                        <button type="button" id="btn-document-primit" aria-pressed="false" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors" aria-label="Document primit - completează automat destinatarul cu ANR Bihor">
                             Document primit
                         </button>
-                        <button type="button" id="btn-document-emis" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-green-500 transition-colors" aria-label="Document emis - completează automat proveniența cu ANR Bihor">
+                        <button type="button" id="btn-document-emis" aria-pressed="false" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-green-500 transition-colors" aria-label="Document emis - completează automat proveniența cu ANR Bihor">
                             Document emis
                         </button>
                     </div>
+                    <p id="document-type-status" class="sr-only" role="status" aria-live="polite"></p>
                     <p class="text-sm text-slate-600 dark:text-gray-400 mb-2" role="status" aria-live="polite">
                         Nr. înregistrare intern și data se alocă automat la salvare.
                     </p>
@@ -70,9 +71,9 @@
                         Operator: <strong><?php echo htmlspecialchars($_SESSION['utilizator'] ?? 'Utilizator'); ?></strong>
                     </div>
                     <div>
-                        <label class="flex items-center">
+                        <label for="reg-task-deschis" class="flex items-center">
                             <input type="hidden" name="task_deschis" value="0">
-                            <input type="checkbox" name="task_deschis" value="1" <?php echo isset($_POST['task_deschis']) ? 'checked' : ''; ?>
+                            <input type="checkbox" id="reg-task-deschis" name="task_deschis" value="1" <?php echo ((string)($_POST['task_deschis'] ?? '0') === '1') ? 'checked' : ''; ?>
                                    class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700"
                                    aria-describedby="task-desc">
                             <span id="task-desc" class="ml-2 text-sm text-slate-800 dark:text-gray-200">Task deschis (se trimite către modulul Taskuri)</span>
@@ -91,31 +92,47 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    
+
     // Buton Document primit
     const btnDocumentPrimit = document.getElementById('btn-document-primit');
+    const btnDocumentEmis = document.getElementById('btn-document-emis');
+    const documentTypeStatus = document.getElementById('document-type-status');
+
+    function seteazaTipDocument(tip) {
+        if (!btnDocumentPrimit || !btnDocumentEmis) {
+            return;
+        }
+        const estePrimit = tip === 'primit';
+        btnDocumentPrimit.classList.toggle('ring-2', estePrimit);
+        btnDocumentPrimit.classList.toggle('ring-blue-400', estePrimit);
+        btnDocumentEmis.classList.toggle('ring-2', !estePrimit);
+        btnDocumentEmis.classList.toggle('ring-green-400', !estePrimit);
+        btnDocumentPrimit.setAttribute('aria-pressed', estePrimit ? 'true' : 'false');
+        btnDocumentEmis.setAttribute('aria-pressed', estePrimit ? 'false' : 'true');
+        if (documentTypeStatus) {
+            documentTypeStatus.textContent = estePrimit
+                ? 'Tip selectat: document primit. Destinatar completat cu ANR Bihor.'
+                : 'Tip selectat: document emis. Proveniență completată cu ANR Bihor.';
+        }
+    }
+
     if (btnDocumentPrimit) {
         btnDocumentPrimit.addEventListener('click', function() {
             const destinatarInput = document.getElementById('reg-destinatar');
             if (destinatarInput) {
                 destinatarInput.value = 'ANR Bihor';
-                // Marchează butonul ca activ
-                btnDocumentPrimit.classList.add('ring-2', 'ring-blue-400');
-                document.getElementById('btn-document-emis').classList.remove('ring-2', 'ring-green-400');
+                seteazaTipDocument('primit');
             }
         });
     }
-    
+
     // Buton Document emis
-    const btnDocumentEmis = document.getElementById('btn-document-emis');
     if (btnDocumentEmis) {
         btnDocumentEmis.addEventListener('click', function() {
             const provineInput = document.getElementById('reg-provine');
             if (provineInput) {
                 provineInput.value = 'ANR Bihor';
-                // Marchează butonul ca activ
-                btnDocumentEmis.classList.add('ring-2', 'ring-green-400');
-                document.getElementById('btn-document-primit').classList.remove('ring-2', 'ring-blue-400');
+                seteazaTipDocument('emis');
             }
         });
     }
