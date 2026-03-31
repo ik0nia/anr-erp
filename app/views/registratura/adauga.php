@@ -24,7 +24,7 @@
                 <input type="hidden" name="salveaza_registratura" value="1">
                 <div class="space-y-4">
                     <!-- Butoane tip document -->
-                    <div class="flex gap-3 mb-4" role="group" aria-label="Tip document">
+                    <div class="flex gap-3 mb-2" role="group" aria-label="Tip document">
                         <button type="button" id="btn-document-primit" aria-pressed="false" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors" aria-label="Document primit - completează automat destinatarul cu ANR Bihor">
                             Document primit
                         </button>
@@ -32,6 +32,10 @@
                             Document emis
                         </button>
                     </div>
+                    <input type="hidden" id="reg-tip-act" name="tip_act" value="<?php echo htmlspecialchars($_POST['tip_act'] ?? 'Înregistrare document'); ?>">
+                    <p class="text-xs text-slate-600 dark:text-gray-400">
+                        Tip selectat: <strong id="selected-tip-label"><?php echo htmlspecialchars($_POST['tip_act'] ?? 'Înregistrare document'); ?></strong>
+                    </p>
                     <p id="document-type-status" class="sr-only" role="status" aria-live="polite"></p>
                     <p class="text-sm text-slate-600 dark:text-gray-400 mb-2" role="status" aria-live="polite">
                         Nr. înregistrare intern și data se alocă automat la salvare.
@@ -102,13 +106,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!btnDocumentPrimit || !btnDocumentEmis) {
             return;
         }
+        const tipActInput = document.getElementById('reg-tip-act');
+        const selectedTipLabel = document.getElementById('selected-tip-label');
         const estePrimit = tip === 'primit';
+        const valoareTip = estePrimit ? 'Document primit' : 'Document emis';
         btnDocumentPrimit.classList.toggle('ring-2', estePrimit);
         btnDocumentPrimit.classList.toggle('ring-blue-400', estePrimit);
         btnDocumentEmis.classList.toggle('ring-2', !estePrimit);
         btnDocumentEmis.classList.toggle('ring-green-400', !estePrimit);
         btnDocumentPrimit.setAttribute('aria-pressed', estePrimit ? 'true' : 'false');
         btnDocumentEmis.setAttribute('aria-pressed', estePrimit ? 'false' : 'true');
+        if (tipActInput) {
+            tipActInput.value = valoareTip;
+        }
+        if (selectedTipLabel) {
+            selectedTipLabel.textContent = valoareTip;
+        }
         if (documentTypeStatus) {
             documentTypeStatus.textContent = estePrimit
                 ? 'Tip selectat: document primit. Destinatar completat cu ANR Bihor.'
@@ -135,6 +148,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 seteazaTipDocument('emis');
             }
         });
+    }
+
+    const tipActInitial = (document.getElementById('reg-tip-act')?.value || '').toLowerCase();
+    if (tipActInitial.includes('emis')) {
+        seteazaTipDocument('emis');
+    } else if (tipActInitial.includes('primit')) {
+        seteazaTipDocument('primit');
     }
 });
 </script>

@@ -57,6 +57,10 @@ function registratura_get(PDO $pdo, int $id): ?array {
 function registratura_create(PDO $pdo, array $data, string $utilizator = 'Sistem'): array {
     ensure_registratura_table($pdo);
 
+    $tip_act_input = trim($data['tip_act'] ?? '');
+    $tip_act = in_array($tip_act_input, ['Document primit', 'Document emis'], true)
+        ? $tip_act_input
+        : 'Înregistrare document';
     $nr_document = trim($data['nr_document'] ?? '') ?: null;
     $data_document = trim($data['data_document'] ?? '') ?: null;
     $provine_din = trim($data['provine_din'] ?? '') ?: null;
@@ -78,7 +82,7 @@ function registratura_create(PDO $pdo, array $data, string $utilizator = 'Sistem
             try {
                 $stmt = $pdo->prepare('INSERT INTO registratura (nr_intern, nr_inregistrare, utilizator, tip_act, nr_document, data_document, provine_din, continut_document, destinatar_document, task_deschis) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                 $stmt->execute([
-                    $nr_intern, $nr_inregistrare, $utilizator, 'Înregistrare document',
+                    $nr_intern, $nr_inregistrare, $utilizator, $tip_act,
                     $nr_document, $data_document, $provine_din, $continut_document, $destinatar_document, $task_deschis
                 ]);
                 $id = (int)$pdo->lastInsertId();
