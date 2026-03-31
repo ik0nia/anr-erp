@@ -193,8 +193,14 @@ function incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data
     $reprezentand = trim((string)$reprezentand) ?: null;
     $seria = null;
     $nr_chitanta = null;
-    // Generate receipt series/number for cash and old receipt payment methods
+    // Generate receipt series/number for:
+    // - Chitanta ERP (numerar)
+    // - Chitanta veche
+    // - cotizatie achitata prin mandat postal (cerinta business)
     $metode_cu_chitanta = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CHITANTA_VECHE];
+    if ($tip === INCASARI_TIP_COTIZATIE && $mod_plata === INCASARI_MOD_MANDAT_POSTAL) {
+        $metode_cu_chitanta[] = INCASARI_MOD_MANDAT_POSTAL;
+    }
     if (in_array($mod_plata, $metode_cu_chitanta)) {
         $tip_serie = incasari_tip_serie_pentru_tip($tip);
         $next = incasari_urmatorul_nr_serie($pdo, $tip_serie);

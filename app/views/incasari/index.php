@@ -24,7 +24,7 @@
             </a>
             <a href="/util/incasari-borderou-print.php?<?php echo htmlspecialchars(http_build_query(['tip' => $tip_filtru, 'serie' => $serie_filtru, 'data_de_la' => $data_de_la, 'data_pana_la' => $data_pana_la, 'q' => $cautare, 'per_page' => $per_page, 'page' => $page])); ?>" target="_blank" rel="noopener noreferrer"
                class="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg focus:ring-2 focus:ring-amber-500"
-               aria-label="Tipărește borderoul de chitanțe pentru tabelul afișat">
+               aria-label="Tipărește borderoul de chitanțe ERP pentru filtrele curente">
                 <i data-lucide="printer" class="w-4 h-4" aria-hidden="true"></i>
                 Print
             </a>
@@ -50,7 +50,7 @@
                 </select>
             </div>
             <div>
-                <label for="serie" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Serie chitanță</label>
+                <label for="serie" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Serie chitanță ERP</label>
                 <select id="serie" name="serie" class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white text-sm">
                     <option value="">Toate seriile</option>
                     <?php foreach ($serie_options as $serie_opt): ?>
