@@ -42,6 +42,8 @@ if ($tip_form === 'donatie') {
     $cnp = trim($_POST['cnp_donator'] ?? '') ?: null;
     $telefon = trim($_POST['telefon_donator'] ?? '') ?: null;
     $email = trim($_POST['email_donator'] ?? '') ?: null;
+    $localitate = trim($_POST['localitate_donator'] ?? '') ?: null;
+    $judet = trim($_POST['judet_donator'] ?? '') ?: null;
     $suma = (float)str_replace(',', '.', $_POST['valoare'] ?? 0);
 
     // Pentru metodele cu identificare directă pe chitanță, numele și prenumele sunt obligatorii.
@@ -72,7 +74,7 @@ if ($tip_form === 'donatie') {
 
     $reprezentand = $reprezentand ?: 'Donație';
 
-    $contact_id = contacte_creare_donator($pdo, $nume, $prenume ?: null, $cnp, $telefon, $email);
+    $contact_id = contacte_creare_donator($pdo, $nume, $prenume ?: null, $cnp, $telefon, $email, $localitate, $judet);
     if (!$contact_id) {
         echo json_encode(['ok' => false, 'eroare' => 'Eroare la crearea contactului donator.']);
         exit;

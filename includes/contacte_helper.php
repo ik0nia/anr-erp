@@ -72,8 +72,8 @@ function contacte_data_nasterii_din_cnp($cnp) {
 /**
  * @deprecated Foloseste contacte_creeaza_donator() din ContacteService
  */
-function contacte_creare_donator(PDO $pdo, $nume, $prenume = null, $cnp = null, $telefon = null, $email = null) {
-    return contacte_creeaza_donator($pdo, (string)$nume, $prenume, $cnp, $telefon, $email);
+function contacte_creare_donator(PDO $pdo, $nume, $prenume = null, $cnp = null, $telefon = null, $email = null, $domloc = null, $judet_domiciliu = null) {
+    return contacte_creeaza_donator($pdo, (string)$nume, $prenume, $cnp, $telefon, $email, $domloc, $judet_domiciliu);
 }
 
 /**

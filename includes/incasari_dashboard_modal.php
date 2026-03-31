@@ -4,9 +4,19 @@
  */
 if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
 ?>
+<style>
+    #modal-incasari-dashboard::backdrop {
+        background: rgba(0, 0, 0, 0.55);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+    }
+</style>
 <dialog id="modal-incasari-dashboard" role="dialog" aria-modal="true" aria-labelledby="modal-incasari-dashboard-titlu" class="p-0 rounded-xl shadow-2xl max-w-2xl w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-    <div class="p-6">
-        <h2 id="modal-incasari-dashboard-titlu" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Încasează Donație</h2>
+    <div class="p-6 relative">
+        <button type="button" id="inc-dash-btn-inchide-x" class="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" aria-label="Închide fereastra de încasare donație" title="Închide">
+            <span aria-hidden="true" class="text-lg leading-none">&times;</span>
+        </button>
+        <h2 id="modal-incasari-dashboard-titlu" class="text-lg font-bold text-slate-900 dark:text-white mb-4 pr-10">Încasează Donație</h2>
         <form id="form-incasari-dashboard" class="space-y-4">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="tip_form" value="donatie">
@@ -60,6 +70,16 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
+                        <label for="inc-dash-localitate" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Localitate</label>
+                        <input type="text" id="inc-dash-localitate" name="localitate_donator" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                    </div>
+                    <div>
+                        <label for="inc-dash-judet" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Județ</label>
+                        <input type="text" id="inc-dash-judet" name="judet_donator" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
                         <label for="inc-dash-valoare" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Valoarea (RON) <span class="text-red-600">*</span></label>
                         <input type="text" id="inc-dash-valoare" name="valoare" placeholder="0.00" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" inputmode="decimal" aria-required="true">
                     </div>
@@ -90,11 +110,35 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
     var reprezentandInput = document.getElementById('inc-dash-reprezentand');
     var modInput = document.getElementById('inc-dash-mod');
     var feedback = document.getElementById('inc-dash-feedback');
+    var defaultData = new Date().toISOString().slice(0,10);
 
     function afiseazaMesaj(text) {
         if (!feedback) return;
         feedback.textContent = text || '';
         feedback.classList.toggle('hidden', !text);
+    }
+
+    function resetModalDashboard() {
+        afiseazaMesaj('');
+        modInput.value = '';
+        document.querySelectorAll('.inc-dash-mod-btn').forEach(function(b){
+            b.classList.remove('border-amber-500', 'bg-amber-200', 'dark:bg-amber-400', 'text-slate-900');
+            b.classList.add('border-slate-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
+            b.setAttribute('aria-checked', 'false');
+        });
+        form.reset();
+        document.getElementById('inc-dash-data').value = defaultData;
+        reprezentandInput.value = 'Donație';
+        if (localitateInput) localitateInput.value = '';
+        if (judetInput) judetInput.value = '';
+        sumaLitereInput.value = '';
+        numeInput.required = true;
+        prenumeInput.required = true;
+        numeInput.setAttribute('aria-required', 'true');
+        prenumeInput.setAttribute('aria-required', 'true');
+        asteriscNume.style.display = 'inline';
+        asteriscPrenume.style.display = 'inline';
+        hintDatePersonale.classList.add('hidden');
     }
 
     function necesitaDatePersonale(modPlata) {
@@ -161,6 +205,8 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
 
     var numeInput = document.getElementById('inc-dash-nume');
     var prenumeInput = document.getElementById('inc-dash-prenume');
+    var localitateInput = document.getElementById('inc-dash-localitate');
+    var judetInput = document.getElementById('inc-dash-judet');
     var asteriscNume = document.getElementById('inc-dash-asterisc-nume');
     var asteriscPrenume = document.getElementById('inc-dash-asterisc-prenume');
     var hintDatePersonale = document.getElementById('inc-dash-hint-date-personale');
@@ -220,10 +266,7 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
                 if (data.ok) {
                     dialog.close();
                     window.open('util/incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
-                    form.reset();
-                    document.getElementById('inc-dash-data').value = new Date().toISOString().slice(0,10);
-                    reprezentandInput.value = 'Donație';
-                    sumaLitereInput.value = '';
+                    resetModalDashboard();
                     if (typeof window.location.reload === 'function') window.location.reload();
                 } else {
                     afiseazaMesaj(data.eroare || 'Eroare la salvare.');
@@ -232,31 +275,15 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
             .catch(function(){ afiseazaMesaj('Eroare de rețea.'); });
     });
 
-    document.getElementById('inc-dash-btn-inchide').addEventListener('click', function(){ dialog.close(); });
-    dialog.addEventListener('click', function(e){ if (e.target === dialog) dialog.close(); });
+    document.getElementById('inc-dash-btn-inchide-x').addEventListener('click', function(){ resetModalDashboard(); dialog.close(); });
+    document.getElementById('inc-dash-btn-inchide').addEventListener('click', function(){ resetModalDashboard(); dialog.close(); });
+    dialog.addEventListener('click', function(e){ if (e.target === dialog) { resetModalDashboard(); dialog.close(); } });
 
     document.addEventListener('click', function(e){
         var btn = e.target.closest('.btn-deschide-incasari-dashboard');
         if (btn && dialog) {
             e.preventDefault();
-            afiseazaMesaj('');
-            modInput.value = '';
-            document.querySelectorAll('.inc-dash-mod-btn').forEach(function(b){
-                b.classList.remove('border-amber-500', 'bg-amber-200', 'dark:bg-amber-400', 'text-slate-900');
-                b.classList.add('border-slate-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
-                b.setAttribute('aria-checked', 'false');
-            });
-            form.reset();
-            document.getElementById('inc-dash-data').value = new Date().toISOString().slice(0,10);
-            reprezentandInput.value = 'Donație';
-            sumaLitereInput.value = '';
-            numeInput.required = true;
-            prenumeInput.required = true;
-            numeInput.setAttribute('aria-required', 'true');
-            prenumeInput.setAttribute('aria-required', 'true');
-            asteriscNume.style.display = 'inline';
-            asteriscPrenume.style.display = 'inline';
-            hintDatePersonale.classList.add('hidden');
+            resetModalDashboard();
             dialog.showModal();
         }
     });
