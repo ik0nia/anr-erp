@@ -15,13 +15,13 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Mod plată <span class="text-red-600">*</span></span>
-                    <div class="flex flex-wrap gap-2" role="group" aria-label="Mod plată">
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="numerar">Chitanta ERP</button>
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="chitanta_veche">Chitanta veche</button>
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="card_pos">POS</button>
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="transfer_bancar">Transfer bancar</button>
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="card_online">Plata online</button>
-                        <button type="button" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium" data-mod="mandat_postal">Mandat postal</button>
+                    <div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Mod plată">
+                        <button type="button" role="radio" aria-checked="false" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="numerar">Chitanta ERP</button>
+                        <button type="button" role="radio" aria-checked="false" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="chitanta_veche">Chitanta veche</button>
+                        <button type="button" role="radio" aria-checked="false" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="card_pos">POS</button>
+                        <button type="button" role="radio" aria-checked="false" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="transfer_bancar">Transfer bancar</button>
+                        <button type="button" role="radio" aria-checked="false" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="card_online">Plata online</button>
+                        <button type="button" role="radio" aria-checked="false" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="mandat_postal">Mandat postal</button>
                     </div>
                     <input type="hidden" name="mod_plata" id="inc-dash-mod" value="">
                 </div>
@@ -33,6 +33,7 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
 
             <div class="space-y-4">
                 <p id="inc-dash-hint-date-personale" class="text-sm text-slate-600 dark:text-gray-400 hidden" aria-live="polite">La Card POS, Card online sau Transfer bancar, datele personale ale donatorului nu sunt obligatorii.</p>
+                <p id="inc-dash-feedback" class="text-sm font-medium text-rose-700 dark:text-rose-300 hidden" aria-live="assertive"></p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label for="inc-dash-nume" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Nume donator <span id="inc-dash-asterisc-nume" class="text-red-600">*</span></label>
@@ -74,8 +75,8 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
             </div>
 
             <div class="flex flex-wrap gap-2 pt-2">
-                <button type="submit" id="inc-dash-btn-salveaza-print" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">Salvează și Printează</button>
-                <button type="button" id="inc-dash-btn-inchide" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300">Închide</button>
+                <button type="submit" id="inc-dash-btn-salveaza-print" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">Salvează și Printează</button>
+                <button type="button" id="inc-dash-btn-inchide" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">Închide</button>
             </div>
         </form>
     </div>
@@ -88,6 +89,17 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
     var sumaLitereInput = document.getElementById('inc-dash-suma-litere');
     var reprezentandInput = document.getElementById('inc-dash-reprezentand');
     var modInput = document.getElementById('inc-dash-mod');
+    var feedback = document.getElementById('inc-dash-feedback');
+
+    function afiseazaMesaj(text) {
+        if (!feedback) return;
+        feedback.textContent = text || '';
+        feedback.classList.toggle('hidden', !text);
+    }
+
+    function necesitaDatePersonale(modPlata) {
+        return ['card_pos', 'card_online', 'transfer_bancar'].indexOf(modPlata) === -1;
+    }
 
     function numarInLitereRo(n) {
         n = Math.floor(n);
@@ -141,7 +153,11 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
         var v = parseFloat(String(valoareInput.value).replace(',','.')) || 0;
         sumaLitereInput.value = v > 0 ? sumaInLitere(v) : '';
     }
-    valoareInput.addEventListener('input', actualizeazaSumaLitere);
+    valoareInput.addEventListener('input', function(){
+        afiseazaMesaj('');
+        this.removeAttribute('aria-invalid');
+        actualizeazaSumaLitere();
+    });
 
     var numeInput = document.getElementById('inc-dash-nume');
     var prenumeInput = document.getElementById('inc-dash-prenume');
@@ -150,36 +166,51 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
     var hintDatePersonale = document.getElementById('inc-dash-hint-date-personale');
 
     function actualizeazaObligatoriuDateDonator() {
-        var isNumerar = modInput.value === 'numerar';
-        numeInput.required = isNumerar;
-        numeInput.setAttribute('aria-required', isNumerar ? 'true' : 'false');
-        prenumeInput.required = isNumerar;
-        prenumeInput.setAttribute('aria-required', isNumerar ? 'true' : 'false');
-        asteriscNume.style.display = isNumerar ? 'inline' : 'none';
-        asteriscPrenume.style.display = isNumerar ? 'inline' : 'none';
-        hintDatePersonale.classList.toggle('hidden', isNumerar || !modInput.value);
+        var obligatoriu = necesitaDatePersonale(modInput.value);
+        numeInput.required = obligatoriu;
+        numeInput.setAttribute('aria-required', obligatoriu ? 'true' : 'false');
+        prenumeInput.required = obligatoriu;
+        prenumeInput.setAttribute('aria-required', obligatoriu ? 'true' : 'false');
+        asteriscNume.style.display = obligatoriu ? 'inline' : 'none';
+        asteriscPrenume.style.display = obligatoriu ? 'inline' : 'none';
+        hintDatePersonale.classList.toggle('hidden', obligatoriu || !modInput.value);
     }
 
     document.querySelectorAll('.inc-dash-mod-btn').forEach(function(btn){
         btn.addEventListener('click', function(){
             var m = this.getAttribute('data-mod');
             modInput.value = m;
-            document.querySelectorAll('.inc-dash-mod-btn').forEach(function(b){ b.classList.remove('border-amber-500', 'bg-amber-200', 'dark:bg-amber-800/50'); b.classList.add('border-slate-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700'); });
-            this.classList.add('border-amber-500', 'bg-amber-200', 'dark:bg-amber-800/50');
+            afiseazaMesaj('');
+            document.querySelectorAll('.inc-dash-mod-btn').forEach(function(b){
+                b.classList.remove('border-amber-500', 'bg-amber-200', 'dark:bg-amber-400', 'text-slate-900');
+                b.classList.add('border-slate-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
+                b.setAttribute('aria-checked', 'false');
+            });
+            this.classList.add('border-amber-500', 'bg-amber-200', 'dark:bg-amber-400', 'text-slate-900');
             this.classList.remove('border-slate-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
+            this.setAttribute('aria-checked', 'true');
             actualizeazaObligatoriuDateDonator();
         });
     });
 
     form.addEventListener('submit', function(e){
         e.preventDefault();
-        if (!modInput.value) { alert('Selectați modul de plată.'); return; }
-        if (modInput.value === 'numerar') {
-            if (!numeInput.value.trim()) { alert('Completați numele donatorului.'); return; }
-            if (!prenumeInput.value.trim()) { alert('Completați prenumele donatorului.'); return; }
+        afiseazaMesaj('');
+        valoareInput.removeAttribute('aria-invalid');
+        numeInput.removeAttribute('aria-invalid');
+        prenumeInput.removeAttribute('aria-invalid');
+        if (!modInput.value) {
+            afiseazaMesaj('Selectați modul de plată.');
+            var firstModBtn = document.querySelector('.inc-dash-mod-btn');
+            if (firstModBtn) firstModBtn.focus();
+            return;
+        }
+        if (necesitaDatePersonale(modInput.value)) {
+            if (!numeInput.value.trim()) { numeInput.setAttribute('aria-invalid', 'true'); afiseazaMesaj('Completați numele donatorului.'); numeInput.focus(); return; }
+            if (!prenumeInput.value.trim()) { prenumeInput.setAttribute('aria-invalid', 'true'); afiseazaMesaj('Completați prenumele donatorului.'); prenumeInput.focus(); return; }
         }
         var v = parseFloat(String(valoareInput.value).replace(',','.')) || 0;
-        if (v <= 0) { alert('Introduceți valoarea donației.'); return; }
+        if (v <= 0) { valoareInput.setAttribute('aria-invalid', 'true'); afiseazaMesaj('Introduceți valoarea donației.'); valoareInput.focus(); return; }
         var fd = new FormData(form);
         fd.set('tip_form', 'donatie');
         fd.set('valoare', valoareInput.value.replace(',', '.'));
@@ -195,10 +226,10 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
                     sumaLitereInput.value = '';
                     if (typeof window.location.reload === 'function') window.location.reload();
                 } else {
-                    alert(data.eroare || 'Eroare la salvare.');
+                    afiseazaMesaj(data.eroare || 'Eroare la salvare.');
                 }
             })
-            .catch(function(){ alert('Eroare de rețea.'); });
+            .catch(function(){ afiseazaMesaj('Eroare de rețea.'); });
     });
 
     document.getElementById('inc-dash-btn-inchide').addEventListener('click', function(){ dialog.close(); });
@@ -208,14 +239,21 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
         var btn = e.target.closest('.btn-deschide-incasari-dashboard');
         if (btn && dialog) {
             e.preventDefault();
+            afiseazaMesaj('');
             modInput.value = '';
-            document.querySelectorAll('.inc-dash-mod-btn').forEach(function(b){ b.classList.remove('border-amber-500', 'bg-amber-200', 'dark:bg-amber-800/50'); });
+            document.querySelectorAll('.inc-dash-mod-btn').forEach(function(b){
+                b.classList.remove('border-amber-500', 'bg-amber-200', 'dark:bg-amber-400', 'text-slate-900');
+                b.classList.add('border-slate-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
+                b.setAttribute('aria-checked', 'false');
+            });
             form.reset();
             document.getElementById('inc-dash-data').value = new Date().toISOString().slice(0,10);
             reprezentandInput.value = 'Donație';
             sumaLitereInput.value = '';
             numeInput.required = true;
             prenumeInput.required = true;
+            numeInput.setAttribute('aria-required', 'true');
+            prenumeInput.setAttribute('aria-required', 'true');
             asteriscNume.style.display = 'inline';
             asteriscPrenume.style.display = 'inline';
             hintDatePersonale.classList.add('hidden');
