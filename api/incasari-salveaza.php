@@ -33,7 +33,8 @@ if ($membru_id <= 0 || !in_array($tip, $tipuri) || !in_array($mod_plata, $moduri
 
 $anul = null;
 if ($tip === INCASARI_TIP_COTIZATIE) {
-    $anul = incasari_an_cotizatie_implicit($pdo);
+    // Cerință business: plata cotizației din modal marchează membrul ca achitat pentru anul curent.
+    $anul = (int)date('Y');
     cotizatii_ensure_tables($pdo);
     if ($reprezentand === null || $reprezentand === '') {
         $reprezentand = 'Cotizatie membru';

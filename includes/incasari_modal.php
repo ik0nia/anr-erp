@@ -4,9 +4,19 @@
  * Datele membrului se setează la deschidere prin data-* pe butonul trigger (btn-deschide-incasari).
  */
 ?>
+<style>
+    #modal-incasari::backdrop {
+        background: rgba(0, 0, 0, 0.55);
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+    }
+</style>
 <dialog id="modal-incasari" role="dialog" aria-modal="true" aria-labelledby="modal-incasari-titlu" class="p-0 rounded-xl shadow-2xl max-w-lg w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800">
-    <div class="p-6">
-        <h2 id="modal-incasari-titlu" class="text-lg font-bold text-slate-900 dark:text-white mb-4">Încasare pentru <span id="incasari-nume-membru" class="text-amber-600 dark:text-amber-400"></span></h2>
+    <div class="p-6 relative">
+        <button type="button" id="incasari-btn-inchide-x" class="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" aria-label="Închide fereastra de încasare" title="Închide">
+            <span aria-hidden="true" class="text-lg leading-none">&times;</span>
+        </button>
+        <h2 id="modal-incasari-titlu" class="text-lg font-bold text-slate-900 dark:text-white mb-4 pr-10">Încasare pentru <span id="incasari-nume-membru" class="text-amber-600 dark:text-amber-400"></span></h2>
         <form id="form-incasari" class="space-y-4">
             <?php if (function_exists('csrf_field')) { echo csrf_field(); } ?>
             <input type="hidden" name="membru_id" id="incasari-membru-id" value="">
@@ -18,10 +28,10 @@
                 <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Tip încasare</span>
                 <div id="incasari-tip-group" class="flex flex-wrap gap-2" role="radiogroup" aria-label="Tip încasare">
                     <span id="incasari-cot-achitata-afis" class="hidden inline-flex items-center px-3 py-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 font-medium">Cotizație achitată</span>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-tip="cotizatie">Încasează cotizație</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-tip="donatie">Încasează Donație</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-tip="taxa_participare">Încasează taxă participare</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-tip="alte">Încasează alte venituri</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-tip="cotizatie">Încasează cotizație</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-tip="donatie">Încasează Donație</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-tip="taxa_participare">Încasează taxă participare</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-tip-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-tip="alte">Încasează alte venituri</button>
                 </div>
                 <input type="hidden" name="tip" id="incasari-tip" value="">
             </div>
@@ -29,12 +39,12 @@
             <div>
                 <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Mod plată</span>
                 <div id="incasari-mod-group" class="flex flex-wrap gap-2" role="radiogroup" aria-label="Mod plată">
-                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="numerar">Chitanta ERP</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="chitanta_veche">Chitanta veche</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="card_pos">POS</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="transfer_bancar">Transfer bancar</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="card_online">Plata online</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-amber-700 dark:hover:bg-amber-700 font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="mandat_postal">Mandat postal</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="numerar">Chitanta ERP</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="chitanta_veche">Chitanta veche</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="card_pos">POS</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="transfer_bancar">Transfer bancar</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="card_online">Plata online</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="mandat_postal">Echitanta ERP</button>
                 </div>
                 <input type="hidden" name="mod_plata" id="incasari-mod" value="">
             </div>
@@ -95,14 +105,26 @@
         document.querySelectorAll(grupSelector).forEach(function(b){
             var esteActiv = b === activ;
             b.setAttribute('aria-checked', esteActiv ? 'true' : 'false');
-            b.classList.toggle('bg-amber-200', esteActiv);
-            b.classList.toggle('dark:bg-amber-400', esteActiv);
-            b.classList.toggle('border-amber-500', esteActiv);
-            b.classList.toggle('text-slate-900', esteActiv);
+            b.classList.toggle('bg-emerald-600', esteActiv);
+            b.classList.toggle('dark:bg-emerald-500', esteActiv);
+            b.classList.toggle('border-emerald-500', esteActiv);
             b.classList.toggle('bg-slate-700', !esteActiv);
             b.classList.toggle('dark:bg-slate-600', !esteActiv);
-            b.classList.toggle('text-white', !esteActiv);
+            b.classList.add('text-white');
         });
+    }
+
+    function actualizeazaReprezentandPentruMandatPostal() {
+        var textMandat = 'Cotizatie membru - achitata prin mandat postal.';
+        if (tipInput.value !== 'cotizatie') return;
+        wrapReprezentand.classList.remove('hidden');
+        if (modInput.value === 'mandat_postal') {
+            inputReprezentand.value = textMandat;
+            return;
+        }
+        if (!inputReprezentand.value || inputReprezentand.value === textMandat) {
+            inputReprezentand.value = 'Cotizatie membru';
+        }
     }
 
     function resetModal() {
@@ -113,12 +135,12 @@
         inputSuma.required = false;
         dataInput.removeAttribute('aria-invalid');
         document.querySelectorAll('.incasari-tip-btn').forEach(function(b){
-            b.classList.remove('bg-amber-200', 'dark:bg-amber-400', 'border-amber-500', 'text-slate-900');
+            b.classList.remove('bg-emerald-600', 'dark:bg-emerald-500', 'border-emerald-500');
             b.classList.add('bg-slate-700', 'dark:bg-slate-600', 'text-white');
             b.setAttribute('aria-checked', 'false');
         });
         document.querySelectorAll('.incasari-mod-btn').forEach(function(b){
-            b.classList.remove('bg-amber-200', 'dark:bg-amber-400', 'border-amber-500', 'text-slate-900');
+            b.classList.remove('bg-emerald-600', 'dark:bg-emerald-500', 'border-emerald-500');
             b.classList.add('bg-slate-700', 'dark:bg-slate-600', 'text-white');
             b.setAttribute('aria-checked', 'false');
         });
@@ -204,6 +226,7 @@
                 wrapReprezentand.classList.remove('hidden');
                 inputReprezentand.value = 'Cotizatie membru';
             }
+            actualizeazaReprezentandPentruMandatPostal();
             if (modInput.value) { if (modInput.value === 'numerar' || modInput.value === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); } else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); } }
         });
     });
@@ -214,6 +237,7 @@
             modInput.value = m;
             afiseazaMesaj('');
             seteazaSelectie('.incasari-mod-btn', this);
+            actualizeazaReprezentandPentruMandatPostal();
             if (m === 'numerar' || m === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); }
             else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); }
         });
@@ -272,6 +296,7 @@
             if (typeof window.location.reload === 'function') window.location.reload();
         });
     });
+    document.getElementById('incasari-btn-inchide-x').addEventListener('click', function(){ dialog.close(); });
     document.getElementById('incasari-btn-inchide').addEventListener('click', function(){ dialog.close(); });
     dialog.addEventListener('click', function(e){ if (e.target === dialog) dialog.close(); });
 })();
