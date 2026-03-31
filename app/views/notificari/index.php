@@ -46,7 +46,7 @@
                         <thead class="bg-slate-100 dark:bg-gray-700">
                             <tr>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">ID</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Titlu</th>
+                                <th scope="col" class="px-4 py-3 text-left align-middle text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Titlu</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Importanță</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Status</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Data</th>
@@ -62,8 +62,8 @@
                             <?php foreach ($lista as $n): ?>
                             <tr class="<?php echo $n['status'] === 'nou' ? 'bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 border-l-4 border-amber-500 dark:border-amber-400' : 'hover:bg-slate-50 dark:hover:bg-gray-700'; ?>" <?php echo $n['status'] === 'nou' ? 'aria-label="Notificare necitită"' : ''; ?>>
                                 <td class="px-4 py-3 text-sm <?php echo $n['status'] === 'nou' ? 'text-slate-800 dark:text-gray-100 font-medium' : 'text-slate-600 dark:text-gray-400'; ?>"><?php echo (int)$n['id']; ?></td>
-                                <td class="px-4 py-3 text-left">
-                                    <a href="/notificari/view?id=<?php echo (int)$n['id']; ?>" class="<?php echo $n['status'] === 'nou' ? 'text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 font-bold' : 'text-amber-600 dark:text-amber-400 hover:underline font-medium'; ?> hover:underline"><?php echo htmlspecialchars($n['titlu']); ?></a>
+                                <td class="px-4 py-3 text-left align-middle">
+                                    <a href="/notificari/view?id=<?php echo (int)$n['id']; ?>" class="block text-left <?php echo $n['status'] === 'nou' ? 'text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 font-bold' : 'text-amber-600 dark:text-amber-400 hover:underline font-medium'; ?> hover:underline"><?php echo htmlspecialchars($n['titlu']); ?></a>
                                 </td>
                                 <td class="px-4 py-3 text-sm <?php echo $n['status'] === 'nou' ? 'text-slate-800 dark:text-gray-100 font-medium' : 'text-slate-700 dark:text-gray-300'; ?>"><?php echo htmlspecialchars($n['importanta']); ?></td>
                                 <td class="px-4 py-3">
