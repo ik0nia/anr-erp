@@ -16,6 +16,29 @@ function registratura_task_deschis_flag(array $data): int {
 }
 
 /**
+ * Normalizeaza data documentului in format SQL (Y-m-d).
+ * Accepta doar DD.MM.YYYY sau Y-m-d.
+ */
+function registratura_normalize_data_document(?string $value): ?string {
+    $value = trim((string)$value);
+    if ($value === '') {
+        return null;
+    }
+
+    if (preg_match('/^\d{2}\.\d{2}\.\d{4}$/', $value) === 1) {
+        $dt = DateTime::createFromFormat('d.m.Y', $value);
+        return ($dt && $dt->format('d.m.Y') === $value) ? $dt->format('Y-m-d') : null;
+    }
+
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+        $dt = DateTime::createFromFormat('Y-m-d', $value);
+        return ($dt && $dt->format('Y-m-d') === $value) ? $value : null;
+    }
+
+    return null;
+}
+
+/**
  * Lista inregistrari cu paginare.
  *
  * @return array ['inregistrari'=>[], 'total'=>int, 'total_pages'=>int]
@@ -62,7 +85,11 @@ function registratura_create(PDO $pdo, array $data, string $utilizator = 'Sistem
         ? $tip_act_input
         : 'Înregistrare document';
     $nr_document = trim($data['nr_document'] ?? '') ?: null;
-    $data_document = trim($data['data_document'] ?? '') ?: null;
+    $data_document_raw = trim($data['data_document'] ?? '');
+    $data_document = registratura_normalize_data_document($data_document_raw);
+    if ($data_document_raw !== '' && $data_document === null) {
+        return ['success' => false, 'id' => null, 'nr_inregistrare' => null, 'error' => 'Data document trebuie completată în format DD.MM.YYYY.'];
+    }
     $provine_din = trim($data['provine_din'] ?? '') ?: null;
     $continut_document = trim($data['continut_document'] ?? '') ?: null;
     $destinatar_document = trim($data['destinatar_document'] ?? '') ?: null;
@@ -126,7 +153,11 @@ function registratura_update(PDO $pdo, int $id, array $data, string $utilizator 
     if (empty($data_str)) return ['success' => false, 'error' => 'Data este obligatorie.'];
 
     $nr_document = trim($data['nr_document'] ?? '') ?: null;
-    $data_document = trim($data['data_document'] ?? '') ?: null;
+    $data_document_raw = trim($data['data_document'] ?? '');
+    $data_document = registratura_normalize_data_document($data_document_raw);
+    if ($data_document_raw !== '' && $data_document === null) {
+        return ['success' => false, 'error' => 'Data document trebuie completată în format DD.MM.YYYY.'];
+    }
     $provine_din = trim($data['provine_din'] ?? '') ?: null;
     $continut_document = trim($data['continut_document'] ?? '') ?: null;
     $destinatar_document = trim($data['destinatar_document'] ?? '') ?: null;

@@ -11,14 +11,14 @@
         <a href="<?php echo htmlspecialchars($redirect_url); ?>" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded" aria-label="Înapoi">← Înapoi</a>
     </header>
 
-    <div class="p-6 overflow-y-auto flex-1 max-w-2xl">
+    <div class="p-6 overflow-y-auto flex-1">
         <?php if (!empty($eroare)): ?>
-        <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border-l-4 border-red-600 text-red-800 dark:text-red-200 rounded-r" role="alert">
+        <div class="mb-4 p-4 max-w-2xl mx-auto bg-red-100 dark:bg-red-900/30 border-l-4 border-red-600 text-red-800 dark:text-red-200 rounded-r" role="alert">
             <?php echo htmlspecialchars($eroare); ?>
         </div>
         <?php endif; ?>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
+        <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
             <form method="post" action="/registratura/adauga?redirect=<?php echo htmlspecialchars($redirect_param); ?>" id="form-registratura">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_registratura" value="1">
@@ -49,8 +49,13 @@
                         </div>
                         <div>
                             <label for="reg-data-document" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data document</label>
-                            <input type="date" id="reg-data-document" name="data_document" value="<?php echo htmlspecialchars($_POST['data_document'] ?? ''); ?>"
-                                   class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                            <input type="text" id="reg-data-document" name="data_document" value="<?php echo htmlspecialchars($_POST['data_document'] ?? ''); ?>"
+                                   class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                                   placeholder="Ex: 31.03.2026"
+                                   inputmode="numeric"
+                                   pattern="\d{2}\.\d{2}\.\d{4}"
+                                   aria-describedby="reg-data-document-help">
+                            <p id="reg-data-document-help" class="mt-1 text-xs text-slate-600 dark:text-gray-400">Format obligatoriu: DD.MM.YYYY</p>
                         </div>
                     </div>
                     <div>
@@ -85,7 +90,7 @@
                     </div>
                 </div>
                 <div class="mt-6 flex gap-3">
-                    <a href="<?php echo htmlspecialchars($redirect_url); ?>" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Anulează">Anulare</a>
+                    <a href="<?php echo htmlspecialchars($redirect_url); ?>" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Renunță">Renunță</a>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Salvează înregistrarea">Salvează</button>
                 </div>
             </form>
