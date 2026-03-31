@@ -19,6 +19,26 @@ if (!defined('INCASARI_MOD_NUMERAR')) {
     define('INCASARI_MOD_MANDAT_POSTAL', 'mandat_postal');
 }
 
+/**
+ * Verifică dacă o coloană există în tabela contacte (cache per-request).
+ */
+function incasari_contacte_has_column($pdo, $column) {
+    static $cache = [];
+    $column = trim((string)$column);
+    if ($column === '') return false;
+    if (array_key_exists($column, $cache)) {
+        return $cache[$column];
+    }
+    try {
+        $stmt = $pdo->prepare('SHOW COLUMNS FROM contacte LIKE ?');
+        $stmt->execute([$column]);
+        $cache[$column] = (bool)$stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $cache[$column] = false;
+    }
+    return $cache[$column];
+}
+
 function incasari_ensure_tables($pdo) {
     // No-op: schema is managed by install/schema/migration.php
     return;
@@ -193,8 +213,14 @@ function incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data
     $reprezentand = trim((string)$reprezentand) ?: null;
     $seria = null;
     $nr_chitanta = null;
-    // Generate receipt series/number for cash and old receipt payment methods
+    // Generate receipt series/number for:
+    // - Chitanta ERP (numerar)
+    // - Chitanta veche
+    // - cotizatie achitata prin mandat postal (cerinta business)
     $metode_cu_chitanta = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CHITANTA_VECHE];
+    if ($tip === INCASARI_TIP_COTIZATIE && $mod_plata === INCASARI_MOD_MANDAT_POSTAL) {
+        $metode_cu_chitanta[] = INCASARI_MOD_MANDAT_POSTAL;
+    }
     if (in_array($mod_plata, $metode_cu_chitanta)) {
         $tip_serie = incasari_tip_serie_pentru_tip($tip);
         $next = incasari_urmatorul_nr_serie($pdo, $tip_serie);
@@ -213,12 +239,22 @@ function incasari_get($pdo, $id) {
     incasari_ensure_tables($pdo);
     require_once __DIR__ . '/contacte_helper.php';
     ensure_contacte_table($pdo);
+    $select_domloc = 'm.domloc AS domloc';
+    $select_judet = 'm.judet_domiciliu AS judet_domiciliu';
+    if (incasari_contacte_has_column($pdo, 'domloc')) {
+        $select_domloc = 'COALESCE(m.domloc, c.domloc) AS domloc';
+    }
+    if (incasari_contacte_has_column($pdo, 'judet_domiciliu')) {
+        $select_judet = 'COALESCE(m.judet_domiciliu, c.judet_domiciliu) AS judet_domiciliu';
+    }
     $stmt = $pdo->prepare("
         SELECT i.*,
                COALESCE(m.nume, c.nume) AS nume,
                COALESCE(m.prenume, c.prenume) AS prenume,
                COALESCE(m.cnp, c.cnp) AS cnp,
-               m.domloc, m.judet_domiciliu
+               {$select_domloc},
+               {$select_judet},
+               c.notite AS contact_notite
         FROM incasari i
         LEFT JOIN membri m ON m.id = i.membru_id
         LEFT JOIN contacte c ON c.id = i.contact_id

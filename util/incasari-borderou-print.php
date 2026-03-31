@@ -30,6 +30,13 @@ if ($data_pana_la === '') {
 
 $where = [];
 $params = [];
+// Borderou Chitante: includem doar documentele "Chitanta ERP":
+// - numerar
+// - cotizatie prin mandat postal
+$where[] = '(i.mod_plata = ? OR (i.mod_plata = ? AND i.tip = ?))';
+$params[] = INCASARI_MOD_NUMERAR;
+$params[] = INCASARI_MOD_MANDAT_POSTAL;
+$params[] = INCASARI_TIP_COTIZATIE;
 if ($tip_filtru !== '' && in_array($tip_filtru, [INCASARI_TIP_COTIZATIE, INCASARI_TIP_DONATIE, INCASARI_TIP_TAXA_PARTICIPARE, INCASARI_TIP_ALTE], true)) {
     $where[] = 'i.tip = ?';
     $params[] = $tip_filtru;
@@ -107,7 +114,7 @@ if ($serie_filtru !== '') {
     $serie_selectata = 'Toate';
 }
 
-$titlu_borderou = 'Borderou Chitante, Seria ' . $serie_selectata . ', Perioada ' . date('d.m.Y', strtotime($data_de_la)) . ' - ' . date('d.m.Y', strtotime($data_pana_la));
+$titlu_borderou = 'Borderou Chitante ERP, Seria ' . $serie_selectata . ', Perioada ' . date('d.m.Y', strtotime($data_de_la)) . ' - ' . date('d.m.Y', strtotime($data_pana_la));
 ?>
 <!DOCTYPE html>
 <html lang="ro">

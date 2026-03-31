@@ -39,6 +39,25 @@ function contacte_ensure_table(PDO $pdo): void {
 }
 
 /**
+ * Verifica existenta unei coloane in tabela contacte (cache per-request).
+ */
+function contacte_table_has_column(PDO $pdo, string $column): bool {
+    static $cache = [];
+    if (array_key_exists($column, $cache)) {
+        return $cache[$column];
+    }
+    try {
+        $stmt = $pdo->prepare('SHOW COLUMNS FROM contacte LIKE ?');
+        $stmt->execute([$column]);
+        $cache[$column] = (bool)$stmt->fetch(PDO::FETCH_ASSOC);
+        return $cache[$column];
+    } catch (PDOException $e) {
+        $cache[$column] = false;
+        return false;
+    }
+}
+
+/**
  * Lista contacte cu filtrare, cautare si paginare.
  *
  * @return array ['contacte'=>[], 'total'=>int, 'total_pages'=>int, 'counts'=>[]]
@@ -239,7 +258,7 @@ function contacte_whatsapp(string $telefon): ?string {
 /**
  * Creeaza un contact donator (tip Donator). Din CNP se extrage data nasterii.
  */
-function contacte_creeaza_donator(PDO $pdo, string $nume, ?string $prenume = null, ?string $cnp = null, ?string $telefon = null, ?string $email = null): ?int {
+function contacte_creeaza_donator(PDO $pdo, string $nume, ?string $prenume = null, ?string $cnp = null, ?string $telefon = null, ?string $email = null, ?string $domloc = null, ?string $judet_domiciliu = null): ?int {
     contacte_ensure_table($pdo);
     $nume = trim($nume);
     if ($nume === '') return null;
@@ -262,15 +281,43 @@ function contacte_creeaza_donator(PDO $pdo, string $nume, ?string $prenume = nul
         }
     }
 
-    $stmt = $pdo->prepare("INSERT INTO contacte (nume, prenume, cnp, tip_contact, telefon, email, data_nasterii) VALUES (?, ?, ?, 'Donator', ?, ?, ?)");
-    $stmt->execute([
+    $has_domloc = contacte_table_has_column($pdo, 'domloc');
+    $has_judet = contacte_table_has_column($pdo, 'judet_domiciliu');
+    $has_notite = contacte_table_has_column($pdo, 'notite');
+
+    $coloane = ['nume', 'prenume', 'cnp', 'tip_contact', 'telefon', 'email', 'data_nasterii'];
+    $params = [
         $nume,
         $prenume ? trim($prenume) : null,
         $cnp ? trim($cnp) : null,
+        'Donator',
         $telefon ? trim($telefon) : null,
         $email ? trim($email) : null,
         $data_nasterii,
-    ]);
+    ];
+
+    if ($has_domloc) {
+        $coloane[] = 'domloc';
+        $params[] = $domloc ? trim($domloc) : null;
+    }
+    if ($has_judet) {
+        $coloane[] = 'judet_domiciliu';
+        $params[] = $judet_domiciliu ? trim($judet_domiciliu) : null;
+    }
+    if ((!$has_domloc || !$has_judet) && $has_notite) {
+        $fallback_note = [];
+        if (!empty($domloc)) $fallback_note[] = 'Localitate: ' . trim($domloc);
+        if (!empty($judet_domiciliu)) $fallback_note[] = 'Judet: ' . trim($judet_domiciliu);
+        if (!empty($fallback_note)) {
+            $coloane[] = 'notite';
+            $params[] = implode(', ', $fallback_note);
+        }
+    }
+
+    $placeholders = implode(', ', array_fill(0, count($coloane), '?'));
+    $sql = 'INSERT INTO contacte (' . implode(', ', $coloane) . ') VALUES (' . $placeholders . ')';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     return (int)$pdo->lastInsertId();
 }
 

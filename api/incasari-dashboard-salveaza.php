@@ -42,16 +42,23 @@ if ($tip_form === 'donatie') {
     $cnp = trim($_POST['cnp_donator'] ?? '') ?: null;
     $telefon = trim($_POST['telefon_donator'] ?? '') ?: null;
     $email = trim($_POST['email_donator'] ?? '') ?: null;
+    $localitate = trim($_POST['localitate_donator'] ?? '') ?: null;
+    $judet = trim($_POST['judet_donator'] ?? '') ?: null;
     $suma = (float)str_replace(',', '.', $_POST['valoare'] ?? 0);
 
-    // La numerar, numele și prenumele donatorului sunt obligatorii
-    if ($mod_plata === INCASARI_MOD_NUMERAR) {
+    // Pentru metodele cu identificare directă pe chitanță, numele și prenumele sunt obligatorii.
+    $moduri_cu_date_personale_obligatorii = [
+        INCASARI_MOD_NUMERAR,
+        INCASARI_MOD_CHITANTA_VECHE,
+        INCASARI_MOD_MANDAT_POSTAL,
+    ];
+    if (in_array($mod_plata, $moduri_cu_date_personale_obligatorii, true)) {
         if ($nume === '') {
-            echo json_encode(['ok' => false, 'eroare' => 'Numele donatorului este obligatoriu la plată numerar.']);
+            echo json_encode(['ok' => false, 'eroare' => 'Numele donatorului este obligatoriu pentru modul de plată selectat.']);
             exit;
         }
         if ($prenume === '') {
-            echo json_encode(['ok' => false, 'eroare' => 'Prenumele donatorului este obligatoriu la plată numerar.']);
+            echo json_encode(['ok' => false, 'eroare' => 'Prenumele donatorului este obligatoriu pentru modul de plată selectat.']);
             exit;
         }
     }
@@ -67,7 +74,7 @@ if ($tip_form === 'donatie') {
 
     $reprezentand = $reprezentand ?: 'Donație';
 
-    $contact_id = contacte_creare_donator($pdo, $nume, $prenume ?: null, $cnp, $telefon, $email);
+    $contact_id = contacte_creare_donator($pdo, $nume, $prenume ?: null, $cnp, $telefon, $email, $localitate, $judet);
     if (!$contact_id) {
         echo json_encode(['ok' => false, 'eroare' => 'Eroare la crearea contactului donator.']);
         exit;

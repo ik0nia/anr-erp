@@ -24,7 +24,7 @@
             </a>
             <a href="/util/incasari-borderou-print.php?<?php echo htmlspecialchars(http_build_query(['tip' => $tip_filtru, 'serie' => $serie_filtru, 'data_de_la' => $data_de_la, 'data_pana_la' => $data_pana_la, 'q' => $cautare, 'per_page' => $per_page, 'page' => $page])); ?>" target="_blank" rel="noopener noreferrer"
                class="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg focus:ring-2 focus:ring-amber-500"
-               aria-label="Tipărește borderoul de chitanțe pentru tabelul afișat">
+               aria-label="Tipărește borderoul de chitanțe ERP pentru filtrele curente">
                 <i data-lucide="printer" class="w-4 h-4" aria-hidden="true"></i>
                 Print
             </a>
@@ -50,7 +50,7 @@
                 </select>
             </div>
             <div>
-                <label for="serie" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Serie chitanță</label>
+                <label for="serie" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Serie chitanță ERP</label>
                 <select id="serie" name="serie" class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white text-sm">
                     <option value="">Toate seriile</option>
                     <?php foreach ($serie_options as $serie_opt): ?>
@@ -257,6 +257,7 @@
 (function(){
     var dialog = document.getElementById('modal-edit-incasare');
     var form = document.getElementById('form-edit-incasare');
+    var csrfTokenIncasari = "<?php echo htmlspecialchars(function_exists('csrf_token') ? csrf_token() : ''); ?>";
 
     // Edit
     document.addEventListener('click', function(e){
@@ -303,15 +304,32 @@
         var id = btn.getAttribute('data-id');
         var info = btn.getAttribute('data-info');
         if (!confirm('Sigur doriți să ștergeți încasarea?\n\n' + info + '\n\nNumerotarea chitanțelor va fi recalculată.')) return;
+        if (!id) {
+            alert('ID încasare invalid.');
+            return;
+        }
 
         var fd = new FormData();
         fd.append('id', id);
-        // Get CSRF token
-        var csrfInput = document.querySelector('#form-edit-incasare input[name="_csrf_token"]');
-        if (csrfInput) fd.append('_csrf_token', csrfInput.value);
+        if (csrfTokenIncasari) {
+            fd.append('_csrf_token', csrfTokenIncasari);
+        } else {
+            // Fallback la tokenul din formularul de editare (dacă există în DOM).
+            var csrfInput = document.querySelector('#form-edit-incasare input[name="_csrf_token"]');
+            if (csrfInput && csrfInput.value) fd.append('_csrf_token', csrfInput.value);
+        }
 
         fetch('/api/incasari-sterge', { method: 'POST', body: fd, credentials: 'same-origin' })
-            .then(function(r){ return r.json(); })
+            .then(function(r){
+                return r.text().then(function(text){
+                    if (!r.ok) {
+                        throw new Error(text || ('HTTP ' + r.status));
+                    }
+                    try { return JSON.parse(text); } catch (err) {
+                        throw new Error('Răspuns invalid de la server.');
+                    }
+                });
+            })
             .then(function(data){
                 if (data.ok) {
                     var row = document.getElementById('row-inc-' + id);
@@ -321,7 +339,7 @@
                     alert(data.eroare || 'Eroare la ștergere.');
                 }
             })
-            .catch(function(){ alert('Eroare de rețea.'); });
+            .catch(function(err){ alert((err && err.message) ? err.message : 'Eroare de rețea.'); });
     });
 })();
 </script>
