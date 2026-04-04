@@ -268,8 +268,7 @@ function fundraising_f230_get_settings(PDO $pdo): array
     $template_map = fundraising_f230_get_template_map($pdo);
     $template_page_count = 0;
     if ($template_abs !== '' && is_file($template_abs)) {
-        $streams = documente_pdf_extract_page_streams($template_abs);
-        $template_page_count = max(1, count((array)$streams));
+        $template_page_count = fundraising_f230_get_template_pdf_page_count($template_abs);
     }
     $template_uploaded_at_raw = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE_UPLOADED_AT) ?? ''));
     if ($template_uploaded_at_raw === '' && $template_abs !== '' && is_file($template_abs)) {
@@ -878,8 +877,39 @@ function fundraising_f230_get_template_pdf_page_count(string $template_abs): int
     if (!is_file($template_abs)) {
         return 0;
     }
-    $streams = documente_pdf_extract_page_streams($template_abs);
-    return max(0, count((array)$streams));
+
+    // 1) Încearcă metoda FPDI (fiabilă pentru majoritatea PDF-urilor).
+    try {
+        $autoload = APP_ROOT . '/vendor/autoload.php';
+        if (is_file($autoload) && !class_exists('setasign\\Fpdi\\Fpdi', false)) {
+            require_once $autoload;
+        }
+        if (class_exists('setasign\\Fpdi\\Fpdi')) {
+            $pdf = new \setasign\Fpdi\Fpdi();
+            $count = (int)$pdf->setSourceFile($template_abs);
+            if ($count > 0) {
+                return $count;
+            }
+        }
+    } catch (Throwable $e) {
+        // Fallback la metodă tolerantă mai jos.
+    }
+
+    // 2) Fallback tolerant: numără markerii /Type /Page din binarul PDF.
+    try {
+        $bin = @file_get_contents($template_abs);
+        if ($bin === false || $bin === '') {
+            return 0;
+        }
+        $matches = @preg_match_all('/\/Type\s*\/Page\b/', (string)$bin, $m);
+        if (is_int($matches) && $matches > 0) {
+            return $matches;
+        }
+    } catch (Throwable $e) {
+        return 0;
+    }
+
+    return 0;
 }
 
 /**

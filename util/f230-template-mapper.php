@@ -22,7 +22,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_mapare_templ
     }
 }
 
-$setari_modul = fundraising_f230_get_settings($pdo);
+try {
+    $setari_modul = fundraising_f230_get_settings($pdo);
+} catch (Throwable $e) {
+    $setari_modul = [
+        'template_exists' => false,
+        'template_page_count' => 1,
+        'template_sha256' => '',
+        'template_preview_url' => '/util/f230-template-preview.php',
+        'template_map_defaults_by_tag' => [],
+    ];
+    $eroare = 'Mapper-ul nu a putut încărca setările template-ului. Reîncearcă după un upload nou.';
+}
 $taguri_f230 = fundraising_f230_taguri_display();
 $template_exists = !empty($setari_modul['template_exists']);
 $template_page_count = (int)($setari_modul['template_page_count'] ?? 1);
