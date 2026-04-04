@@ -510,6 +510,63 @@ function fundraising_f230_validate_uploaded_template_pdf(string $abs_path): ?str
 }
 
 /**
+ * Procesează upload-ul unui template PDF și îl setează ca activ.
+ * Resetează maparea existentă deoarece coordonatele vechi nu mai sunt valide.
+ */
+function fundraising_f230_upload_template_file(PDO $pdo, array $files): array
+{
+    $fisier = $files['template_pdf_230'] ?? null;
+    if (!is_array($fisier) || (int)($fisier['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return ['success' => false, 'error' => 'Selectează un fișier template PDF înainte de salvare.'];
+    }
+    if ((int)($fisier['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'Eroare la încărcarea fișierului template PDF.'];
+    }
+
+    $ext = strtolower((string)pathinfo((string)($fisier['name'] ?? ''), PATHINFO_EXTENSION));
+    if ($ext !== 'pdf') {
+        return ['success' => false, 'error' => 'Template-ul trebuie să fie fișier PDF.'];
+    }
+    if ((int)($fisier['size'] ?? 0) > 20 * 1024 * 1024) {
+        return ['success' => false, 'error' => 'Template-ul PDF depășește 20 MB.'];
+    }
+
+    $upload_dir = APP_ROOT . '/uploads/fundraising/';
+    if (!is_dir($upload_dir)) {
+        @mkdir($upload_dir, 0755, true);
+    }
+
+    $filename = 'template-230-' . date('Ymd-His') . '-' . substr(md5((string)uniqid('', true)), 0, 10) . '.pdf';
+    $dest = $upload_dir . $filename;
+    if (!@move_uploaded_file((string)$fisier['tmp_name'], $dest)) {
+        return ['success' => false, 'error' => 'Nu s-a putut salva template-ul PDF pe server.'];
+    }
+
+    $template_err = fundraising_f230_validate_uploaded_template_pdf($dest);
+    if ($template_err !== null) {
+        @unlink($dest);
+        return ['success' => false, 'error' => $template_err];
+    }
+
+    $old_rel = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE) ?? ''));
+    $new_rel = 'uploads/fundraising/' . $filename;
+    fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, $new_rel);
+    fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_MAPPING, '');
+
+    if ($old_rel !== '') {
+        $old_abs = fundraising_f230_abs_path($old_rel);
+        if (is_file($old_abs) && $old_abs !== $dest) {
+            @unlink($old_abs);
+        }
+    }
+
+    return [
+        'success' => true,
+        'template_pages' => fundraising_f230_get_template_pdf_page_count($dest),
+    ];
+}
+
+/**
  * Curățare HTML minimă pentru mesajul configurabil din TinyMCE.
  */
 function fundraising_f230_sanitize_confirm_html(string $html): string
@@ -531,69 +588,26 @@ function fundraising_f230_sanitize_confirm_html(string $html): string
 function fundraising_f230_save_settings(PDO $pdo, array $post, array $files): array
 {
     try {
-        $template_uploaded = false;
-        $template_pages = 0;
         $confirm_html = fundraising_f230_sanitize_confirm_html((string)($post['mesaj_confirmare_html'] ?? ''));
         if ($confirm_html === '') {
             return ['success' => false, 'error' => 'Mesajul de confirmare nu poate fi gol.'];
         }
         fundraising_setare_set($pdo, FUNDRAISING_SETARE_CONFIRM, $confirm_html);
 
+        $upload_res = ['success' => true, 'template_pages' => 0];
         $fisier = $files['template_pdf_230'] ?? null;
         if (is_array($fisier) && (int)($fisier['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-            if ((int)($fisier['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-                return ['success' => false, 'error' => 'Eroare la încărcarea fișierului template PDF.'];
+            $upload_res = fundraising_f230_upload_template_file($pdo, $files);
+            if (empty($upload_res['success'])) {
+                return ['success' => false, 'error' => (string)($upload_res['error'] ?? 'Template-ul PDF nu a putut fi salvat.')];
             }
-
-            $ext = strtolower((string)pathinfo((string)($fisier['name'] ?? ''), PATHINFO_EXTENSION));
-            if ($ext !== 'pdf') {
-                return ['success' => false, 'error' => 'Template-ul trebuie să fie fișier PDF.'];
-            }
-            if ((int)($fisier['size'] ?? 0) > 20 * 1024 * 1024) {
-                return ['success' => false, 'error' => 'Template-ul PDF depășește 20 MB.'];
-            }
-
-            $upload_dir = APP_ROOT . '/uploads/fundraising/';
-            if (!is_dir($upload_dir)) {
-                @mkdir($upload_dir, 0755, true);
-            }
-            $filename = 'template-230-' . date('Ymd-His') . '-' . substr(md5((string)uniqid('', true)), 0, 10) . '.pdf';
-            $dest = $upload_dir . $filename;
-            if (!@move_uploaded_file((string)$fisier['tmp_name'], $dest)) {
-                return ['success' => false, 'error' => 'Nu s-a putut salva template-ul PDF pe server.'];
-            }
-
-            $template_err = fundraising_f230_validate_uploaded_template_pdf($dest);
-            if ($template_err !== null) {
-                @unlink($dest);
-                return [
-                    'success' => false,
-                    'error' => $template_err,
-                ];
-            }
-
-            $old_rel = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE) ?? ''));
-            $new_rel = 'uploads/fundraising/' . $filename;
-            fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, $new_rel);
-            // Template nou => maparea anterioară devine invalidă.
-            fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_MAPPING, '');
-
-            if ($old_rel !== '') {
-                $old_abs = fundraising_f230_abs_path($old_rel);
-                if (is_file($old_abs) && $old_abs !== $dest) {
-                    @unlink($old_abs);
-                }
-            }
-
-            $template_uploaded = true;
-            $template_pages = fundraising_f230_get_template_pdf_page_count($dest);
         }
 
         return [
             'success' => true,
             'error' => null,
-            'template_uploaded' => $template_uploaded,
-            'template_pages' => $template_pages,
+            'template_uploaded' => !empty($upload_res['template_pages']),
+            'template_pages' => (int)($upload_res['template_pages'] ?? 0),
         ];
     } catch (Throwable $e) {
         return ['success' => false, 'error' => 'Eroare la salvarea setărilor: ' . $e->getMessage()];
