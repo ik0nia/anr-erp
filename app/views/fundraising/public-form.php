@@ -26,11 +26,15 @@
             border: 3px solid #000 !important;
             background-color: #fff !important;
         }
+
+        #public-form-card {
+            background-color: #bfbfbf;
+        }
     </style>
 </head>
 <body class="text-black min-h-screen">
 <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8" role="main">
-    <section class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
+    <section id="public-form-card" class="rounded-xl shadow border border-slate-200 overflow-hidden">
         <header class="p-6 sm:p-8 border-b border-slate-200">
             <div class="flex items-center justify-center">
                 <a href="https://anrbihor.ro/"
