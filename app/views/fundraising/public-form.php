@@ -13,17 +13,17 @@
 
         #form-public-230 input[type="text"],
         #form-public-230 input[type="email"] {
-            border: 3px solid #000 !important;
+            border: 2px solid #000 !important;
             background-color: #fff !important;
             color: #000 !important;
         }
 
         #form-public-230 fieldset {
-            border: 3px solid #000 !important;
+            border: 2px solid #000 !important;
         }
 
         #signature-container-public {
-            border: 3px solid #000 !important;
+            border: 2px solid #000 !important;
             background-color: #fff !important;
         }
 
@@ -262,7 +262,7 @@
         var ratio = Math.max(window.devicePixelRatio || 1, 1);
         var drawing = false;
         var hasStroke = false;
-        var color = '#0000FF';
+        var color = '#003399';
 
         function resizeCanvas() {
             var cssWidth = canvas.clientWidth || 600;
