@@ -12,9 +12,15 @@
     <section class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
         <header class="p-6 sm:p-8 border-b border-slate-200">
             <div class="flex items-center justify-center">
-                <img src="<?php echo htmlspecialchars(defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : ''); ?>"
-                     alt="Logo <?php echo htmlspecialchars(get_platform_name()); ?>"
-                     class="h-16 sm:h-20 w-auto object-contain">
+                <a href="https://anrbihor.ro/"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="inline-flex items-center rounded focus:outline-none focus:ring-2 focus:ring-amber-500"
+                   aria-label="Deschide site-ul Asociatia Nevazatorilor Bihor">
+                    <img src="<?php echo htmlspecialchars(defined('PLATFORM_LOGO_URL') ? PLATFORM_LOGO_URL : ''); ?>"
+                         alt="Logo <?php echo htmlspecialchars(get_platform_name()); ?>"
+                         class="h-16 sm:h-20 w-auto object-contain">
+                </a>
             </div>
             <h1 class="mt-4 text-2xl font-bold text-center">Formular 230</h1>
             <p class="mt-2 text-sm text-slate-600 text-center">
@@ -160,6 +166,18 @@
                 </button>
             </div>
         </div>
+        <footer class="px-6 sm:px-8 py-4 border-t border-slate-200 bg-slate-50">
+            <div class="flex justify-center">
+                <a href="https://anrbihor.ro/"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg font-medium focus:ring-2 focus:ring-slate-500"
+                   aria-label="Inapoi la site-ul Asociatia Nevazatorilor Bihor">
+                    <i data-lucide="arrow-left" class="w-4 h-4" aria-hidden="true"></i>
+                    Inapoi la site
+                </a>
+            </div>
+        </footer>
     </section>
 </main>
 
