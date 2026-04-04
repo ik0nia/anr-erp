@@ -757,6 +757,62 @@ function fundraising_f230_platform_email(PDO $pdo): string
 }
 
 /**
+ * Returnează lista adreselor de administrare la care trimitem notificarea.
+ * Prioritate:
+ * 1) email_asociatie
+ * 2) from_email (dacă diferă)
+ * 3) utilizatori activi care au primeste_notificari_email=1
+ */
+function fundraising_f230_platform_email_targets(PDO $pdo): array
+{
+    $targets = [];
+    $add = static function (string $email) use (&$targets): void {
+        $email = trim($email);
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        $key = strtolower($email);
+        if (!isset($targets[$key])) {
+            $targets[$key] = $email;
+        }
+    };
+
+    $add((string)(fundraising_setare_get($pdo, 'email_asociatie') ?? ''));
+
+    $settings = mailer_get_settings($pdo);
+    $add((string)($settings['from_email'] ?? ''));
+
+    try {
+        $stmt = $pdo->query("SELECT email FROM utilizatori WHERE activ = 1 AND primeste_notificari_email = 1");
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        foreach ($rows as $row) {
+            $add((string)($row['email'] ?? ''));
+        }
+    } catch (Throwable $e) {
+        // Nu blocăm fluxul dacă tabela utilizatori nu este disponibilă.
+    }
+
+    return array_values($targets);
+}
+
+/**
+ * Returnează un mesaj explicit de eroare dacă lipsește configurarea minimă email.
+ */
+function fundraising_f230_validate_email_config(PDO $pdo): ?string
+{
+    $targets = fundraising_f230_platform_email_targets($pdo);
+    if (empty($targets)) {
+        return 'Nu este configurată nicio adresă validă pentru administrator (Setări > Generare documente: email_asociatie sau Setări > Email: from_email / utilizatori cu notificări email).';
+    }
+    $settings = mailer_get_settings($pdo);
+    $from_email = trim((string)($settings['from_email'] ?? ''));
+    if ($from_email === '' || !filter_var($from_email, FILTER_VALIDATE_EMAIL)) {
+        return 'Nu este configurată o adresă validă de expeditor (Setări > Email: from_email).';
+    }
+    return null;
+}
+
+/**
  * Înlocuiește tagurile [230...] într-un șablon text/HTML.
  */
 function fundraising_f230_replace_tags(string $content, array $data): string
@@ -784,8 +840,8 @@ function fundraising_f230_submission_action_text(string $sursa): string
  */
 function fundraising_f230_send_admin_email(PDO $pdo, array $data, string $pdf_abs_path): bool
 {
-    $to = fundraising_f230_platform_email($pdo);
-    if ($to === '') {
+    $targets = fundraising_f230_platform_email_targets($pdo);
+    if (empty($targets)) {
         return false;
     }
 
@@ -798,7 +854,13 @@ function fundraising_f230_send_admin_email(PDO $pdo, array $data, string $pdf_ab
     $html = '<p>' . nl2br(htmlspecialchars($body, ENT_QUOTES, 'UTF-8')) . '</p>';
 
     // Păstrăm trimiterea documentului către administrator conform cerinței.
-    return sendEmailWithAttachment($pdo, $to, $subject, $html, $pdf_abs_path, basename($pdf_abs_path));
+    $ok_any = false;
+    foreach ($targets as $to) {
+        if (sendEmailWithAttachment($pdo, (string)$to, $subject, $html, $pdf_abs_path, basename($pdf_abs_path))) {
+            $ok_any = true;
+        }
+    }
+    return $ok_any;
 }
 
 /**
@@ -831,6 +893,10 @@ function fundraising_f230_send_confirmation_email(PDO $pdo, array $data): bool
 function fundraising_f230_dispatch_submission_emails(PDO $pdo, int $formular_id, bool $trimite_confirmare = true): array
 {
     $warnings = [];
+    $config_error = fundraising_f230_validate_email_config($pdo);
+    if ($config_error !== null) {
+        return ['warning' => $config_error];
+    }
     $formular = fundraising_f230_get_formular($pdo, $formular_id);
     if (!$formular) {
         return ['warning' => 'Formularul nu a fost găsit pentru notificări email.'];
