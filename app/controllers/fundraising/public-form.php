@@ -53,12 +53,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_formular_230_
             'sursa' => 'online',
             'ip' => (string)($_SERVER['REMOTE_ADDR'] ?? ''),
             'user_agent' => (string)($_SERVER['HTTP_USER_AGENT'] ?? ''),
+            'trimite_emailuri' => false,
+            'trimite_confirmare' => true,
         ]);
         if (!empty($result['success'])) {
+            $dispatch_warning = null;
+            if (function_exists('fastcgi_finish_request')) {
+                ignore_user_abort(true);
+            }
             $_SESSION['fundraising_public_flash'] = [
                 'succes' => 'Formularul a fost trimis cu succes. Vă mulțumim!',
-                'warning' => (string)($result['warning'] ?? ''),
+                'warning' => '',
             ];
+            session_write_close();
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+                $dispatch = fundraising_f230_dispatch_submission_emails($pdo, (int)$result['id'], !empty($result['trimite_confirmare']));
+                $dispatch_warning = (string)($dispatch['warning'] ?? '');
+            } else {
+                $dispatch = fundraising_f230_dispatch_submission_emails($pdo, (int)$result['id'], !empty($result['trimite_confirmare']));
+                $dispatch_warning = (string)($dispatch['warning'] ?? '');
+                if ($dispatch_warning !== '') {
+                    if (session_status() === PHP_SESSION_NONE) {
+                        session_start();
+                    }
+                    $_SESSION['fundraising_public_flash']['warning'] = $dispatch_warning;
+                }
+            }
             header('Location: /fundraising/formular-230?trimis=1');
             exit;
         }

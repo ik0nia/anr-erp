@@ -7,7 +7,7 @@
     <link href="/css/tailwind.css?v=<?php echo @filemtime(APP_ROOT . '/css/tailwind.css') ?: '1'; ?>" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.344.0"></script>
 </head>
-<body class="bg-slate-100 text-slate-900 min-h-screen">
+<body class="bg-gray-200 text-black min-h-screen">
 <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8" role="main">
     <section class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
         <header class="p-6 sm:p-8 border-b border-slate-200">
@@ -23,7 +23,7 @@
                 </a>
             </div>
             <h1 class="mt-4 text-2xl font-bold text-center">Formular 230</h1>
-            <p class="mt-2 text-sm text-slate-600 text-center">
+            <p class="mt-2 text-sm text-black text-center">
                 Completează formularul pentru redirecționarea a 3.5% către Asociația Nevăzătorilor Bihor.
             </p>
         </header>
@@ -55,96 +55,96 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-nume">Nume <span class="text-red-600">*</span></label>
-                        <input id="f230-nume" type="text" name="nume" required value="<?php echo htmlspecialchars((string)$valori['nume']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                        <input id="f230-nume" type="text" name="nume" required value="<?php echo htmlspecialchars((string)$valori['nume']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-initiala">Inițiala tatălui</label>
-                        <input id="f230-initiala" type="text" name="initiala_tatalui" maxlength="3" value="<?php echo htmlspecialchars((string)$valori['initiala_tatalui']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                        <input id="f230-initiala" type="text" name="initiala_tatalui" maxlength="3" value="<?php echo htmlspecialchars((string)$valori['initiala_tatalui']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-prenume">Prenume <span class="text-red-600">*</span></label>
-                        <input id="f230-prenume" type="text" name="prenume" required value="<?php echo htmlspecialchars((string)$valori['prenume']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                        <input id="f230-prenume" type="text" name="prenume" required value="<?php echo htmlspecialchars((string)$valori['prenume']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-cnp">CNP <span class="text-red-600">*</span></label>
-                        <input id="f230-cnp" type="text" name="cnp" inputmode="numeric" pattern="[0-9]{13}" maxlength="13" required value="<?php echo htmlspecialchars((string)$valori['cnp']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                        <input id="f230-cnp" type="text" name="cnp" inputmode="numeric" pattern="[0-9]{13}" maxlength="13" required value="<?php echo htmlspecialchars((string)$valori['cnp']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-telefon">Telefon <span class="text-red-600">*</span></label>
-                        <input id="f230-telefon" type="text" name="telefon" required value="<?php echo htmlspecialchars((string)$valori['telefon']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                        <input id="f230-telefon" type="text" name="telefon" required value="<?php echo htmlspecialchars((string)$valori['telefon']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-email">Email <span class="text-red-600">*</span></label>
-                        <input id="f230-email" type="email" name="email" required value="<?php echo htmlspecialchars((string)$valori['email']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                        <input id="f230-email" type="email" name="email" required value="<?php echo htmlspecialchars((string)$valori['email']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                     </div>
                 </div>
 
-                <fieldset class="rounded-lg border border-slate-200 p-3">
+                <fieldset class="rounded-lg border border-black p-3">
                     <legend class="px-1 text-sm font-medium">Adresă</legend>
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-2">
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-localitate">Localitatea <span class="text-red-600">*</span></label>
-                            <input id="f230-localitate" type="text" name="localitate" required value="<?php echo htmlspecialchars((string)$valori['localitate']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-localitate" type="text" name="localitate" required value="<?php echo htmlspecialchars((string)$valori['localitate']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-judet">Județ <span class="text-red-600">*</span></label>
-                            <input id="f230-judet" type="text" name="judet" required value="<?php echo htmlspecialchars((string)$valori['judet']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-judet" type="text" name="judet" required value="<?php echo htmlspecialchars((string)$valori['judet']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-cp">Cod poștal</label>
-                            <input id="f230-cp" type="text" name="cod_postal" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" value="<?php echo htmlspecialchars((string)$valori['cod_postal']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-cp" type="text" name="cod_postal" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" value="<?php echo htmlspecialchars((string)$valori['cod_postal']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-strada">Strada <span class="text-red-600">*</span></label>
-                            <input id="f230-strada" type="text" name="strada" required value="<?php echo htmlspecialchars((string)$valori['strada']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-strada" type="text" name="strada" required value="<?php echo htmlspecialchars((string)$valori['strada']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-numar">Număr <span class="text-red-600">*</span></label>
-                            <input id="f230-numar" type="text" name="numar" required value="<?php echo htmlspecialchars((string)$valori['numar']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-numar" type="text" name="numar" required value="<?php echo htmlspecialchars((string)$valori['numar']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-bloc">Bloc</label>
-                            <input id="f230-bloc" type="text" name="bloc" maxlength="10" value="<?php echo htmlspecialchars((string)$valori['bloc']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-bloc" type="text" name="bloc" maxlength="10" value="<?php echo htmlspecialchars((string)$valori['bloc']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-scara">Scară</label>
-                            <input id="f230-scara" type="text" name="scara" maxlength="10" value="<?php echo htmlspecialchars((string)$valori['scara']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-scara" type="text" name="scara" maxlength="10" value="<?php echo htmlspecialchars((string)$valori['scara']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-etaj">Etaj</label>
-                            <input id="f230-etaj" type="text" name="etaj" maxlength="10" value="<?php echo htmlspecialchars((string)$valori['etaj']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-etaj" type="text" name="etaj" maxlength="10" value="<?php echo htmlspecialchars((string)$valori['etaj']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1" for="f230-apartament">Apartament</label>
-                            <input id="f230-apartament" type="text" name="apartament" maxlength="10" value="<?php echo htmlspecialchars((string)$valori['apartament']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                            <input id="f230-apartament" type="text" name="apartament" maxlength="10" value="<?php echo htmlspecialchars((string)$valori['apartament']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         </div>
                     </div>
                 </fieldset>
 
                 <div>
                     <label class="block text-sm font-medium mb-1">Semnătură <span class="text-red-600">*</span></label>
-                    <p class="text-xs text-slate-600 mb-2">Semnați cu mouse-ul sau cu degetul. Culoarea semnăturii este albastru închis, fundal transparent.</p>
-                    <div class="rounded-lg border border-slate-300 bg-white p-2">
+                    <p class="text-xs text-black mb-2">Semnați cu mouse-ul sau cu degetul. Culoarea semnăturii este albastru închis, fundal transparent.</p>
+                    <div class="rounded-lg border border-black bg-white p-2">
                         <canvas id="signature-pad-public" class="w-full rounded bg-white" style="height: 180px;" aria-label="Zonă semnătură formular 230"></canvas>
                     </div>
                     <div class="mt-2 flex gap-2">
-                        <button type="button" id="signature-clear-public" class="px-3 py-1.5 text-sm bg-slate-100 text-slate-800 rounded hover:bg-slate-200" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>Șterge semnătura</button>
+                        <button type="button" id="signature-clear-public" class="px-3 py-1.5 text-sm bg-gray-100 text-black rounded hover:bg-gray-200 border border-black" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>Șterge semnătura</button>
                     </div>
                     <input type="hidden" name="signature_data" id="signature-data-public" value="<?php echo htmlspecialchars((string)$valori['signature_data']); ?>">
                 </div>
 
                 <div>
                     <label class="inline-flex items-center gap-2 text-sm">
-                        <input type="checkbox" name="gdpr_acord" value="1" <?php echo !empty($valori['gdpr_acord']) ? 'checked' : ''; ?> class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                        <input type="checkbox" name="gdpr_acord" value="1" <?php echo !empty($valori['gdpr_acord']) ? 'checked' : ''; ?> class="w-4 h-4 text-amber-600 border-black rounded focus:ring-amber-500" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         Acord GDPR <span class="text-red-600">*</span>
                     </label>
                 </div>
 
                 <div class="pt-2 flex flex-wrap gap-3">
-                    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
+                    <button type="submit" id="btn-submit-public" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed" <?php echo empty($template_activ) ? 'disabled' : ''; ?>>
                         <i data-lucide="send" class="w-4 h-4" aria-hidden="true"></i>
                         Trimite formularul
                     </button>
@@ -237,7 +237,7 @@
         var ratio = Math.max(window.devicePixelRatio || 1, 1);
         var drawing = false;
         var hasStroke = false;
-        var color = '#0f2a63';
+        var color = '#0000FF';
 
         function resizeCanvas() {
             var cssWidth = canvas.clientWidth || 600;
@@ -317,6 +317,14 @@
                 if (!hidden.value) {
                     e.preventDefault();
                     alert('Semnătura este obligatorie.');
+                    return;
+                }
+                var submitBtn = document.getElementById('btn-submit-public');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.setAttribute('aria-busy', 'true');
+                    submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin" aria-hidden="true"></i> Se trimite...';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
                 }
             });
         }

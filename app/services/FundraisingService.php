@@ -267,6 +267,17 @@ function fundraising_f230_save_settings(PDO $pdo, array $post, array $files): ar
                 return ['success' => false, 'error' => 'Nu s-a putut salva template-ul PDF pe server.'];
             }
 
+            // Validăm și pre-cache-uim coordonatele tagurilor la upload,
+            // astfel submit-ul public să nu suporte costul primei scanări PDF.
+            $placements_check = fundraising_f230_get_template_placements($pdo, $dest);
+            if (empty($placements_check['success'])) {
+                @unlink($dest);
+                return [
+                    'success' => false,
+                    'error' => (string)($placements_check['error'] ?? 'Template PDF invalid pentru tagurile Formular 230.'),
+                ];
+            }
+
             $old_rel = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE) ?? ''));
             $new_rel = 'uploads/fundraising/' . $filename;
             fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, $new_rel);
@@ -484,6 +495,104 @@ function fundraising_f230_build_tag_values(array $data): array
 }
 
 /**
+ * Construiește cheia de cache pentru coordonatele tagurilor din template.
+ */
+function fundraising_f230_template_cache_key(string $template_abs): string
+{
+    $mtime = @filemtime($template_abs) ?: 0;
+    $size = @filesize($template_abs) ?: 0;
+    return sha1($template_abs . '|' . $mtime . '|' . $size);
+}
+
+/**
+ * Încarcă coordonatele tagurilor din cache sau le detectează și le salvează.
+ */
+function fundraising_f230_get_template_placements(PDO $pdo, string $template_abs): array
+{
+    $cache_setting_key = 'fundraising_f230_template_placements_cache';
+    $cache_key = fundraising_f230_template_cache_key($template_abs);
+
+    $cached_raw = fundraising_setare_get($pdo, $cache_setting_key);
+    if (is_string($cached_raw) && trim($cached_raw) !== '') {
+        $decoded = json_decode($cached_raw, true);
+        if (
+            is_array($decoded)
+            && (string)($decoded['cache_key'] ?? '') === $cache_key
+            && isset($decoded['placements_by_page'])
+            && is_array($decoded['placements_by_page'])
+        ) {
+            return [
+                'success' => true,
+                'placements_by_page' => $decoded['placements_by_page'],
+                'has_signature' => !empty($decoded['has_signature']),
+            ];
+        }
+    }
+
+    $streams = documente_pdf_extract_page_streams($template_abs);
+    if (empty($streams)) {
+        return ['success' => false, 'error' => 'Template-ul PDF nu poate fi citit (stream-uri indisponibile).'];
+    }
+
+    $scan_tags = [];
+    foreach (array_keys(fundraising_f230_taguri()) as $tag_name) {
+        $scan_tags[$tag_name] = '';
+    }
+
+    $placements_by_page = [];
+    $has_signature = false;
+    foreach ($streams as $idx => $stream) {
+        $placements = documente_pdf_detect_tag_positions($stream, $scan_tags, $idx + 1);
+        if (empty($placements)) {
+            continue;
+        }
+        $normalized = [];
+        foreach ($placements as $pl) {
+            $tag = (string)($pl['tag'] ?? '');
+            if ($tag === '') {
+                continue;
+            }
+            if ($tag === '230semnatura') {
+                $has_signature = true;
+            }
+            $normalized[] = [
+                'tag' => $tag,
+                'x_pt' => (float)($pl['x_pt'] ?? 0.0),
+                'y_pt' => (float)($pl['y_pt'] ?? 0.0),
+                'font_pt' => (float)($pl['font_pt'] ?? 10.0),
+                'tag_width_pt' => (float)($pl['tag_width_pt'] ?? 24.0),
+            ];
+        }
+        if (!empty($normalized)) {
+            $placements_by_page[(string)($idx + 1)] = $normalized;
+        }
+    }
+
+    if (empty($placements_by_page)) {
+        return ['success' => false, 'error' => 'Template-ul PDF nu conține taguri detectabile [230...].'];
+    }
+    if (!$has_signature) {
+        return ['success' => false, 'error' => 'Template-ul PDF nu conține tagul obligatoriu [230semnatura].'];
+    }
+
+    fundraising_setare_set(
+        $pdo,
+        $cache_setting_key,
+        (string)json_encode([
+            'cache_key' => $cache_key,
+            'has_signature' => $has_signature,
+            'placements_by_page' => $placements_by_page,
+        ], JSON_UNESCAPED_UNICODE)
+    );
+
+    return [
+        'success' => true,
+        'placements_by_page' => $placements_by_page,
+        'has_signature' => true,
+    ];
+}
+
+/**
  * Generează PDF completat pe baza template-ului configurat.
  */
 function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_abs_path, int $record_id): array
@@ -507,31 +616,11 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
     }
 
     $tag_values = fundraising_f230_build_tag_values($data);
-    $streams = documente_pdf_extract_page_streams($template_abs);
-    if (empty($streams)) {
-        return ['success' => false, 'error' => 'Template-ul PDF nu poate fi citit (stream-uri indisponibile).'];
+    $placements_result = fundraising_f230_get_template_placements($pdo, $template_abs);
+    if (empty($placements_result['success'])) {
+        return ['success' => false, 'error' => (string)($placements_result['error'] ?? 'Template-ul PDF nu poate fi procesat.')];
     }
-
-    $placements_by_page = [];
-    $found_signature_tag = false;
-    foreach ($streams as $idx => $stream) {
-        $placements = documente_pdf_detect_tag_positions($stream, $tag_values, $idx + 1);
-        if (!empty($placements)) {
-            $placements_by_page[$idx + 1] = $placements;
-            foreach ($placements as $pl) {
-                if (($pl['tag'] ?? '') === '230semnatura') {
-                    $found_signature_tag = true;
-                }
-            }
-        }
-    }
-
-    if (empty($placements_by_page)) {
-        return ['success' => false, 'error' => 'Template-ul PDF nu conține taguri detectabile [230...].'];
-    }
-    if (!$found_signature_tag) {
-        return ['success' => false, 'error' => 'Template-ul PDF nu conține tagul obligatoriu [230semnatura].'];
-    }
+    $placements_by_page = (array)($placements_result['placements_by_page'] ?? []);
 
     $storage = fundraising_f230_ensure_private_storage();
     $nume_part = fundraising_f230_filename_part((string)$data['nume'], 70);
@@ -559,7 +648,7 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
             $pdf->useTemplate($tpl);
 
             $page_height_mm = (float)($size['height'] ?? 297.0);
-            $placements = $placements_by_page[$page_no] ?? [];
+            $placements = $placements_by_page[(string)$page_no] ?? [];
             foreach ($placements as $pl) {
                 $tag = (string)($pl['tag'] ?? '');
                 $font_pt = max(7.0, min(14.0, (float)($pl['font_pt'] ?? 10.0)));
@@ -586,7 +675,7 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
                     continue;
                 }
 
-                $value = trim((string)($pl['value'] ?? ''));
+                $value = trim((string)($tag_values[$tag] ?? ''));
                 if ($value === '') {
                     continue;
                 }
@@ -649,6 +738,16 @@ function fundraising_f230_replace_tags(string $content, array $data): string
 }
 
 /**
+ * Returnează textul mesajului de submit în funcție de sursă.
+ */
+function fundraising_f230_submission_action_text(string $sursa): string
+{
+    return $sursa === 'manual'
+        ? 'a fost introdus manual în ERP.'
+        : 'a completat formularul 230 online.';
+}
+
+/**
  * Trimite notificarea obligatorie către emailul platformei.
  */
 function fundraising_f230_send_admin_email(PDO $pdo, array $data, string $pdf_abs_path): bool
@@ -659,12 +758,14 @@ function fundraising_f230_send_admin_email(PDO $pdo, array $data, string $pdf_ab
     }
 
     $subject = 'Formular 230 – ' . $data['nume'] . ' ' . $data['prenume'];
+    $sursa = (string)($data['sursa'] ?? 'online');
     $body = 'Formular 230 nou! ' . $data['nume'] . ' ' . $data['prenume']
         . ' din ' . $data['localitate'] . '/' . $data['judet']
-        . ' a completat formularul 230 online. Telefon ' . $data['telefon']
+        . ' ' . fundraising_f230_submission_action_text($sursa) . ' Telefon ' . $data['telefon']
         . ', email ' . $data['email'] . '. Formularul a fost incarcat in ERP.';
     $html = '<p>' . nl2br(htmlspecialchars($body, ENT_QUOTES, 'UTF-8')) . '</p>';
 
+    // Păstrăm trimiterea documentului către administrator conform cerinței.
     return sendEmailWithAttachment($pdo, $to, $subject, $html, $pdf_abs_path, basename($pdf_abs_path));
 }
 
@@ -684,8 +785,34 @@ function fundraising_f230_send_confirmation_email(PDO $pdo, array $data): bool
     }
     $subject = 'Confirmare Formular 230 – ' . $data['nume'] . ' ' . $data['prenume'];
     $html = fundraising_f230_replace_tags($template, $data);
+    $text = trim((string)html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    if ($text === '') {
+        $text = 'Confirmare Formular 230';
+    }
+    return sendAutomatedEmail($pdo, $to, $subject, $text);
+}
 
-    return sendEmailWithAttachment($pdo, $to, $subject, $html, null, null);
+/**
+ * Trimite emailurile de notificare pentru un formular salvat.
+ * Se poate apela sincron sau post-răspuns (fastcgi_finish_request).
+ */
+function fundraising_f230_dispatch_submission_emails(PDO $pdo, int $formular_id, bool $trimite_confirmare = true): array
+{
+    $warnings = [];
+    $formular = fundraising_f230_get_formular($pdo, $formular_id);
+    if (!$formular) {
+        return ['warning' => 'Formularul nu a fost găsit pentru notificări email.'];
+    }
+
+    $pdf_abs = fundraising_f230_get_pdf_abs_path($formular);
+    if (!fundraising_f230_send_admin_email($pdo, $formular, $pdf_abs)) {
+        $warnings[] = 'Emailul către administrator nu a putut fi trimis.';
+    }
+    if ($trimite_confirmare && !fundraising_f230_send_confirmation_email($pdo, $formular)) {
+        $warnings[] = 'Emailul de confirmare către completator nu a putut fi trimis.';
+    }
+
+    return ['warning' => !empty($warnings) ? implode(' ', $warnings) : null];
 }
 
 /**
@@ -699,6 +826,9 @@ function fundraising_f230_process_submission(PDO $pdo, array $post, array $opts 
     $trimite_confirmare = array_key_exists('trimite_confirmare', $opts)
         ? (bool)$opts['trimite_confirmare']
         : ($sursa === 'online');
+    $trimite_emailuri = array_key_exists('trimite_emailuri', $opts)
+        ? (bool)$opts['trimite_emailuri']
+        : true;
     $ip = fundraising_f230_text((string)($opts['ip'] ?? ''), 64);
     $ua = fundraising_f230_text((string)($opts['user_agent'] ?? ''), 255);
 
@@ -771,16 +901,17 @@ function fundraising_f230_process_submission(PDO $pdo, array $post, array $opts 
         return ['success' => false, 'error' => 'Formularul nu a putut fi salvat: ' . $e->getMessage()];
     }
 
-    if (!fundraising_f230_send_admin_email($pdo, $data, $pdf_abs)) {
-        $warnings[] = 'Emailul către administrator nu a putut fi trimis.';
-    }
-    if ($trimite_confirmare && !fundraising_f230_send_confirmation_email($pdo, $data)) {
-        $warnings[] = 'Emailul de confirmare către completator nu a putut fi trimis.';
+    if ($trimite_emailuri) {
+        $dispatch = fundraising_f230_dispatch_submission_emails($pdo, $record_id, $trimite_confirmare);
+        if (!empty($dispatch['warning'])) {
+            $warnings[] = (string)$dispatch['warning'];
+        }
     }
 
     return [
         'success' => true,
         'id' => $record_id,
+        'trimite_confirmare' => $trimite_confirmare,
         'warning' => !empty($warnings) ? implode(' ', $warnings) : null,
     ];
 }
