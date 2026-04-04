@@ -17,7 +17,7 @@ function auth_pagini_publice() {
         'reset-parola.php',
         'install-auth.php',
         'setare-admin.php',
-        'fundraising-formular-230-public.php',
+        'fundraising-formular-230.php',
     ];
 }
 

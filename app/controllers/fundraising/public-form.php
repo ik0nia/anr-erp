@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_formular_230_
                 'succes' => 'Formularul a fost trimis cu succes. Vă mulțumim!',
                 'warning' => (string)($result['warning'] ?? ''),
             ];
-            header('Location: /fundraising/formular-230-public?trimis=1');
+            header('Location: /fundraising/formular-230?trimis=1');
             exit;
         }
         $eroare = (string)($result['error'] ?? 'Formularul nu a putut fi trimis.');

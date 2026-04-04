@@ -42,7 +42,7 @@
                 </div>
             <?php endif; ?>
 
-            <form method="post" action="/fundraising/formular-230-public" class="space-y-4" id="form-public-230" <?php echo empty($template_activ) ? 'aria-disabled="true"' : ''; ?>>
+            <form method="post" action="/fundraising/formular-230" class="space-y-4" id="form-public-230" <?php echo empty($template_activ) ? 'aria-disabled="true"' : ''; ?>>
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="trimite_formular_230_public" value="1">
 

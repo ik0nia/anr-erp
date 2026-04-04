@@ -190,11 +190,11 @@ function fundraising_f230_ensure_schema(PDO $pdo): void
 function fundraising_f230_public_url(): string
 {
     if (defined('PLATFORM_BASE_URL') && trim((string)PLATFORM_BASE_URL) !== '') {
-        return rtrim((string)PLATFORM_BASE_URL, '/') . '/fundraising/formular-230-public';
+        return rtrim((string)PLATFORM_BASE_URL, '/') . '/fundraising/formular-230';
     }
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    return $scheme . '://' . $host . '/fundraising/formular-230-public';
+    return $scheme . '://' . $host . '/fundraising/formular-230';
 }
 
 /**
