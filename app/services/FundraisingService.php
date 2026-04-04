@@ -299,6 +299,27 @@ function fundraising_f230_text(?string $val, int $max = 255): string
 }
 
 /**
+ * Normalizează text pentru utilizare sigură în numele fișierelor.
+ */
+function fundraising_f230_filename_part(?string $val, int $max = 80): string
+{
+    $txt = fundraising_f230_text($val, $max);
+    if ($txt === '') {
+        return 'NECOMPLETAT';
+    }
+    $txt = strtr($txt, [
+        'ă' => 'a', 'â' => 'a', 'î' => 'i', 'ș' => 's', 'ş' => 's', 'ț' => 't', 'ţ' => 't',
+        'Ă' => 'A', 'Â' => 'A', 'Î' => 'I', 'Ș' => 'S', 'Ş' => 'S', 'Ț' => 'T', 'Ţ' => 'T',
+    ]);
+    $txt = preg_replace('/[^a-zA-Z0-9_-]+/', '_', $txt);
+    $txt = trim((string)$txt, '_');
+    if ($txt === '') {
+        return 'NECOMPLETAT';
+    }
+    return mb_substr($txt, 0, $max);
+}
+
+/**
  * Extrage datele formularului din POST (online sau manual).
  */
 function fundraising_f230_extract_data(array $post): array
@@ -513,12 +534,15 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
     }
 
     $storage = fundraising_f230_ensure_private_storage();
-    $safe_name = preg_replace('/[^a-z0-9_-]+/i', '-', strtolower((string)$data['nume'] . '-' . (string)$data['prenume']));
-    $safe_name = trim((string)$safe_name, '-');
-    if ($safe_name === '') {
-        $safe_name = 'formular';
+    $nume_part = fundraising_f230_filename_part((string)$data['nume'], 70);
+    $prenume_part = fundraising_f230_filename_part((string)$data['prenume'], 70);
+    $loc_part = fundraising_f230_filename_part((string)$data['localitate'], 70);
+    $pdf_filename = 'D230_' . $nume_part . '_' . $prenume_part . '_' . $loc_part . '.pdf';
+    $dupe_index = 1;
+    while (is_file($storage['base_dir'] . '/' . $pdf_filename)) {
+        $dupe_index++;
+        $pdf_filename = 'D230_' . $nume_part . '_' . $prenume_part . '_' . $loc_part . '_' . $dupe_index . '.pdf';
     }
-    $pdf_filename = 'formular-230-' . $record_id . '-' . $safe_name . '-' . date('Ymd-His') . '.pdf';
     $pdf_abs = $storage['base_dir'] . '/' . $pdf_filename;
 
     try {
