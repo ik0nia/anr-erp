@@ -18,6 +18,7 @@ require_once APP_ROOT . '/includes/mailer_functions.php';
 const FUNDRAISING_SETARE_TEMPLATE = 'fundraising_f230_template_pdf';
 const FUNDRAISING_SETARE_CONFIRM = 'fundraising_f230_mesaj_confirmare_html';
 const FUNDRAISING_SETARE_TEMPLATE_MAPPING = 'fundraising_f230_template_mapping_json';
+const FUNDRAISING_SETARE_TEMPLATE_UPLOADED_AT = 'fundraising_f230_template_uploaded_at';
 
 /**
  * Returnează lista de taguri suportate în template-ul PDF.
@@ -270,6 +271,22 @@ function fundraising_f230_get_settings(PDO $pdo): array
         $streams = documente_pdf_extract_page_streams($template_abs);
         $template_page_count = max(1, count((array)$streams));
     }
+    $template_uploaded_at_raw = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE_UPLOADED_AT) ?? ''));
+    if ($template_uploaded_at_raw === '' && $template_abs !== '' && is_file($template_abs)) {
+        $mtime = @filemtime($template_abs);
+        if (is_int($mtime) && $mtime > 0) {
+            $template_uploaded_at_raw = date('c', $mtime);
+        }
+    }
+    $template_uploaded_at_display = '';
+    if ($template_uploaded_at_raw !== '') {
+        try {
+            $dt = new DateTimeImmutable($template_uploaded_at_raw);
+            $template_uploaded_at_display = $dt->format('d.m.Y H:i:s');
+        } catch (Throwable $e) {
+            $template_uploaded_at_display = '';
+        }
+    }
 
     return [
         'template_rel' => $template_rel,
@@ -281,6 +298,8 @@ function fundraising_f230_get_settings(PDO $pdo): array
         'template_map_missing_tags' => (array)($template_map['missing_tags'] ?? []),
         'template_map_items_by_tag' => (array)($template_map['items_by_tag'] ?? []),
         'template_map_defaults_by_tag' => fundraising_f230_template_map_defaults_by_tag((array)($template_map['items_by_tag'] ?? [])),
+        'template_uploaded_at' => $template_uploaded_at_raw,
+        'template_uploaded_at_display' => $template_uploaded_at_display,
         'confirm_html' => $confirm_html,
         'public_url' => fundraising_f230_public_url(),
         'storage_folder' => 'F230PDF',
@@ -590,6 +609,7 @@ function fundraising_f230_upload_template_file(PDO $pdo, array $files): array
     $new_rel = 'uploads/fundraising/' . $filename;
     fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, $new_rel);
     fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_MAPPING, '');
+    fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_UPLOADED_AT, date('c'));
 
     if ($old_rel !== '') {
         $old_abs = fundraising_f230_abs_path($old_rel);
