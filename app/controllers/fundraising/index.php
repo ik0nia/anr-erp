@@ -38,28 +38,25 @@ if ($tab === 'formular230' && isset($_GET['export']) && (string)$_GET['export'] 
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['salveaza_setari_fundraising'])) {
+    if (isset($_POST['salveaza_template_f230'])) {
         csrf_require_valid();
         $tab = 'setari';
-        $actiune_setari = trim((string)($_POST['salveaza_setari_fundraising'] ?? 'all'));
-
-        // Acțiune dedicată: salvează doar template-ul PDF selectat.
-        if ($actiune_setari === 'template_upload') {
-            $result = fundraising_f230_upload_template_file($pdo, $_FILES);
-            if (!empty($result['success'])) {
-                header('Location: /fundraising?tab=setari&succes_template=1');
-                exit;
-            }
-            $eroare = (string)($result['error'] ?? 'Template-ul nu a putut fi salvat.');
-        } else {
-            $result = fundraising_f230_save_settings($pdo, $_POST, $_FILES);
-            if (!empty($result['success'])) {
-                $redirect = '/fundraising?tab=setari&succes_setari=1';
-                header('Location: ' . $redirect);
-                exit;
-            }
-            $eroare = (string)($result['error'] ?? 'Setările nu au putut fi salvate.');
+        $result = fundraising_f230_upload_template_file($pdo, $_FILES);
+        if (!empty($result['success'])) {
+            header('Location: /fundraising?tab=setari&succes_template=1');
+            exit;
         }
+        $eroare = (string)($result['error'] ?? 'Template-ul nu a putut fi salvat.');
+    } elseif (isset($_POST['salveaza_setari_fundraising'])) {
+        csrf_require_valid();
+        $tab = 'setari';
+        $result = fundraising_f230_save_settings($pdo, $_POST, $_FILES);
+        if (!empty($result['success'])) {
+            $redirect = '/fundraising?tab=setari&succes_setari=1';
+            header('Location: ' . $redirect);
+            exit;
+        }
+        $eroare = (string)($result['error'] ?? 'Setările nu au putut fi salvate.');
     } elseif (isset($_POST['salveaza_mapare_template_f230'])) {
         csrf_require_valid();
         $tab = 'setari';
@@ -91,7 +88,7 @@ if (isset($_GET['succes_setari'])) {
     $succes = 'Setările modulului Fundraising au fost salvate.';
 }
 if (isset($_GET['succes_template'])) {
-    $succes = 'Template-ul PDF a fost salvat. Poți începe maparea.';
+    $succes = 'Template-ul PDF a fost salvat cu succes. Poți începe maparea (butonul "Deschide fereastra de mapare").';
 }
 if (isset($_GET['succes_mapare'])) {
     $succes = 'Maparea template-ului PDF a fost salvată.';

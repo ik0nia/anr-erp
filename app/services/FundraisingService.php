@@ -510,17 +510,43 @@ function fundraising_f230_validate_uploaded_template_pdf(string $abs_path): ?str
 }
 
 /**
+ * Mesaj prietenos pentru codurile de eroare upload PHP.
+ */
+function fundraising_f230_upload_error_message(int $upload_error): string
+{
+    switch ($upload_error) {
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+            return 'Fișierul PDF depășește limita permisă de server.';
+        case UPLOAD_ERR_PARTIAL:
+            return 'Fișierul PDF a fost încărcat parțial. Reîncearcă upload-ul.';
+        case UPLOAD_ERR_NO_FILE:
+            return 'Selectează un fișier template PDF înainte de salvare.';
+        case UPLOAD_ERR_NO_TMP_DIR:
+            return 'Lipsește directorul temporar de upload pe server.';
+        case UPLOAD_ERR_CANT_WRITE:
+            return 'Serverul nu poate scrie fișierul încărcat pe disc.';
+        case UPLOAD_ERR_EXTENSION:
+            return 'Upload-ul fișierului a fost blocat de o extensie PHP a serverului.';
+        case UPLOAD_ERR_OK:
+        default:
+            return 'Eroare la încărcarea fișierului template PDF.';
+    }
+}
+
+/**
  * Procesează upload-ul unui template PDF și îl setează ca activ.
  * Resetează maparea existentă deoarece coordonatele vechi nu mai sunt valide.
  */
 function fundraising_f230_upload_template_file(PDO $pdo, array $files): array
 {
     $fisier = $files['template_pdf_230'] ?? null;
-    if (!is_array($fisier) || (int)($fisier['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+    if (!is_array($fisier)) {
         return ['success' => false, 'error' => 'Selectează un fișier template PDF înainte de salvare.'];
     }
-    if ((int)($fisier['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-        return ['success' => false, 'error' => 'Eroare la încărcarea fișierului template PDF.'];
+    $upload_error = (int)($fisier['error'] ?? UPLOAD_ERR_OK);
+    if ($upload_error !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => fundraising_f230_upload_error_message($upload_error)];
     }
 
     $ext = strtolower((string)pathinfo((string)($fisier['name'] ?? ''), PATHINFO_EXTENSION));
@@ -532,13 +558,25 @@ function fundraising_f230_upload_template_file(PDO $pdo, array $files): array
     }
 
     $upload_dir = APP_ROOT . '/uploads/fundraising/';
-    if (!is_dir($upload_dir)) {
-        @mkdir($upload_dir, 0755, true);
+    if (!is_dir($upload_dir) && !@mkdir($upload_dir, 0755, true) && !is_dir($upload_dir)) {
+        return ['success' => false, 'error' => 'Directorul uploads/fundraising nu poate fi creat pe server.'];
+    }
+    if (!is_writable($upload_dir)) {
+        @chmod($upload_dir, 0775);
+        clearstatcache(true, $upload_dir);
+    }
+    if (!is_writable($upload_dir)) {
+        return ['success' => false, 'error' => 'Directorul uploads/fundraising nu este inscriptibil. Verifică permisiunile serverului.'];
+    }
+
+    $tmp_name = (string)($fisier['tmp_name'] ?? '');
+    if ($tmp_name === '' || !is_uploaded_file($tmp_name)) {
+        return ['success' => false, 'error' => 'Fișierul temporar de upload nu este valid sau a expirat. Reîncearcă.'];
     }
 
     $filename = 'template-230-' . date('Ymd-His') . '-' . substr(md5((string)uniqid('', true)), 0, 10) . '.pdf';
     $dest = $upload_dir . $filename;
-    if (!@move_uploaded_file((string)$fisier['tmp_name'], $dest)) {
+    if (!@move_uploaded_file($tmp_name, $dest)) {
         return ['success' => false, 'error' => 'Nu s-a putut salva template-ul PDF pe server.'];
     }
 
