@@ -42,6 +42,7 @@ if (!$template_exists) {
     <title>Mapper Formular 230</title>
     <link href="/css/tailwind.css?v=<?php echo @filemtime(APP_ROOT . '/css/tailwind.css') ?: '1'; ?>" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.344.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-900 min-h-screen">
 <main class="max-w-7xl mx-auto px-4 py-5 sm:py-8" role="main">
@@ -116,15 +117,9 @@ if (!$template_exists) {
                                 </div>
                             </div>
                             <div id="pdf-map-canvas-wrap-f230" class="relative overflow-auto border border-slate-300 rounded bg-white" style="max-height: 72vh;">
-                                <div class="relative w-full" style="padding-top: 141.42%;">
-                                    <iframe id="pdf-map-preview-f230"
-                                            src="<?php echo htmlspecialchars((string)$setari_modul['template_preview_url']); ?>?t=<?php echo rawurlencode((string)($setari_modul['template_sha256'] ?? '')); ?>#page=1&zoom=page-fit"
-                                            title="Preview template PDF pentru mapare"
-                                            class="absolute inset-0 w-full h-full border-0"
-                                            loading="eager"></iframe>
-                                    <div id="pdf-map-overlay-f230" class="absolute inset-0 pointer-events-none" aria-hidden="true"></div>
-                                    <button type="button" id="pdf-map-click-layer-f230" class="absolute inset-0 w-full h-full opacity-0 cursor-text" aria-label="Selectează poziția tagului"></button>
-                                </div>
+                                <canvas id="pdf-map-canvas-f230" class="block w-full h-auto"></canvas>
+                                <div id="pdf-map-overlay-f230" class="absolute inset-0 pointer-events-none" aria-hidden="true"></div>
+                                <button type="button" id="pdf-map-click-layer-f230" class="absolute inset-0 w-full h-full opacity-0 cursor-text" aria-label="Selectează poziția tagului"></button>
                             </div>
                         </div>
                     </section>
@@ -164,7 +159,8 @@ if (!$template_exists) {
     var inputH = document.getElementById('map-h-f230');
     var coordsText = document.getElementById('map-coords-f230');
     var statusList = document.getElementById('map-status-list-f230');
-    var previewFrame = document.getElementById('pdf-map-preview-f230');
+    var previewWrap = document.getElementById('pdf-map-canvas-wrap-f230');
+    var previewCanvas = document.getElementById('pdf-map-canvas-f230');
     var overlay = document.getElementById('pdf-map-overlay-f230');
     var clickLayer = document.getElementById('pdf-map-click-layer-f230');
     var prevBtn = document.getElementById('btn-prev-page-map-f230');
@@ -175,6 +171,7 @@ if (!$template_exists) {
         currentPage: 1,
         activeTag: selectTag ? String(selectTag.value || '') : ''
     };
+    var pdfDoc = null;
 
     function ensureTag(tag) {
         if (!mapDefaults[tag]) {
@@ -205,8 +202,7 @@ if (!$template_exists) {
     function refreshPreview() {
         var page = Math.max(1, Math.min(pageCount, state.currentPage));
         state.currentPage = page;
-        previewFrame.src = previewBaseUrl + '?t=' + encodeURIComponent(templateSha) + '#page=' + page + '&zoom=page-fit&toolbar=0&navpanes=0&scrollbar=1';
-        drawOverlay();
+        renderPdfPage(page);
     }
 
     function drawOverlay() {
@@ -308,7 +304,90 @@ if (!$template_exists) {
     }
 
     window.addEventListener('resize', drawOverlay);
-    previewFrame.addEventListener('load', drawOverlay);
+
+    function renderFallbackSheet() {
+        if (!previewCanvas || !previewWrap) {
+            drawOverlay();
+            return;
+        }
+        var wrapRect = previewWrap.getBoundingClientRect();
+        var width = Math.max(300, Math.floor(wrapRect.width - 2));
+        var height = Math.floor(width * 1.4142);
+        previewCanvas.width = width;
+        previewCanvas.height = height;
+        previewCanvas.style.width = width + 'px';
+        previewCanvas.style.height = height + 'px';
+        var ctx = previewCanvas.getContext('2d');
+        if (ctx) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
+        }
+        drawOverlay();
+    }
+
+    function renderPdfPage(pageNo) {
+        if (!window.pdfjsLib || !previewCanvas || !previewWrap) {
+            renderFallbackSheet();
+            return;
+        }
+        if (!pdfDoc) {
+            drawOverlay();
+            return;
+        }
+        pdfDoc.getPage(pageNo).then(function (page) {
+            var wrapRect = previewWrap.getBoundingClientRect();
+            var targetWidth = Math.max(300, Math.floor(wrapRect.width - 2));
+            var baseViewport = page.getViewport({ scale: 1 });
+            var scale = targetWidth / baseViewport.width;
+            var viewport = page.getViewport({ scale: scale });
+            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            var ctx = previewCanvas.getContext('2d');
+            if (!ctx) {
+                renderFallbackSheet();
+                return;
+            }
+
+            previewCanvas.width = Math.floor(viewport.width * ratio);
+            previewCanvas.height = Math.floor(viewport.height * ratio);
+            previewCanvas.style.width = Math.floor(viewport.width) + 'px';
+            previewCanvas.style.height = Math.floor(viewport.height) + 'px';
+            ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+            ctx.clearRect(0, 0, viewport.width, viewport.height);
+
+            page.render({
+                canvasContext: ctx,
+                viewport: viewport
+            }).promise.then(function () {
+                drawOverlay();
+            }).catch(function () {
+                renderFallbackSheet();
+            });
+        }).catch(function () {
+            renderFallbackSheet();
+        });
+    }
+
+    function initPdfDocument() {
+        if (!window.pdfjsLib) {
+            renderFallbackSheet();
+            return;
+        }
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        var loadingTask = window.pdfjsLib.getDocument(previewBaseUrl + '?t=' + encodeURIComponent(templateSha));
+        loadingTask.promise.then(function (doc) {
+            pdfDoc = doc;
+            if (doc.numPages && doc.numPages > 0) {
+                pageCount = doc.numPages;
+            }
+            state.currentPage = Math.max(1, Math.min(pageCount, state.currentPage));
+            refreshPreview();
+        }).catch(function () {
+            renderFallbackSheet();
+        });
+    }
 
     if (form && hiddenJson) {
         form.addEventListener('submit', function (e) {
@@ -341,7 +420,7 @@ if (!$template_exists) {
         updateInputsFromTag();
         state.currentPage = parseInt(ensureTag(state.activeTag).page || 1, 10);
     }
-    refreshPreview();
+    initPdfDocument();
 })();
 </script>
 </body>
