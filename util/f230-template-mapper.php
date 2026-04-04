@@ -1,0 +1,348 @@
+<?php
+/**
+ * Mapper template PDF pentru Formular 230.
+ * Permite mapare manuală procentuală a câmpurilor [230...].
+ */
+require_once __DIR__ . '/../config.php';
+require_once APP_ROOT . '/app/services/FundraisingService.php';
+
+require_login();
+fundraising_f230_ensure_schema($pdo);
+
+$eroare = '';
+$succes = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_mapare_template_f230'])) {
+    csrf_require_valid();
+    $res = fundraising_f230_save_template_map($pdo, $_POST);
+    if (!empty($res['success'])) {
+        $succes = 'Maparea template-ului a fost salvată.';
+    } else {
+        $eroare = (string)($res['error'] ?? 'Maparea nu a putut fi salvată.');
+    }
+}
+
+$setari_modul = fundraising_f230_get_settings($pdo);
+$taguri_f230 = fundraising_f230_taguri_display();
+$template_exists = !empty($setari_modul['template_exists']);
+$template_page_count = (int)($setari_modul['template_page_count'] ?? 1);
+if ($template_page_count < 1) {
+    $template_page_count = 1;
+}
+
+if (!$template_exists) {
+    $eroare = $eroare !== '' ? $eroare : 'Nu există template PDF activ. Încarcă mai întâi un template în Fundraising > Setări.';
+}
+?>
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapper Formular 230</title>
+    <link href="/css/tailwind.css?v=<?php echo @filemtime(APP_ROOT . '/css/tailwind.css') ?: '1'; ?>" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.344.0"></script>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+<main class="max-w-7xl mx-auto px-4 py-5 sm:py-8" role="main">
+    <section class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
+        <header class="px-5 sm:px-6 py-4 border-b border-slate-200">
+            <h1 class="text-xl font-semibold">Mapper template PDF — Formular 230</h1>
+            <p class="text-sm text-slate-600 mt-1">
+                Selectează câmpul și fă click în preview pentru poziționare. Maparea salvată va fi folosită de motorul PDF Overlay.
+            </p>
+        </header>
+        <div class="p-5 sm:p-6">
+            <?php if ($eroare !== ''): ?>
+                <div class="mb-4 p-3 rounded-lg border-l-4 border-red-600 bg-red-50 text-red-800" role="alert">
+                    <?php echo htmlspecialchars($eroare); ?>
+                </div>
+            <?php endif; ?>
+            <?php if ($succes !== ''): ?>
+                <div class="mb-4 p-3 rounded-lg border-l-4 border-emerald-600 bg-emerald-50 text-emerald-800" role="status">
+                    <?php echo htmlspecialchars($succes); ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" class="space-y-4" id="mapper-form-f230">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="salveaza_mapare_template_f230" value="1">
+                <input type="hidden" name="template_map_json" id="template-map-json-f230" value="">
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    <aside class="lg:col-span-4 space-y-3">
+                        <div>
+                            <label for="map-tag-select-f230" class="block text-sm font-medium mb-1">Tag activ</label>
+                            <select id="map-tag-select-f230" class="w-full px-3 py-2 rounded-lg border border-slate-300">
+                                <?php foreach ($taguri_f230 as $t): ?>
+                                    <?php $tag_bracket = (string)$t['tag']; $tag_raw = trim($tag_bracket, '[]'); ?>
+                                    <option value="<?php echo htmlspecialchars($tag_raw); ?>">
+                                        <?php echo htmlspecialchars($tag_bracket . ' — ' . (string)$t['descriere']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="map-page-f230" class="block text-xs font-medium mb-1">Pagină</label>
+                                <input id="map-page-f230" type="number" min="1" step="1" class="w-full px-2 py-1.5 rounded border border-slate-300">
+                            </div>
+                            <div>
+                                <label for="map-font-f230" class="block text-xs font-medium mb-1">Font (pt)</label>
+                                <input id="map-font-f230" type="number" min="6" max="24" step="0.5" class="w-full px-2 py-1.5 rounded border border-slate-300">
+                            </div>
+                            <div>
+                                <label for="map-w-f230" class="block text-xs font-medium mb-1">Lățime (%)</label>
+                                <input id="map-w-f230" type="number" min="0.5" max="100" step="0.1" class="w-full px-2 py-1.5 rounded border border-slate-300">
+                            </div>
+                            <div>
+                                <label for="map-h-f230" class="block text-xs font-medium mb-1">Înălțime (%)</label>
+                                <input id="map-h-f230" type="number" min="0.5" max="100" step="0.1" class="w-full px-2 py-1.5 rounded border border-slate-300">
+                            </div>
+                        </div>
+
+                        <p id="map-coords-f230" class="text-xs text-slate-600">Coordonate: x=0.00%, y=0.00%</p>
+                        <div id="map-status-list-f230" class="space-y-1 max-h-64 overflow-auto pr-1"></div>
+                    </aside>
+
+                    <section class="lg:col-span-8">
+                        <div class="border border-slate-200 rounded-lg bg-slate-50 p-3">
+                            <div class="flex items-center justify-between gap-2 mb-2">
+                                <p class="text-xs text-slate-600">Click pe suprafața preview pentru poziționare.</p>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" id="btn-prev-page-map-f230" class="px-2 py-1 text-xs rounded border border-slate-300">Pagina anterioară</button>
+                                    <button type="button" id="btn-next-page-map-f230" class="px-2 py-1 text-xs rounded border border-slate-300">Pagina următoare</button>
+                                </div>
+                            </div>
+                            <div id="pdf-map-canvas-wrap-f230" class="relative overflow-auto border border-slate-300 rounded bg-white" style="max-height: 72vh;">
+                                <div class="relative w-full" style="padding-top: 141.42%;">
+                                    <iframe id="pdf-map-preview-f230"
+                                            src="<?php echo htmlspecialchars((string)$setari_modul['template_preview_url']); ?>?t=<?php echo rawurlencode((string)($setari_modul['template_sha256'] ?? '')); ?>#page=1&zoom=page-fit"
+                                            title="Preview template PDF pentru mapare"
+                                            class="absolute inset-0 w-full h-full border-0"
+                                            loading="eager"></iframe>
+                                    <div id="pdf-map-overlay-f230" class="absolute inset-0 pointer-events-none" aria-hidden="true"></div>
+                                    <button type="button" id="pdf-map-click-layer-f230" class="absolute inset-0 w-full h-full opacity-0 cursor-text" aria-label="Selectează poziția tagului"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" class="px-4 py-2 rounded-lg border border-slate-300" onclick="window.close();">Închide</button>
+                    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+                        <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i>
+                        Salvează maparea
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+</main>
+
+<script>
+(function () {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    var templateExists = <?php echo $template_exists ? 'true' : 'false'; ?>;
+    if (!templateExists) return;
+
+    var templateSha = <?php echo json_encode((string)($setari_modul['template_sha256'] ?? '')); ?>;
+    var previewBaseUrl = <?php echo json_encode((string)($setari_modul['template_preview_url'] ?? '')); ?>;
+    var pageCount = <?php echo (int)$template_page_count; ?>;
+    var mapDefaults = <?php echo json_encode((array)($setari_modul['template_map_defaults_by_tag'] ?? []), JSON_UNESCAPED_UNICODE); ?>;
+
+    var form = document.getElementById('mapper-form-f230');
+    var selectTag = document.getElementById('map-tag-select-f230');
+    var inputPage = document.getElementById('map-page-f230');
+    var inputFont = document.getElementById('map-font-f230');
+    var inputW = document.getElementById('map-w-f230');
+    var inputH = document.getElementById('map-h-f230');
+    var coordsText = document.getElementById('map-coords-f230');
+    var statusList = document.getElementById('map-status-list-f230');
+    var previewFrame = document.getElementById('pdf-map-preview-f230');
+    var overlay = document.getElementById('pdf-map-overlay-f230');
+    var clickLayer = document.getElementById('pdf-map-click-layer-f230');
+    var prevBtn = document.getElementById('btn-prev-page-map-f230');
+    var nextBtn = document.getElementById('btn-next-page-map-f230');
+    var hiddenJson = document.getElementById('template-map-json-f230');
+
+    var state = {
+        currentPage: 1,
+        activeTag: selectTag ? String(selectTag.value || '') : ''
+    };
+
+    function ensureTag(tag) {
+        if (!mapDefaults[tag]) {
+            var isSignature = tag === '230semnatura';
+            mapDefaults[tag] = {
+                tag: tag,
+                page: state.currentPage,
+                x_pct: 5,
+                y_pct: 5,
+                w_pct: isSignature ? 22 : 18,
+                h_pct: isSignature ? 8 : 2.8,
+                font_pt: 10
+            };
+        }
+        return mapDefaults[tag];
+    }
+
+    function updateInputsFromTag() {
+        var item = ensureTag(state.activeTag);
+        if (!item) return;
+        inputPage.value = item.page;
+        inputFont.value = item.font_pt;
+        inputW.value = item.w_pct;
+        inputH.value = item.h_pct;
+        coordsText.textContent = 'Coordonate: x=' + Number(item.x_pct).toFixed(2) + '%, y=' + Number(item.y_pct).toFixed(2) + '%';
+    }
+
+    function refreshPreview() {
+        var page = Math.max(1, Math.min(pageCount, state.currentPage));
+        state.currentPage = page;
+        previewFrame.src = previewBaseUrl + '?t=' + encodeURIComponent(templateSha) + '#page=' + page + '&zoom=page-fit&toolbar=0&navpanes=0&scrollbar=1';
+        drawOverlay();
+    }
+
+    function drawOverlay() {
+        if (!overlay || !clickLayer) return;
+        var rect = clickLayer.getBoundingClientRect();
+        overlay.innerHTML = '';
+
+        Object.keys(mapDefaults).forEach(function (tag) {
+            var it = mapDefaults[tag];
+            if (!it || parseInt(it.page, 10) !== state.currentPage) return;
+            var d = document.createElement('div');
+            d.className = 'absolute border-2 rounded';
+            d.style.left = Number(it.x_pct) + '%';
+            d.style.top = Number(it.y_pct) + '%';
+            d.style.width = Number(it.w_pct) + '%';
+            d.style.height = Number(it.h_pct) + '%';
+            var active = (tag === state.activeTag);
+            d.style.borderColor = active ? '#2563eb' : '#16a34a';
+            d.style.background = active ? 'rgba(37,99,235,0.12)' : 'rgba(22,163,74,0.08)';
+            var label = document.createElement('span');
+            label.className = 'absolute -top-5 left-0 text-[10px] px-1 rounded bg-white border border-slate-300 text-slate-700';
+            label.textContent = '[' + tag + ']';
+            d.appendChild(label);
+            overlay.appendChild(d);
+        });
+
+        renderStatus();
+    }
+
+    function renderStatus() {
+        if (!statusList) return;
+        statusList.innerHTML = '';
+        var tags = Object.keys(mapDefaults);
+        tags.sort();
+        tags.forEach(function (tag) {
+            var item = mapDefaults[tag];
+            var row = document.createElement('div');
+            row.className = 'text-xs flex items-center justify-between gap-2 px-2 py-1 rounded border';
+            var ok = !!item;
+            row.className += ok ? ' border-emerald-200 bg-emerald-50 text-emerald-800' : ' border-amber-200 bg-amber-50 text-amber-800';
+            row.innerHTML = '<span>[' + tag + ']</span><span>' + (ok ? ('p.' + item.page) : 'nemapat') + '</span>';
+            statusList.appendChild(row);
+        });
+    }
+
+    function updateTagFromInputs() {
+        var item = ensureTag(state.activeTag);
+        if (!item) return;
+        item.page = Math.max(1, Math.min(pageCount, parseInt(inputPage.value || '1', 10) || 1));
+        item.font_pt = Math.max(6, Math.min(24, parseFloat(inputFont.value || '10') || 10));
+        item.w_pct = Math.max(0.5, Math.min(100, parseFloat(inputW.value || '10') || 10));
+        item.h_pct = Math.max(0.5, Math.min(100, parseFloat(inputH.value || '2') || 2));
+        state.currentPage = item.page;
+        refreshPreview();
+        updateInputsFromTag();
+    }
+
+    if (selectTag) {
+        selectTag.addEventListener('change', function () {
+            state.activeTag = String(selectTag.value || '');
+            updateInputsFromTag();
+            state.currentPage = parseInt(ensureTag(state.activeTag).page || 1, 10);
+            refreshPreview();
+        });
+    }
+
+    [inputPage, inputFont, inputW, inputH].forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('change', updateTagFromInputs);
+        el.addEventListener('blur', updateTagFromInputs);
+    });
+
+    if (clickLayer) {
+        clickLayer.addEventListener('click', function (e) {
+            var rect = clickLayer.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            var xPct = ((e.clientX - rect.left) / rect.width) * 100;
+            var yPct = ((e.clientY - rect.top) / rect.height) * 100;
+            var item = ensureTag(state.activeTag);
+            item.x_pct = Math.max(0, Math.min(100, xPct));
+            item.y_pct = Math.max(0, Math.min(100, yPct));
+            item.page = state.currentPage;
+            coordsText.textContent = 'Coordonate: x=' + Number(item.x_pct).toFixed(2) + '%, y=' + Number(item.y_pct).toFixed(2) + '%';
+            drawOverlay();
+        });
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function () {
+            state.currentPage = Math.max(1, state.currentPage - 1);
+            refreshPreview();
+        });
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function () {
+            state.currentPage = Math.min(pageCount, state.currentPage + 1);
+            refreshPreview();
+        });
+    }
+
+    window.addEventListener('resize', drawOverlay);
+    previewFrame.addEventListener('load', drawOverlay);
+
+    if (form && hiddenJson) {
+        form.addEventListener('submit', function (e) {
+            var items = [];
+            Object.keys(mapDefaults).forEach(function (tag) {
+                var item = mapDefaults[tag];
+                if (!item) return;
+                items.push({
+                    tag: tag,
+                    page: parseInt(item.page || 1, 10),
+                    x_pct: Number(item.x_pct || 0),
+                    y_pct: Number(item.y_pct || 0),
+                    w_pct: Number(item.w_pct || 0),
+                    h_pct: Number(item.h_pct || 0),
+                    font_pt: Number(item.font_pt || 10)
+                });
+            });
+            hiddenJson.value = JSON.stringify({
+                template_sha256: templateSha,
+                items: items
+            });
+            if (!hiddenJson.value) {
+                e.preventDefault();
+                alert('Nu s-a putut genera payload-ul de mapare.');
+            }
+        });
+    }
+
+    if (state.activeTag) {
+        updateInputsFromTag();
+        state.currentPage = parseInt(ensureTag(state.activeTag).page || 1, 10);
+    }
+    refreshPreview();
+})();
+</script>
+</body>
+</html>

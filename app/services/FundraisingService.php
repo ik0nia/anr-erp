@@ -17,6 +17,7 @@ require_once APP_ROOT . '/includes/mailer_functions.php';
 
 const FUNDRAISING_SETARE_TEMPLATE = 'fundraising_f230_template_pdf';
 const FUNDRAISING_SETARE_CONFIRM = 'fundraising_f230_mesaj_confirmare_html';
+const FUNDRAISING_SETARE_TEMPLATE_MAPPING = 'fundraising_f230_template_mapping_json';
 
 /**
  * Returnează lista de taguri suportate în template-ul PDF.
@@ -141,6 +142,31 @@ function fundraising_f230_resolve_template_rel(PDO $pdo): string
 }
 
 /**
+ * Hash stabil SHA-256 pentru template-ul PDF activ.
+ */
+function fundraising_f230_template_sha256(string $template_abs): string
+{
+    if (!is_file($template_abs)) {
+        return '';
+    }
+    $hash = @hash_file('sha256', $template_abs);
+    return is_string($hash) ? strtolower(trim($hash)) : '';
+}
+
+/**
+ * Returnează calea absolută a template-ului PDF activ.
+ */
+function fundraising_f230_template_abs(PDO $pdo): string
+{
+    $template_rel = fundraising_f230_resolve_template_rel($pdo);
+    if ($template_rel === '') {
+        return '';
+    }
+    $template_abs = fundraising_f230_abs_path($template_rel);
+    return is_file($template_abs) ? $template_abs : '';
+}
+
+/**
  * Citește o setare (key-value) din tabela setari.
  */
 function fundraising_setare_get(PDO $pdo, string $cheie): ?string
@@ -237,14 +263,250 @@ function fundraising_f230_get_settings(PDO $pdo): array
     $template_rel = fundraising_f230_resolve_template_rel($pdo);
     $template_abs = $template_rel !== '' ? fundraising_f230_abs_path($template_rel) : '';
     $confirm_html = (string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_CONFIRM) ?? '');
+    $template_sha256 = $template_abs !== '' ? fundraising_f230_template_sha256($template_abs) : '';
+    $template_map = fundraising_f230_get_template_map($pdo);
+    $template_page_count = 0;
+    if ($template_abs !== '' && is_file($template_abs)) {
+        $streams = documente_pdf_extract_page_streams($template_abs);
+        $template_page_count = max(1, count((array)$streams));
+    }
 
     return [
         'template_rel' => $template_rel,
         'template_exists' => $template_abs !== '' && is_file($template_abs),
+        'template_sha256' => $template_sha256,
+        'template_preview_url' => '/util/f230-template-preview.php',
+        'template_page_count' => $template_page_count,
+        'template_mapat' => !empty($template_map['mapped']),
+        'template_map_missing_tags' => (array)($template_map['missing_tags'] ?? []),
+        'template_map_items_by_tag' => (array)($template_map['items_by_tag'] ?? []),
+        'template_map_defaults_by_tag' => fundraising_f230_template_map_defaults_by_tag((array)($template_map['items_by_tag'] ?? [])),
         'confirm_html' => $confirm_html,
         'public_url' => fundraising_f230_public_url(),
         'storage_folder' => 'F230PDF',
     ];
+}
+
+/**
+ * Returnează lista tuturor tagurilor obligatorii în maparea template-ului.
+ */
+function fundraising_f230_required_map_tags(): array
+{
+    return array_keys(fundraising_f230_taguri());
+}
+
+/**
+ * Item implicit de mapare pentru un tag.
+ */
+function fundraising_f230_default_map_item(string $tag): array
+{
+    $is_signature = $tag === '230semnatura';
+    return [
+        'tag' => $tag,
+        'page' => 1,
+        'x_pct' => 5.0,
+        'y_pct' => 5.0,
+        'w_pct' => $is_signature ? 22.0 : 18.0,
+        'h_pct' => $is_signature ? 8.0 : 2.8,
+        'font_pt' => $is_signature ? 10.0 : 10.0,
+    ];
+}
+
+/**
+ * Validează payload-ul mapării template-ului PDF.
+ */
+function fundraising_f230_validate_template_map(array $payload, string $expected_template_sha256, int $max_pages = 30): array
+{
+    $incoming_sha = strtolower(trim((string)($payload['template_sha256'] ?? '')));
+    if ($incoming_sha === '' || $incoming_sha !== strtolower(trim($expected_template_sha256))) {
+        return ['success' => false, 'error' => 'Maparea nu corespunde template-ului PDF activ. Reîncarcă pagina și remapează.'];
+    }
+
+    $items = $payload['items'] ?? null;
+    if (!is_array($items) || empty($items)) {
+        return ['success' => false, 'error' => 'Maparea este goală. Marchează poziția pentru toate câmpurile.'];
+    }
+
+    $allowed_tags = fundraising_f230_required_map_tags();
+    $allowed_set = array_fill_keys($allowed_tags, true);
+    $normalized = [];
+
+    foreach ($items as $raw_item) {
+        if (!is_array($raw_item)) {
+            continue;
+        }
+        $tag = trim((string)($raw_item['tag'] ?? ''));
+        if ($tag === '' || !isset($allowed_set[$tag])) {
+            continue;
+        }
+        $page = (int)($raw_item['page'] ?? 1);
+        $x_pct = (float)($raw_item['x_pct'] ?? 0.0);
+        $y_pct = (float)($raw_item['y_pct'] ?? 0.0);
+        $w_pct = (float)($raw_item['w_pct'] ?? 0.0);
+        $h_pct = (float)($raw_item['h_pct'] ?? 0.0);
+        $font_pt = (float)($raw_item['font_pt'] ?? 10.0);
+
+        $max_allowed_pages = max(1, $max_pages);
+        if ($page < 1 || $page > $max_allowed_pages) {
+            return ['success' => false, 'error' => 'Pagina mapată este invalidă pentru tagul [' . $tag . '].'];
+        }
+        if ($x_pct < 0.0 || $x_pct > 100.0 || $y_pct < 0.0 || $y_pct > 100.0) {
+            return ['success' => false, 'error' => 'Coordonatele pentru [' . $tag . '] trebuie să fie între 0 și 100%.'];
+        }
+        if ($w_pct <= 0.0 || $w_pct > 100.0 || $h_pct <= 0.0 || $h_pct > 100.0) {
+            return ['success' => false, 'error' => 'Dimensiunile zonei pentru [' . $tag . '] trebuie să fie valide.'];
+        }
+        if ($font_pt < 6.0 || $font_pt > 24.0) {
+            return ['success' => false, 'error' => 'Dimensiunea fontului pentru [' . $tag . '] este invalidă.'];
+        }
+
+        $normalized[$tag] = [
+            'tag' => $tag,
+            'page' => $page,
+            'x_pct' => round($x_pct, 4),
+            'y_pct' => round($y_pct, 4),
+            'w_pct' => round($w_pct, 4),
+            'h_pct' => round($h_pct, 4),
+            'font_pt' => round($font_pt, 2),
+        ];
+    }
+
+    $missing = [];
+    foreach ($allowed_tags as $tag_name) {
+        if (!isset($normalized[$tag_name])) {
+            $missing[] = $tag_name;
+        }
+    }
+    if (!empty($missing)) {
+        return ['success' => false, 'error' => 'Maparea nu este completă. Lipsesc: ' . implode(', ', array_map(static function ($t) {
+            return '[' . $t . ']';
+        }, $missing)) . '.', 'missing_tags' => $missing];
+    }
+
+    return ['success' => true, 'items_by_tag' => $normalized, 'missing_tags' => []];
+}
+
+/**
+ * Returnează maparea salvată pentru template-ul activ.
+ */
+function fundraising_f230_get_template_map(PDO $pdo): array
+{
+    $template_rel = fundraising_f230_resolve_template_rel($pdo);
+    if ($template_rel === '') {
+        return ['mapped' => false, 'items_by_tag' => [], 'missing_tags' => fundraising_f230_required_map_tags()];
+    }
+    $template_abs = fundraising_f230_abs_path($template_rel);
+    if (!is_file($template_abs)) {
+        return ['mapped' => false, 'items_by_tag' => [], 'missing_tags' => fundraising_f230_required_map_tags()];
+    }
+    $template_sha256 = fundraising_f230_template_sha256($template_abs);
+    if ($template_sha256 === '') {
+        return ['mapped' => false, 'items_by_tag' => [], 'missing_tags' => fundraising_f230_required_map_tags()];
+    }
+
+    $raw = (string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE_MAPPING) ?? '');
+    if (trim($raw) === '') {
+        return ['mapped' => false, 'items_by_tag' => [], 'missing_tags' => fundraising_f230_required_map_tags()];
+    }
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return ['mapped' => false, 'items_by_tag' => [], 'missing_tags' => fundraising_f230_required_map_tags()];
+    }
+
+    $page_count = fundraising_f230_get_template_pdf_page_count($template_abs);
+    $validated = fundraising_f230_validate_template_map($decoded, $template_sha256, $page_count);
+    if (empty($validated['success'])) {
+        return [
+            'mapped' => false,
+            'items_by_tag' => [],
+            'missing_tags' => (array)($validated['missing_tags'] ?? fundraising_f230_required_map_tags()),
+            'error' => (string)($validated['error'] ?? ''),
+        ];
+    }
+
+    return [
+        'mapped' => true,
+        'items_by_tag' => (array)$validated['items_by_tag'],
+        'missing_tags' => [],
+        'template_sha256' => $template_sha256,
+    ];
+}
+
+/**
+ * Returnează maparea implicită pentru fiecare tag (prefill UI mapper).
+ */
+function fundraising_f230_template_map_defaults_by_tag(array $items_by_tag): array
+{
+    $defaults = [];
+    foreach (fundraising_f230_required_map_tags() as $tag) {
+        $base = fundraising_f230_default_map_item($tag);
+        if (isset($items_by_tag[$tag]) && is_array($items_by_tag[$tag])) {
+            $defaults[$tag] = array_merge($base, $items_by_tag[$tag]);
+        } else {
+            $defaults[$tag] = $base;
+        }
+    }
+    return $defaults;
+}
+
+/**
+ * Salvează maparea manuală a câmpurilor pentru template-ul PDF activ.
+ */
+function fundraising_f230_save_template_map(PDO $pdo, array $post): array
+{
+    $template_rel = fundraising_f230_resolve_template_rel($pdo);
+    if ($template_rel === '') {
+        return ['success' => false, 'error' => 'Nu există template PDF activ pentru mapare.'];
+    }
+    $template_abs = fundraising_f230_abs_path($template_rel);
+    if (!is_file($template_abs)) {
+        return ['success' => false, 'error' => 'Template-ul PDF activ nu există pe server.'];
+    }
+    $template_sha256 = fundraising_f230_template_sha256($template_abs);
+    if ($template_sha256 === '') {
+        return ['success' => false, 'error' => 'Nu s-a putut calcula semnătura template-ului PDF.'];
+    }
+
+    $json = trim((string)($post['template_map_json'] ?? ''));
+    if ($json === '') {
+        return ['success' => false, 'error' => 'Payload mapare lipsă.'];
+    }
+    $payload = json_decode($json, true);
+    if (!is_array($payload)) {
+        return ['success' => false, 'error' => 'Payload mapare invalid (JSON).'];
+    }
+
+    $page_count = fundraising_f230_get_template_pdf_page_count($template_abs);
+    $validated = fundraising_f230_validate_template_map($payload, $template_sha256, $page_count);
+    if (empty($validated['success'])) {
+        return ['success' => false, 'error' => (string)($validated['error'] ?? 'Mapare invalidă.')];
+    }
+
+    $save_payload = [
+        'template_sha256' => $template_sha256,
+        'template_rel' => $template_rel,
+        'mapped_at' => date('c'),
+        'items' => array_values((array)$validated['items_by_tag']),
+    ];
+    fundraising_setare_set(
+        $pdo,
+        FUNDRAISING_SETARE_TEMPLATE_MAPPING,
+        (string)json_encode($save_payload, JSON_UNESCAPED_UNICODE)
+    );
+
+    return ['success' => true];
+}
+
+/**
+ * Verifică dacă fișierul încărcat este un PDF valid.
+ */
+function fundraising_f230_validate_uploaded_template_pdf(string $abs_path): ?string
+{
+    $check = documente_validate_template_integrity($abs_path, 'pdf');
+    if (empty($check['ok'])) {
+        return (string)($check['error'] ?? 'Template PDF invalid.');
+    }
+    return null;
 }
 
 /**
@@ -269,6 +531,8 @@ function fundraising_f230_sanitize_confirm_html(string $html): string
 function fundraising_f230_save_settings(PDO $pdo, array $post, array $files): array
 {
     try {
+        $template_uploaded = false;
+        $template_pages = 0;
         $confirm_html = fundraising_f230_sanitize_confirm_html((string)($post['mesaj_confirmare_html'] ?? ''));
         if ($confirm_html === '') {
             return ['success' => false, 'error' => 'Mesajul de confirmare nu poate fi gol.'];
@@ -299,20 +563,20 @@ function fundraising_f230_save_settings(PDO $pdo, array $post, array $files): ar
                 return ['success' => false, 'error' => 'Nu s-a putut salva template-ul PDF pe server.'];
             }
 
-            // Validăm și pre-cache-uim coordonatele tagurilor la upload,
-            // astfel submit-ul public să nu suporte costul primei scanări PDF.
-            $placements_check = fundraising_f230_get_template_placements($pdo, $dest);
-            if (empty($placements_check['success'])) {
+            $template_err = fundraising_f230_validate_uploaded_template_pdf($dest);
+            if ($template_err !== null) {
                 @unlink($dest);
                 return [
                     'success' => false,
-                    'error' => (string)($placements_check['error'] ?? 'Template PDF invalid pentru tagurile Formular 230.'),
+                    'error' => $template_err,
                 ];
             }
 
             $old_rel = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE) ?? ''));
             $new_rel = 'uploads/fundraising/' . $filename;
             fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, $new_rel);
+            // Template nou => maparea anterioară devine invalidă.
+            fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_MAPPING, '');
 
             if ($old_rel !== '') {
                 $old_abs = fundraising_f230_abs_path($old_rel);
@@ -320,9 +584,17 @@ function fundraising_f230_save_settings(PDO $pdo, array $post, array $files): ar
                     @unlink($old_abs);
                 }
             }
+
+            $template_uploaded = true;
+            $template_pages = fundraising_f230_get_template_pdf_page_count($dest);
         }
 
-        return ['success' => true, 'error' => null];
+        return [
+            'success' => true,
+            'error' => null,
+            'template_uploaded' => $template_uploaded,
+            'template_pages' => $template_pages,
+        ];
     } catch (Throwable $e) {
         return ['success' => false, 'error' => 'Eroare la salvarea setărilor: ' . $e->getMessage()];
     }
@@ -527,101 +799,55 @@ function fundraising_f230_build_tag_values(array $data): array
 }
 
 /**
- * Construiește cheia de cache pentru coordonatele tagurilor din template.
+ * Returnează numărul de pagini detectabile pentru template-ul PDF.
  */
-function fundraising_f230_template_cache_key(string $template_abs): string
+function fundraising_f230_get_template_pdf_page_count(string $template_abs): int
 {
-    $mtime = @filemtime($template_abs) ?: 0;
-    $size = @filesize($template_abs) ?: 0;
-    return sha1($template_abs . '|' . $mtime . '|' . $size);
+    if (!is_file($template_abs)) {
+        return 0;
+    }
+    $streams = documente_pdf_extract_page_streams($template_abs);
+    return max(0, count((array)$streams));
 }
 
 /**
- * Încarcă coordonatele tagurilor din cache sau le detectează și le salvează.
+ * Transformă maparea salvată în poziții absolute (mm) pentru overlay.
  */
-function fundraising_f230_get_template_placements(PDO $pdo, string $template_abs): array
+function fundraising_f230_get_overlay_placements(PDO $pdo, float $page_width_mm, float $page_height_mm, int $page_no): array
 {
-    $cache_setting_key = 'fundraising_f230_template_placements_cache';
-    $cache_key = fundraising_f230_template_cache_key($template_abs);
-
-    $cached_raw = fundraising_setare_get($pdo, $cache_setting_key);
-    if (is_string($cached_raw) && trim($cached_raw) !== '') {
-        $decoded = json_decode($cached_raw, true);
-        if (
-            is_array($decoded)
-            && (string)($decoded['cache_key'] ?? '') === $cache_key
-            && isset($decoded['placements_by_page'])
-            && is_array($decoded['placements_by_page'])
-        ) {
-            return [
-                'success' => true,
-                'placements_by_page' => $decoded['placements_by_page'],
-                'has_signature' => !empty($decoded['has_signature']),
-            ];
-        }
+    $map = fundraising_f230_get_template_map($pdo);
+    if (empty($map['mapped'])) {
+        return [];
     }
 
-    $streams = documente_pdf_extract_page_streams($template_abs);
-    if (empty($streams)) {
-        return ['success' => false, 'error' => 'Template-ul PDF nu poate fi citit (stream-uri indisponibile).'];
-    }
-
-    $scan_tags = [];
-    foreach (array_keys(fundraising_f230_taguri()) as $tag_name) {
-        $scan_tags[$tag_name] = '';
-    }
-
-    $placements_by_page = [];
-    $has_signature = false;
-    foreach ($streams as $idx => $stream) {
-        $placements = documente_pdf_detect_tag_positions($stream, $scan_tags, $idx + 1);
-        if (empty($placements)) {
+    $items = (array)($map['items_by_tag'] ?? []);
+    $placements = [];
+    foreach ($items as $tag => $item) {
+        if (!is_array($item)) {
             continue;
         }
-        $normalized = [];
-        foreach ($placements as $pl) {
-            $tag = (string)($pl['tag'] ?? '');
-            if ($tag === '') {
-                continue;
-            }
-            if ($tag === '230semnatura') {
-                $has_signature = true;
-            }
-            $normalized[] = [
-                'tag' => $tag,
-                'x_pt' => (float)($pl['x_pt'] ?? 0.0),
-                'y_pt' => (float)($pl['y_pt'] ?? 0.0),
-                'font_pt' => (float)($pl['font_pt'] ?? 10.0),
-                'tag_width_pt' => (float)($pl['tag_width_pt'] ?? 24.0),
-            ];
+        $item_page = (int)($item['page'] ?? 0);
+        if ($item_page !== $page_no) {
+            continue;
         }
-        if (!empty($normalized)) {
-            $placements_by_page[(string)($idx + 1)] = $normalized;
-        }
+
+        $x_pct = (float)($item['x_pct'] ?? 0.0);
+        $y_pct = (float)($item['y_pct'] ?? 0.0);
+        $w_pct = (float)($item['w_pct'] ?? 0.0);
+        $h_pct = (float)($item['h_pct'] ?? 0.0);
+        $font_pt = (float)($item['font_pt'] ?? 10.0);
+
+        $placements[] = [
+            'tag' => (string)$tag,
+            'x_mm' => ($x_pct / 100.0) * $page_width_mm,
+            'y_mm' => ($y_pct / 100.0) * $page_height_mm,
+            'w_mm' => ($w_pct / 100.0) * $page_width_mm,
+            'h_mm' => ($h_pct / 100.0) * $page_height_mm,
+            'font_pt' => $font_pt,
+        ];
     }
 
-    if (empty($placements_by_page)) {
-        return ['success' => false, 'error' => 'Template-ul PDF nu conține taguri detectabile [230...].'];
-    }
-    if (!$has_signature) {
-        return ['success' => false, 'error' => 'Template-ul PDF nu conține tagul obligatoriu [230semnatura].'];
-    }
-
-    fundraising_setare_set(
-        $pdo,
-        $cache_setting_key,
-        (string)json_encode([
-            'cache_key' => $cache_key,
-            'has_signature' => $has_signature,
-            'placements_by_page' => $placements_by_page,
-        ], JSON_UNESCAPED_UNICODE)
-    );
-
-    return [
-        'success' => true,
-        'placements_by_page' => $placements_by_page,
-        'has_signature' => true,
-    ];
+    return $placements;
 }
 
 /**
@@ -648,11 +874,10 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
     }
 
     $tag_values = fundraising_f230_build_tag_values($data);
-    $placements_result = fundraising_f230_get_template_placements($pdo, $template_abs);
-    if (empty($placements_result['success'])) {
-        return ['success' => false, 'error' => (string)($placements_result['error'] ?? 'Template-ul PDF nu poate fi procesat.')];
+    $map = fundraising_f230_get_template_map($pdo);
+    if (empty($map['mapped'])) {
+        return ['success' => false, 'error' => 'Template-ul PDF nu este mapat complet. Configurează maparea în tabul Setări.'];
     }
-    $placements_by_page = (array)($placements_result['placements_by_page'] ?? []);
 
     $storage = fundraising_f230_ensure_private_storage();
     $nume_part = fundraising_f230_filename_part((string)$data['nume'], 70);
@@ -679,30 +904,27 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
             }
             $pdf->useTemplate($tpl);
 
+            $page_width_mm = (float)($size['width'] ?? 210.0);
             $page_height_mm = (float)($size['height'] ?? 297.0);
-            $placements = $placements_by_page[(string)$page_no] ?? [];
+            $placements = fundraising_f230_get_overlay_placements($pdo, $page_width_mm, $page_height_mm, $page_no);
             foreach ($placements as $pl) {
                 $tag = (string)($pl['tag'] ?? '');
                 $font_pt = max(7.0, min(14.0, (float)($pl['font_pt'] ?? 10.0)));
-                $x_mm = documente_pdf_pt_to_mm((float)($pl['x_pt'] ?? 0.0));
-                $y_mm = $page_height_mm - documente_pdf_pt_to_mm((float)($pl['y_pt'] ?? 0.0));
-                $tag_width_mm = max(10.0, documente_pdf_pt_to_mm((float)($pl['tag_width_pt'] ?? 24.0)));
+                $x_mm = (float)($pl['x_mm'] ?? 0.0);
+                $y_mm_top = (float)($pl['y_mm'] ?? 0.0);
+                $w_mm = max(3.0, (float)($pl['w_mm'] ?? 3.0));
+                $h_mm = max(1.2, (float)($pl['h_mm'] ?? 1.2));
+                $y_mm_bottom = $page_height_mm - $y_mm_top;
                 $font_mm = documente_pdf_pt_to_mm($font_pt);
 
-                // Ștergem vizual tagul [230...] înainte de suprascriere.
+                // PDF Overlay: scriem valorile în zona mapată.
                 $pdf->SetFillColor(255, 255, 255);
-                $pdf->Rect(
-                    max(0.0, $x_mm - 0.5),
-                    max(0.0, $y_mm - ($font_mm * 0.95)),
-                    max(8.0, $tag_width_mm + 1.5),
-                    max(2.0, $font_mm * 1.4),
-                    'F'
-                );
+                $pdf->Rect($x_mm, max(0.0, $y_mm_bottom - $h_mm), $w_mm, $h_mm, 'F');
 
                 if ($tag === '230semnatura') {
-                    $sig_h = max(7.5, $font_mm * 2.5);
-                    $sig_w = max(24.0, $tag_width_mm + 6.0);
-                    $sig_y = max(0.0, $y_mm - $sig_h + 1.2);
+                    $sig_h = max(4.0, $h_mm);
+                    $sig_w = max(6.0, $w_mm);
+                    $sig_y = max(0.0, $page_height_mm - $y_mm_top - $sig_h);
                     $pdf->Image($signature_abs_path, $x_mm, $sig_y, $sig_w, $sig_h, 'PNG');
                     continue;
                 }
@@ -718,7 +940,8 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
                 }
                 $pdf->SetTextColor(0, 0, 0);
                 $pdf->SetFont('Helvetica', '', $font_pt);
-                $pdf->Text($x_mm, $y_mm, (string)$enc);
+                $text_y = max(1.0, $y_mm_bottom - max(0.1, ($h_mm - $font_mm) * 0.35));
+                $pdf->Text($x_mm + 0.4, $text_y, (string)$enc);
             }
         }
 

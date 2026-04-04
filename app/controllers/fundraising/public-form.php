@@ -10,7 +10,7 @@ require_once APP_ROOT . '/app/services/FundraisingService.php';
 fundraising_f230_ensure_schema($pdo);
 $setari_modul = fundraising_f230_get_settings($pdo);
 $public_url = (string)$setari_modul['public_url'];
-$template_activ = !empty($setari_modul['template_exists']);
+$template_activ = !empty($setari_modul['template_exists']) && !empty($setari_modul['template_mapat']);
 
 $eroare = '';
 $succes = '';
@@ -45,7 +45,7 @@ if (!empty($_SESSION['fundraising_public_flash']) && is_array($_SESSION['fundrai
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_formular_230_public'])) {
     if (!$template_activ) {
-        $eroare = 'Formularul nu este configurat încă. Revino mai târziu.';
+        $eroare = 'Formularul nu este configurat complet. Administratorul trebuie să încarce și să mapeze template-ul PDF.';
     } else {
         csrf_require_valid();
         $valori = array_merge($valori, fundraising_f230_extract_data($_POST));
@@ -53,14 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_formular_230_
             'sursa' => 'online',
             'ip' => (string)($_SERVER['REMOTE_ADDR'] ?? ''),
             'user_agent' => (string)($_SERVER['HTTP_USER_AGENT'] ?? ''),
-            'trimite_emailuri' => false,
+            'trimite_emailuri' => true,
             'trimite_confirmare' => true,
         ]);
         if (!empty($result['success'])) {
-            $dispatch = fundraising_f230_dispatch_submission_emails($pdo, (int)$result['id'], !empty($result['trimite_confirmare']));
             $_SESSION['fundraising_public_flash'] = [
                 'succes' => 'Formularul a fost trimis cu succes. Vă mulțumim!',
-                'warning' => (string)($dispatch['warning'] ?? ''),
+                'warning' => (string)($result['warning'] ?? ''),
             ];
             header('Location: /fundraising/formular-230?trimis=1');
             exit;

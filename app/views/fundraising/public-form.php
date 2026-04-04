@@ -56,7 +56,7 @@
         <div class="p-6 sm:p-8">
             <?php if (empty($template_activ)): ?>
                 <div class="mb-4 p-4 rounded-lg border-l-4 border-amber-600 bg-amber-100 text-amber-900" role="status" aria-live="polite">
-                    Formularul este temporar indisponibil. Administratorul nu a configurat încă template-ul PDF.
+                    Formularul este temporar indisponibil. Administratorul nu a configurat încă template-ul PDF sau maparea lui.
                 </div>
             <?php endif; ?>
             <?php if ($eroare !== ''): ?>

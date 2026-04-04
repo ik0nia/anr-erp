@@ -135,7 +135,7 @@
 
                     <section aria-labelledby="f230-template-heading" class="space-y-3">
                         <h3 id="f230-template-heading" class="text-base font-semibold text-slate-900 dark:text-white">Template PDF Formular 230</h3>
-                        <p class="text-sm text-slate-600 dark:text-gray-400">Încarcă fișierul PDF care conține tagurile de tip [230...].</p>
+                        <p class="text-sm text-slate-600 dark:text-gray-400">Încarcă fișierul PDF, apoi mapează zonele câmpurilor într-o fereastră separată.</p>
                         <?php if (!empty($setari_modul['template_rel'])): ?>
                             <p class="text-xs text-slate-600 dark:text-gray-400">
                                 Template curent:
@@ -145,12 +145,43 @@
                                 <?php endif; ?>
                             </p>
                         <?php endif; ?>
+                        <?php if (!empty($setari_modul['template_exists'])): ?>
+                            <div class="text-xs">
+                                <?php if (!empty($setari_modul['template_mapat'])): ?>
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200">
+                                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                        Template mapat complet
+                                    </span>
+                                <?php else: ?>
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+                                        <i data-lucide="alert-triangle" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                        Template nemapat — formularul public este blocat până la mapare
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                         <label for="template_pdf_230" class="block text-sm font-medium text-slate-800 dark:text-gray-200">Template PDF (.pdf)</label>
                         <input id="template_pdf_230"
                                name="template_pdf_230"
                                type="file"
                                accept=".pdf,application/pdf"
                                class="block w-full text-sm text-slate-700 dark:text-gray-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-slate-100 dark:file:bg-gray-700 file:text-slate-800 dark:file:text-gray-100">
+                        <div class="pt-1">
+                            <a href="/util/f230-template-mapper.php"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium focus:ring-2 focus:ring-indigo-500 <?php echo empty($setari_modul['template_exists']) ? 'opacity-50 pointer-events-none' : ''; ?>"
+                               aria-disabled="<?php echo empty($setari_modul['template_exists']) ? 'true' : 'false'; ?>">
+                                <i data-lucide="crosshair" class="w-4 h-4" aria-hidden="true"></i>
+                                Deschide fereastra de mapare
+                            </a>
+                        </div>
+                        <?php if (!empty($setari_modul['template_exists']) && empty($setari_modul['template_mapat']) && !empty($setari_modul['template_map_missing_tags'])): ?>
+                            <p class="text-xs text-amber-700 dark:text-amber-300">
+                                Taguri nemapate:
+                                <?php echo htmlspecialchars(implode(', ', array_map(static function ($t) { return '[' . (string)$t . ']'; }, (array)$setari_modul['template_map_missing_tags']))); ?>
+                            </p>
+                        <?php endif; ?>
                     </section>
 
                     <section aria-labelledby="f230-tags-heading" class="space-y-3">
