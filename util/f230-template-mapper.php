@@ -3,22 +3,44 @@
  * Mapper template PDF pentru Formular 230.
  * Permite mapare manuală procentuală a câmpurilor [230...].
  */
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../app/bootstrap.php';
 require_once APP_ROOT . '/app/services/FundraisingService.php';
+if (!function_exists('require_login')) {
+    require_once APP_ROOT . '/includes/auth_helper.php';
+}
+if (!function_exists('csrf_field') || !function_exists('csrf_require_valid')) {
+    require_once APP_ROOT . '/includes/csrf_helper.php';
+}
 
 require_login();
-fundraising_f230_ensure_schema($pdo);
 
 $eroare = '';
 $succes = '';
 
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    http_response_code(500);
+    echo 'Conexiunea la baza de date nu este disponibilă.';
+    exit;
+}
+try {
+    fundraising_f230_ensure_schema($pdo);
+} catch (Throwable $e) {
+    error_log('f230-template-mapper ensure_schema error: ' . $e->getMessage());
+    $eroare = 'Nu s-a putut inițializa schema Fundraising. Verifică baza de date și drepturile utilizatorului SQL.';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_mapare_template_f230'])) {
-    csrf_require_valid();
-    $res = fundraising_f230_save_template_map($pdo, $_POST);
-    if (!empty($res['success'])) {
-        $succes = 'Maparea template-ului a fost salvată.';
-    } else {
-        $eroare = (string)($res['error'] ?? 'Maparea nu a putut fi salvată.');
+    try {
+        csrf_require_valid();
+        $res = fundraising_f230_save_template_map($pdo, $_POST);
+        if (!empty($res['success'])) {
+            $succes = 'Maparea template-ului a fost salvată.';
+        } else {
+            $eroare = (string)($res['error'] ?? 'Maparea nu a putut fi salvată.');
+        }
+    } catch (Throwable $e) {
+        error_log('f230-template-mapper save error: ' . $e->getMessage());
+        $eroare = 'Maparea nu a putut fi salvată din cauza unei erori interne. Reîncearcă.';
     }
 }
 
@@ -395,7 +417,12 @@ if (!$template_exists) {
             }
             state.currentPage = Math.max(1, Math.min(pageCount, state.currentPage));
             refreshPreview();
-        }).catch(function () {
+        }).catch(function (err) {
+            var msg = 'Nu s-a putut încărca preview-ul PDF. Verifică template-ul și reîncarcă pagina.';
+            if (err && err.message) {
+                msg = msg + ' (' + err.message + ')';
+            }
+            alert(msg);
             renderFallbackSheet();
         });
     }
