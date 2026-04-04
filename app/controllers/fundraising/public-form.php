@@ -53,11 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_formular_230_
             'sursa' => 'online',
             'ip' => (string)($_SERVER['REMOTE_ADDR'] ?? ''),
             'user_agent' => (string)($_SERVER['HTTP_USER_AGENT'] ?? ''),
+            'trimite_emailuri' => false,
+            'trimite_confirmare' => true,
         ]);
         if (!empty($result['success'])) {
+            $dispatch = fundraising_f230_dispatch_submission_emails($pdo, (int)$result['id'], !empty($result['trimite_confirmare']));
             $_SESSION['fundraising_public_flash'] = [
                 'succes' => 'Formularul a fost trimis cu succes. Vă mulțumim!',
-                'warning' => (string)($result['warning'] ?? ''),
+                'warning' => (string)($dispatch['warning'] ?? ''),
             ];
             header('Location: /fundraising/formular-230?trimis=1');
             exit;
