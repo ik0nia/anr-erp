@@ -6,8 +6,29 @@
     <title>Formular 230 - <?php echo htmlspecialchars(get_platform_name()); ?></title>
     <link href="/css/tailwind.css?v=<?php echo @filemtime(APP_ROOT . '/css/tailwind.css') ?: '1'; ?>" rel="stylesheet">
     <script src="https://unpkg.com/lucide@0.344.0"></script>
+    <style>
+        body {
+            background-color: #808080;
+        }
+
+        #form-public-230 input[type="text"],
+        #form-public-230 input[type="email"] {
+            border: 3px solid #000 !important;
+            background-color: #fff !important;
+            color: #000 !important;
+        }
+
+        #form-public-230 fieldset {
+            border: 3px solid #000 !important;
+        }
+
+        #signature-container-public {
+            border: 3px solid #000 !important;
+            background-color: #fff !important;
+        }
+    </style>
 </head>
-<body class="bg-gray-200 text-black min-h-screen">
+<body class="text-black min-h-screen">
 <main class="max-w-4xl mx-auto px-4 py-6 sm:py-8" role="main">
     <section class="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
         <header class="p-6 sm:p-8 border-b border-slate-200">
@@ -127,7 +148,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-1">Semnătură <span class="text-red-600">*</span></label>
                     <p class="text-xs text-black mb-2">Semnați cu mouse-ul sau cu degetul. Culoarea semnăturii este albastru închis, fundal transparent.</p>
-                    <div class="rounded-lg border border-black bg-white p-2">
+                    <div id="signature-container-public" class="rounded-lg border border-black bg-white p-2">
                         <canvas id="signature-pad-public" class="w-full rounded bg-white" style="height: 180px;" aria-label="Zonă semnătură formular 230"></canvas>
                     </div>
                     <div class="mt-2 flex gap-2">
