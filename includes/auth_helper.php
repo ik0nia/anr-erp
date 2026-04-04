@@ -10,7 +10,15 @@ if (!defined('PLATFORM_NAME')) {
 
 /** Pagini care nu necesită autentificare */
 function auth_pagini_publice() {
-    return ['login.php', 'logout.php', 'recuperare-parola.php', 'reset-parola.php', 'install-auth.php', 'setare-admin.php'];
+    return [
+        'login.php',
+        'logout.php',
+        'recuperare-parola.php',
+        'reset-parola.php',
+        'install-auth.php',
+        'setare-admin.php',
+        'fundraising-formular-230-public.php',
+    ];
 }
 
 /**
