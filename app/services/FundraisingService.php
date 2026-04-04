@@ -109,6 +109,38 @@ function fundraising_f230_rel_path(string $absolute_path): string
 }
 
 /**
+ * Returnează calea template-ului implicit livrat în repository.
+ */
+function fundraising_f230_default_template_rel(): string
+{
+    return 'app/resources/fundraising/D230_ERP2026.pdf';
+}
+
+/**
+ * Resolve calea efectivă de template:
+ * 1) setarea salvată în DB, dacă există și fișierul este prezent;
+ * 2) fallback pe template-ul implicit din repository.
+ */
+function fundraising_f230_resolve_template_rel(PDO $pdo): string
+{
+    $saved_rel = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE) ?? ''));
+    if ($saved_rel !== '') {
+        $saved_abs = fundraising_f230_abs_path($saved_rel);
+        if (is_file($saved_abs)) {
+            return $saved_rel;
+        }
+    }
+
+    $default_rel = fundraising_f230_default_template_rel();
+    $default_abs = fundraising_f230_abs_path($default_rel);
+    if (is_file($default_abs)) {
+        return $default_rel;
+    }
+
+    return '';
+}
+
+/**
  * Citește o setare (key-value) din tabela setari.
  */
 function fundraising_setare_get(PDO $pdo, string $cheie): ?string
@@ -202,7 +234,7 @@ function fundraising_f230_public_url(): string
  */
 function fundraising_f230_get_settings(PDO $pdo): array
 {
-    $template_rel = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE) ?? ''));
+    $template_rel = fundraising_f230_resolve_template_rel($pdo);
     $template_abs = $template_rel !== '' ? fundraising_f230_abs_path($template_rel) : '';
     $confirm_html = (string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_CONFIRM) ?? '');
 
@@ -597,7 +629,7 @@ function fundraising_f230_get_template_placements(PDO $pdo, string $template_abs
  */
 function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_abs_path, int $record_id): array
 {
-    $template_rel = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE) ?? ''));
+    $template_rel = fundraising_f230_resolve_template_rel($pdo);
     if ($template_rel === '') {
         return ['success' => false, 'error' => 'Nu există template PDF configurat în Setări Fundraising.'];
     }
