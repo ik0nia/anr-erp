@@ -166,6 +166,13 @@
                                type="file"
                                accept=".pdf,application/pdf"
                                class="block w-full text-sm text-slate-700 dark:text-gray-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-slate-100 dark:file:bg-gray-700 file:text-slate-800 dark:file:text-gray-100">
+                        <div>
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium focus:ring-2 focus:ring-amber-500">
+                                <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i>
+                                Salveaza
+                            </button>
+                        </div>
                         <div class="pt-1">
                             <a href="/util/f230-template-mapper.php"
                                target="_blank"
