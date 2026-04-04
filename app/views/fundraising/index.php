@@ -145,6 +145,12 @@
                                 <?php endif; ?>
                             </p>
                         <?php endif; ?>
+                        <?php if (!empty($setari_modul['template_uploaded_at_display'])): ?>
+                            <p class="text-xs text-slate-600 dark:text-gray-400">
+                                Ultimul upload template:
+                                <strong><?php echo htmlspecialchars((string)$setari_modul['template_uploaded_at_display']); ?></strong>
+                            </p>
+                        <?php endif; ?>
                         <?php if (!empty($setari_modul['template_exists'])): ?>
                             <div class="text-xs">
                                 <?php if (!empty($setari_modul['template_mapat'])): ?>
