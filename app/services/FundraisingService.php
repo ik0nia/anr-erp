@@ -431,7 +431,7 @@ function fundraising_f230_get_template_map(PDO $pdo): array
         return ['mapped' => false, 'items_by_tag' => [], 'missing_tags' => fundraising_f230_required_map_tags()];
     }
 
-    $page_count = fundraising_f230_get_template_pdf_page_count($template_abs);
+    $page_count = fundraising_f230_template_map_max_pages($template_abs);
     $validated = fundraising_f230_validate_template_map($decoded, $template_sha256, $page_count);
     if (empty($validated['success'])) {
         return [
@@ -494,7 +494,7 @@ function fundraising_f230_save_template_map(PDO $pdo, array $post): array
         return ['success' => false, 'error' => 'Payload mapare invalid (JSON).'];
     }
 
-    $page_count = fundraising_f230_get_template_pdf_page_count($template_abs);
+    $page_count = fundraising_f230_template_map_max_pages($template_abs);
     $validated = fundraising_f230_validate_template_map($payload, $template_sha256, $page_count);
     if (empty($validated['success'])) {
         return ['success' => false, 'error' => (string)($validated['error'] ?? 'Mapare invalidă.')];
@@ -910,6 +910,20 @@ function fundraising_f230_get_template_pdf_page_count(string $template_abs): int
     }
 
     return 0;
+}
+
+/**
+ * Returnează numărul maxim de pagini permis pentru validarea mapării.
+ * Dacă serverul nu poate determina robust numărul de pagini, folosim o limită
+ * sigură pentru a evita blocarea mapării (UI-ul pdf.js oferă numărul real).
+ */
+function fundraising_f230_template_map_max_pages(string $template_abs): int
+{
+    $count = fundraising_f230_get_template_pdf_page_count($template_abs);
+    if ($count > 0) {
+        return $count;
+    }
+    return 30;
 }
 
 /**

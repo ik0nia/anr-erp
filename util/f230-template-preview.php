@@ -2,11 +2,26 @@
 /**
  * Endpoint securizat pentru livrarea template-ului PDF către mapper.
  */
-require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../app/bootstrap.php';
 require_once APP_ROOT . '/app/services/FundraisingService.php';
+if (!function_exists('require_login')) {
+    require_once APP_ROOT . '/includes/auth_helper.php';
+}
 
 require_login();
-fundraising_f230_ensure_schema($pdo);
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    http_response_code(500);
+    echo 'Conexiunea la baza de date nu este disponibilă.';
+    exit;
+}
+try {
+    fundraising_f230_ensure_schema($pdo);
+} catch (Throwable $e) {
+    error_log('f230-template-preview ensure_schema error: ' . $e->getMessage());
+    http_response_code(500);
+    echo 'Nu s-a putut inițializa modulul Fundraising.';
+    exit;
+}
 
 $template_abs = fundraising_f230_template_abs($pdo);
 if ($template_abs === '' || !is_file($template_abs)) {
