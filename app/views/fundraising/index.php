@@ -131,7 +131,7 @@
                 <form method="post" enctype="multipart/form-data" action="/fundraising?tab=setari"
                       class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6 space-y-6">
                     <?php echo csrf_field(); ?>
-                    <input type="hidden" name="salveaza_setari_fundraising" value="all" id="input-actiune-setari-fundraising">
+                    <input type="hidden" name="salveaza_setari_fundraising" value="1">
 
                     <section aria-labelledby="f230-template-heading" class="space-y-3">
                         <h3 id="f230-template-heading" class="text-base font-semibold text-slate-900 dark:text-white">Template PDF Formular 230</h3>
@@ -168,7 +168,8 @@
                                class="block w-full text-sm text-slate-700 dark:text-gray-300 file:mr-3 file:px-3 file:py-2 file:rounded-lg file:border-0 file:bg-slate-100 dark:file:bg-gray-700 file:text-slate-800 dark:file:text-gray-100">
                         <div>
                             <button type="submit"
-                                    onclick="document.getElementById('input-actiune-setari-fundraising').value='template_upload';"
+                                    name="salveaza_template_f230"
+                                    value="1"
                                     class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium focus:ring-2 focus:ring-amber-500">
                                 <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i>
                                 Salveaza
@@ -244,7 +245,8 @@
 
                     <div class="pt-2">
                         <button type="submit"
-                                onclick="document.getElementById('input-actiune-setari-fundraising').value='all';"
+                                name="salveaza_setari_fundraising"
+                                value="1"
                                 class="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-amber-500">
                             <i data-lucide="save" class="w-4 h-4" aria-hidden="true"></i>
                             Salvează setările
