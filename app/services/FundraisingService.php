@@ -1149,21 +1149,22 @@ function fundraising_f230_render_overlay_pdf(
             foreach ($placements as $pl) {
                 $tag = (string)($pl['tag'] ?? '');
                 $font_pt = max(7.0, min(14.0, (float)($pl['font_pt'] ?? 14.0)));
-                $x_mm = (float)($pl['x_mm'] ?? 0.0);
-                $y_mm_top = (float)($pl['y_mm'] ?? 0.0);
-                $w_mm = max(3.0, (float)($pl['w_mm'] ?? 3.0));
-                $h_mm = max(1.2, (float)($pl['h_mm'] ?? 1.2));
-                $y_mm_bottom = $page_height_mm - $y_mm_top;
+                // Mapper-ul salvează coordonate procentuale față de colțul stânga-sus.
+                // FPDF folosește același sistem de coordonate; nu inversăm axa Y.
+                $x_mm = max(0.0, min($page_width_mm - 3.0, (float)($pl['x_mm'] ?? 0.0)));
+                $y_mm_top = max(0.0, min($page_height_mm - 1.2, (float)($pl['y_mm'] ?? 0.0)));
+                $w_mm = max(3.0, min($page_width_mm - $x_mm, (float)($pl['w_mm'] ?? 3.0)));
+                $h_mm = max(1.2, min($page_height_mm - $y_mm_top, (float)($pl['h_mm'] ?? 1.2)));
                 $font_mm = documente_pdf_pt_to_mm($font_pt);
 
                 // PDF Overlay: scriem valorile în zona mapată.
                 $pdf->SetFillColor(255, 255, 255);
-                $pdf->Rect($x_mm, max(0.0, $y_mm_bottom - $h_mm), $w_mm, $h_mm, 'F');
+                $pdf->Rect($x_mm, $y_mm_top, $w_mm, $h_mm, 'F');
 
                 if ($tag === '230semnatura') {
                     $sig_h = max(4.0, $h_mm);
                     $sig_w = max(6.0, $w_mm);
-                    $sig_y = max(0.0, $page_height_mm - $y_mm_top - $sig_h);
+                    $sig_y = max(0.0, min($page_height_mm - $sig_h, $y_mm_top));
                     $pdf->Image($signature_abs_path, $x_mm, $sig_y, $sig_w, $sig_h, 'PNG');
                     continue;
                 }
@@ -1179,7 +1180,8 @@ function fundraising_f230_render_overlay_pdf(
                 }
                 $pdf->SetTextColor(0, 0, 0);
                 $pdf->SetFont('Helvetica', '', $font_pt);
-                $text_y = max(1.0, $y_mm_bottom - max(0.1, ($h_mm - $font_mm) * 0.35));
+                $baseline_offset = min(max(0.8, $h_mm - 0.2), max(0.8, $font_mm * 0.85));
+                $text_y = min($page_height_mm - 0.5, max(0.8, $y_mm_top + $baseline_offset));
                 $pdf->Text($x_mm + 0.4, $text_y, (string)$enc);
             }
         }
