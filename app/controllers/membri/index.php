@@ -44,26 +44,37 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     exit;
 }
 
-// --- POST: Salvare mesaj precompletat ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_mesaj_precompletat'])) {
-    csrf_require_valid();
-    $_SESSION['membri_mesaj_subiect'] = trim($_POST['mesaj_subiect'] ?? '');
-    $_SESSION['membri_mesaj_continut'] = trim($_POST['mesaj_continut'] ?? '');
-    $params = [];
-    if (isset($_POST['redirect_status'])) $params['status'] = $_POST['redirect_status'];
-    if (!empty($_POST['redirect_sort'])) $params['sort'] = $_POST['redirect_sort'];
-    if (!empty($_POST['redirect_dir'])) $params['dir'] = $_POST['redirect_dir'];
-    if (!empty($_POST['redirect_per_page'])) $params['per_page'] = $_POST['redirect_per_page'];
-    if (!empty($_POST['redirect_page'])) $params['page'] = $_POST['redirect_page'];
-    if (isset($_POST['redirect_cautare'])) $params['cautare'] = $_POST['redirect_cautare'];
-    if (!empty($_POST['redirect_avertizari'])) $params['avertizari'] = $_POST['redirect_avertizari'];
-    if (!empty($_POST['redirect_actualizare_cnp_ci'])) $params['actualizare_cnp_ci'] = $_POST['redirect_actualizare_cnp_ci'];
-    if (!empty($_POST['redirect_aniversari_azi'])) $params['aniversari_azi'] = $_POST['redirect_aniversari_azi'];
-    if (!empty($_POST['redirect_cotizatie_neachitata'])) $params['cotizatie_neachitata'] = $_POST['redirect_cotizatie_neachitata'];
-    if (!empty($_POST['redirect_fara_contact'])) $params['fara_contact'] = $_POST['redirect_fara_contact'];
-    $redirect = '/membri' . (count($params) ? '?' . http_build_query($params) : '');
-    header('Location: ' . $redirect);
-    exit;
+// --- POST handlers ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Adaugare membru nou (formular modal din pagina lista)
+    if (isset($_POST['adauga_membru'])) {
+        csrf_require_valid();
+        $result = membri_create($pdo, $_POST, $_FILES);
+        if (!empty($result['success'])) {
+            header('Location: /membri?succes=1');
+            exit;
+        }
+        $eroare = (string)($result['error'] ?? 'Membrul nu a putut fi salvat.');
+    } elseif (isset($_POST['save_mesaj_precompletat'])) {
+        csrf_require_valid();
+        $_SESSION['membri_mesaj_subiect'] = trim($_POST['mesaj_subiect'] ?? '');
+        $_SESSION['membri_mesaj_continut'] = trim($_POST['mesaj_continut'] ?? '');
+        $params = [];
+        if (isset($_POST['redirect_status'])) $params['status'] = $_POST['redirect_status'];
+        if (!empty($_POST['redirect_sort'])) $params['sort'] = $_POST['redirect_sort'];
+        if (!empty($_POST['redirect_dir'])) $params['dir'] = $_POST['redirect_dir'];
+        if (!empty($_POST['redirect_per_page'])) $params['per_page'] = $_POST['redirect_per_page'];
+        if (!empty($_POST['redirect_page'])) $params['page'] = $_POST['redirect_page'];
+        if (isset($_POST['redirect_cautare'])) $params['cautare'] = $_POST['redirect_cautare'];
+        if (!empty($_POST['redirect_avertizari'])) $params['avertizari'] = $_POST['redirect_avertizari'];
+        if (!empty($_POST['redirect_actualizare_cnp_ci'])) $params['actualizare_cnp_ci'] = $_POST['redirect_actualizare_cnp_ci'];
+        if (!empty($_POST['redirect_aniversari_azi'])) $params['aniversari_azi'] = $_POST['redirect_aniversari_azi'];
+        if (!empty($_POST['redirect_cotizatie_neachitata'])) $params['cotizatie_neachitata'] = $_POST['redirect_cotizatie_neachitata'];
+        if (!empty($_POST['redirect_fara_contact'])) $params['fara_contact'] = $_POST['redirect_fara_contact'];
+        $redirect = '/membri' . (count($params) ? '?' . http_build_query($params) : '');
+        header('Location: ' . $redirect);
+        exit;
+    }
 }
 
 // Reset mesaj precompletat

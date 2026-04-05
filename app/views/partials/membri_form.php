@@ -69,6 +69,7 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
         <input type="hidden" name="membru_id" value="<?php echo $membru['id']; ?>">
         <?php endif; ?>
         <input type="hidden" name="<?php echo $is_edit ? 'actualizeaza_membru' : 'adauga_membru'; ?>" value="1">
+        <input type="hidden" name="status_dosar" value="<?php echo $val('status_dosar', 'Activ'); ?>">
         
         <?php 
         $input_class = 'w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-slate-900 dark:text-white dark:bg-gray-700';
@@ -113,6 +114,16 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
                         <div>
                             <label for="email" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Email</label>
                             <input type="email" id="email" name="email" value="<?php echo $val('email'); ?>" class="<?php echo $input_class; ?>">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="nume_apartinator" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume aparținător</label>
+                                <input type="text" id="nume_apartinator" name="nume_apartinator" value="<?php echo $val('nume_apartinator'); ?>" class="<?php echo $input_class; ?>">
+                            </div>
+                            <div>
+                                <label for="prenume_apartinator" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Prenume aparținător</label>
+                                <input type="text" id="prenume_apartinator" name="prenume_apartinator" value="<?php echo $val('prenume_apartinator'); ?>" class="<?php echo $input_class; ?>">
+                            </div>
                         </div>
                         <div>
                             <label class="flex items-center">
@@ -442,6 +453,10 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
                     <label for="cidataelib" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">C.I. data elib.</label>
                     <input type="date" id="cidataelib" name="cidataelib" value="<?php echo $val('cidataelib'); ?>" class="<?php echo $input_class; ?>">
                 </div>
+                <div>
+                    <label for="cidataexp" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">C.I. data expirării</label>
+                    <input type="date" id="cidataexp" name="cidataexp" value="<?php echo $val('cidataexp'); ?>" class="<?php echo $input_class; ?>">
+                </div>
             </div>
         </div>
         <div class="border-b border-slate-200 dark:border-gray-700 pb-4">
@@ -458,6 +473,14 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
                 <div class="md:col-span-2">
                     <label for="email" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Email</label>
                     <input type="email" id="email" name="email" value="<?php echo $val('email'); ?>" class="<?php echo $input_class; ?>">
+                </div>
+                <div>
+                    <label for="nume_apartinator" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume aparținător</label>
+                    <input type="text" id="nume_apartinator" name="nume_apartinator" value="<?php echo $val('nume_apartinator'); ?>" class="<?php echo $input_class; ?>">
+                </div>
+                <div>
+                    <label for="prenume_apartinator" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Prenume aparținător</label>
+                    <input type="text" id="prenume_apartinator" name="prenume_apartinator" value="<?php echo $val('prenume_apartinator'); ?>" class="<?php echo $input_class; ?>">
                 </div>
             </div>
         </div>
@@ -479,6 +502,10 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
                 <div class="md:col-span-2">
                     <label for="domloc" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Localitatea</label>
                     <input type="text" id="domloc" name="domloc" value="<?php echo $val('domloc'); ?>" class="<?php echo $input_class; ?>">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="judet_domiciliu" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Județ</label>
+                    <input type="text" id="judet_domiciliu" name="judet_domiciliu" value="<?php echo $val('judet_domiciliu'); ?>" class="<?php echo $input_class; ?>">
                 </div>
                 <div class="md:col-span-2">
                     <label for="domstr" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Strada</label>
@@ -510,7 +537,7 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
                 </div>
             </div>
         </div>
-        <div class="border-b border-slate-200 dark:border-gray-700 pb-4">
+                <div class="border-b border-slate-200 dark:border-gray-700 pb-4">
             <h3 class="text-md font-semibold text-slate-900 dark:text-white mb-4">Handicap</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -539,6 +566,20 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
                     <label for="hmotiv" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Motiv Handicap</label>
                     <textarea id="hmotiv" name="hmotiv" rows="3" class="<?php echo $input_class; ?>"><?php echo $val('hmotiv'); ?></textarea>
                 </div>
+                        <div class="md:col-span-2">
+                            <label for="diagnostic" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Diagnostic</label>
+                            <textarea id="diagnostic" name="diagnostic" rows="3" class="<?php echo $input_class; ?>"><?php echo $val('diagnostic'); ?></textarea>
+                        </div>
+                        <div>
+                            <label for="insotitor" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Asistent personal</label>
+                            <select id="insotitor" name="insotitor" class="<?php echo $input_class; ?>">
+                                <option value="0" <?php echo $selected('insotitor', '0'); ?>>Nespecificat</option>
+                                <option value="INDEMNIZATIE INSOTITOR" <?php echo $selected('insotitor', 'INDEMNIZATIE INSOTITOR'); ?>>Indemnizatie insotitor</option>
+                                <option value="ASISTENT PERSONAL" <?php echo $selected('insotitor', 'ASISTENT PERSONAL'); ?>>Asistent personal</option>
+                                <option value="FARA" <?php echo $selected('insotitor', 'FARA'); ?>>Fara</option>
+                                <option value="NESPECIFICAT" <?php echo $selected('insotitor', 'NESPECIFICAT'); ?>>Nespecificat</option>
+                            </select>
+                        </div>
                 <div>
                     <label for="cenr" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nr. Certificat Handicap</label>
                     <input type="text" id="cenr" name="cenr" value="<?php echo $val('cenr'); ?>" class="<?php echo $input_class; ?>">
@@ -571,11 +612,29 @@ function render_formular_membru($membru = null, $eroare = '', $layout_3col = fal
         <div class="border-b border-slate-200 dark:border-gray-700 pb-4">
             <h3 class="text-md font-semibold text-slate-900 dark:text-white mb-4">Altele</h3>
             <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="biblioteca_online_username" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Username Bibliotecă Online</label>
+                        <input type="text" id="biblioteca_online_username" name="biblioteca_online_username" value="<?php echo $val('biblioteca_online_username'); ?>" class="<?php echo $input_class; ?>">
+                    </div>
+                    <div>
+                        <label for="biblioteca_online_parola" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Parolă Bibliotecă Online</label>
+                        <input type="text" id="biblioteca_online_parola" name="biblioteca_online_parola" value="<?php echo $val('biblioteca_online_parola'); ?>" class="<?php echo $input_class; ?>">
+                    </div>
+                </div>
                 <div>
                     <label class="flex items-center">
                         <input type="hidden" name="gdpr" value="0">
                         <input type="checkbox" id="gdpr" name="gdpr" value="1" <?php echo $checked('gdpr', '1'); ?> class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
                         <span class="ml-2 text-sm text-slate-800 dark:text-gray-200">Acord GDPR</span>
+                    </label>
+                </div>
+                <div>
+                    <label class="flex items-center">
+                        <input type="hidden" name="newsletter_opt_in" value="0">
+                        <input type="checkbox" id="newsletter_opt_in" name="newsletter_opt_in" value="1" <?php echo $checked('newsletter_opt_in', '1'); ?>
+                               class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
+                        <span class="ml-2 text-sm text-slate-800 dark:text-gray-200">Primește newsletter</span>
                     </label>
                 </div>
                 <div>

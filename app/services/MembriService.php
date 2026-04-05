@@ -607,6 +607,21 @@ function membri_next_dosar_nr(PDO $pdo): string {
 }
 
 /**
+ * Verifica daca o coloana exista in tabela membri.
+ */
+function membri_has_column(PDO $pdo, string $column_name): bool {
+    $column_name = trim($column_name);
+    if ($column_name === '') return false;
+    try {
+        $stmt = $pdo->prepare("SHOW COLUMNS FROM membri LIKE ?");
+        $stmt->execute([$column_name]);
+        return (bool)$stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+/**
  * Obtine istoricul de modificari pentru un membru.
  */
 function membri_istoric(PDO $pdo, int $id, ?array $membru = null): array {
@@ -789,6 +804,16 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
     $eroare = '';
     $membru_id = null;
 
+    // Compatibilitate schemă: unele instanțe nu au încă aceste coloane.
+    // Le asigurăm înainte de orice INSERT/UPDATE pentru a evita eșecul la creare.
+    membri_ensure_biblioteca_online_columns($pdo);
+    try {
+        $chk = $pdo->query("SHOW COLUMNS FROM membri LIKE 'newsletter_opt_in'");
+        if (!$chk->fetch()) {
+            $pdo->exec("ALTER TABLE membri ADD COLUMN newsletter_opt_in TINYINT(1) DEFAULT 0");
+        }
+    } catch (PDOException $e) {}
+
     // Extrage CNP din post_data inainte de orice validare
     $cnp = preg_replace('/\D/', '', $post_data['cnp'] ?? '');
 
@@ -893,6 +918,14 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
 
     // Pregateste datele
     $dosarnr = trim($post_data['dosarnr'] ?? '') ?: null;
+    if (!$is_update && ($dosarnr === null || $dosarnr === '')) {
+        try {
+            $dosarnr = (string)membri_next_dosar_nr($pdo);
+        } catch (Throwable $e) {
+            // Keep null fallback and let DB constraints/reporting handle edge cases.
+            $dosarnr = null;
+        }
+    }
     $dosardata = !empty($post_data['dosardata']) ? date('Y-m-d', strtotime($post_data['dosardata'])) : null;
     $status_dosar = in_array($post_data['status_dosar'] ?? '', ['Activ', 'Expirat', 'Suspendat', 'Retras', 'Decedat']) ? $post_data['status_dosar'] : 'Activ';
     $telefonnev = trim($post_data['telefonnev'] ?? '') ?: null;
