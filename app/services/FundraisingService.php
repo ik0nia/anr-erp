@@ -1285,15 +1285,67 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
             $retry_abs = (string)($converted['path'] ?? '');
             $retry_render = fundraising_f230_render_overlay_pdf($pdo, $retry_abs, $pdf_abs, $signature_abs_path, $tag_values);
             if (empty($retry_render['success'])) {
-                return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . (string)($retry_render['error'] ?? 'Randare eșuată după conversie.')];
+                $message = (string)($retry_render['error'] ?? 'Randare eșuată după conversie.');
+                if (!fundraising_f230_is_fpdi_unsupported_compression_error($message)) {
+                    return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . $message];
+                }
+                // Continuăm cu fallback pe template-ul default din aplicație.
+            } else {
+                fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'fallback');
+                if ($template_rel !== fundraising_f230_default_template_rel()) {
+                    fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, fundraising_f230_default_template_rel());
+                }
+                if (!is_file($pdf_abs)) {
+                    return ['success' => false, 'error' => 'PDF-ul completat nu a fost salvat pe server.'];
+                }
+                return [
+                    'success' => true,
+                    'pdf_abs_path' => $pdf_abs,
+                    'pdf_rel_path' => fundraising_f230_rel_path($pdf_abs),
+                    'pdf_filename' => $pdf_filename,
+                ];
             }
-            fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'fallback');
-        } else {
+        }
+
+        // Fallback final: template-ul default inclus în aplicație (convertit 1.4).
+        $default_rel = fundraising_f230_default_template_rel();
+        $default_abs = fundraising_f230_abs_path($default_rel);
+        if (!is_file($default_abs)) {
             return ['success' => false, 'error' => 'Template PDF incompatibil FPDI și nu a putut fi convertit automat pe server.'];
         }
-    } else {
-        fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'direct');
+        $default_render = fundraising_f230_render_overlay_pdf($pdo, $default_abs, $pdf_abs, $signature_abs_path, $tag_values);
+        if (empty($default_render['success'])) {
+            $default_message = (string)($default_render['error'] ?? 'Randare eșuată pe template-ul default.');
+            if (fundraising_f230_is_fpdi_unsupported_compression_error($default_message)) {
+                $default_converted = fundraising_f230_get_or_create_fpdi_compatible_template($default_abs);
+                if (!empty($default_converted['success'])) {
+                    $default_retry_abs = (string)($default_converted['path'] ?? '');
+                    $default_retry_render = fundraising_f230_render_overlay_pdf($pdo, $default_retry_abs, $pdf_abs, $signature_abs_path, $tag_values);
+                    if (empty($default_retry_render['success'])) {
+                        return ['success' => false, 'error' => 'Template PDF incompatibil FPDI și nu a putut fi convertit automat pe server.'];
+                    }
+                } else {
+                    return ['success' => false, 'error' => 'Template PDF incompatibil FPDI și nu a putut fi convertit automat pe server.'];
+                }
+            } else {
+                return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . $default_message];
+            }
+        }
+
+        // Dacă fallback-ul default a mers, îl promovăm ca template activ pentru submit-uri viitoare.
+        fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, $default_rel);
+        fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'fallback');
+        if (!is_file($pdf_abs)) {
+            return ['success' => false, 'error' => 'PDF-ul completat nu a fost salvat pe server.'];
+        }
+        return [
+            'success' => true,
+            'pdf_abs_path' => $pdf_abs,
+            'pdf_rel_path' => fundraising_f230_rel_path($pdf_abs),
+            'pdf_filename' => $pdf_filename,
+        ];
     }
+    fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'direct');
 
     if (!is_file($pdf_abs)) {
         return ['success' => false, 'error' => 'PDF-ul completat nu a fost salvat pe server.'];
