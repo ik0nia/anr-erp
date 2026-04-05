@@ -460,6 +460,41 @@ function fundraising_f230_get_template_map(PDO $pdo): array
     $page_count = fundraising_f230_template_map_max_pages($template_abs);
     $validated = fundraising_f230_validate_template_map($decoded, $template_sha256, $page_count);
     if (empty($validated['success'])) {
+        // Preserve existing mapping when template file is replaced:
+        // if items are structurally valid, remap payload to current SHA.
+        $decoded_items = isset($decoded['items']) && is_array($decoded['items']) ? $decoded['items'] : null;
+        if ($decoded_items !== null) {
+            $rebound_payload = [
+                'template_sha256' => $template_sha256,
+                'items' => $decoded_items,
+            ];
+            $rebound = fundraising_f230_validate_template_map($rebound_payload, $template_sha256, $page_count);
+            if (!empty($rebound['success'])) {
+                $save_payload = [
+                    'template_sha256' => $template_sha256,
+                    'template_rel' => $template_rel,
+                    'mapped_at' => date('c'),
+                    'items' => array_values((array)$rebound['items_by_tag']),
+                ];
+                try {
+                    fundraising_setare_set(
+                        $pdo,
+                        FUNDRAISING_SETARE_TEMPLATE_MAPPING,
+                        (string)json_encode($save_payload, JSON_UNESCAPED_UNICODE)
+                    );
+                } catch (Throwable $e) {
+                    // Continue with in-memory mapping, even if persisting rebound fails.
+                }
+                return [
+                    'mapped' => true,
+                    'items_by_tag' => (array)$rebound['items_by_tag'],
+                    'missing_tags' => [],
+                    'template_sha256' => $template_sha256,
+                ];
+            }
+            $validated = $rebound;
+        }
+
         return [
             'mapped' => false,
             'items_by_tag' => [],
