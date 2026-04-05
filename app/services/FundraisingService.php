@@ -1771,6 +1771,52 @@ function fundraising_f230_process_submission(PDO $pdo, array $post, array $opts 
 }
 
 /**
+ * Golește tabelul cu formulare 230 completate.
+ * Curăță și fișierele asociate (PDF + semnături) dacă există pe server.
+ */
+function fundraising_f230_clear_formulare(PDO $pdo): array
+{
+    fundraising_f230_ensure_schema($pdo);
+    $rows = [];
+    try {
+        $stmt = $pdo->query("SELECT semnatura_path, pdf_path FROM fundraising_f230_formulare");
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    } catch (Throwable $e) {
+        $rows = [];
+    }
+
+    $deleted_rows = 0;
+    try {
+        $pdo->beginTransaction();
+        $del = $pdo->prepare("DELETE FROM fundraising_f230_formulare");
+        $del->execute();
+        $deleted_rows = (int)$del->rowCount();
+        $pdo->exec("ALTER TABLE fundraising_f230_formulare AUTO_INCREMENT = 1");
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        return ['success' => false, 'error' => 'Tabelul nu a putut fi golit: ' . $e->getMessage()];
+    }
+
+    foreach ($rows as $row) {
+        foreach (['semnatura_path', 'pdf_path'] as $key) {
+            $rel = trim((string)($row[$key] ?? ''));
+            if ($rel === '') {
+                continue;
+            }
+            $abs = fundraising_f230_abs_path($rel);
+            if (is_file($abs)) {
+                @unlink($abs);
+            }
+        }
+    }
+
+    return ['success' => true, 'deleted' => $deleted_rows];
+}
+
+/**
  * Lista formularelor completate.
  */
 function fundraising_f230_list_formulare(PDO $pdo, int $limit = 1000): array

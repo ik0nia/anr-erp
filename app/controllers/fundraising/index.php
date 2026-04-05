@@ -81,6 +81,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         $eroare = (string)($result['error'] ?? 'Formularul nu a putut fi salvat.');
+    } elseif (isset($_POST['goleste_tabel_formulare_230'])) {
+        csrf_require_valid();
+        $tab = 'formular230';
+        $result = fundraising_f230_clear_formulare($pdo);
+        if (!empty($result['success'])) {
+            header('Location: /fundraising?tab=formular230&succes_golire=1');
+            exit;
+        }
+        $eroare = (string)($result['error'] ?? 'Tabelul de formulare nu a putut fi golit.');
     }
 }
 
@@ -95,6 +104,9 @@ if (isset($_GET['succes_mapare'])) {
 }
 if (isset($_GET['succes_manual'])) {
     $succes = 'Formularul 230 a fost adăugat cu succes.';
+}
+if (isset($_GET['succes_golire'])) {
+    $succes = 'Tabelul „Formulare 230 completate” a fost golit.';
 }
 
 $setari_modul = fundraising_f230_get_settings($pdo);

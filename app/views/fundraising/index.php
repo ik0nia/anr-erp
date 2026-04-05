@@ -60,6 +60,16 @@
                             <i data-lucide="download" class="w-4 h-4" aria-hidden="true"></i>
                             Export
                         </a>
+                        <form method="post" action="/fundraising?tab=formular230" onsubmit="return confirm('Sigur doriți să goliți complet tabelul Formulare 230 completate? Această acțiune șterge toate înregistrările și fișierele aferente.');">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="goleste_tabel_formulare_230" value="1">
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-red-500"
+                                    aria-label="Golește tabelul Formulare 230 completate">
+                                <i data-lucide="trash-2" class="w-4 h-4" aria-hidden="true"></i>
+                                Golește tabelul
+                            </button>
+                        </form>
                         <button type="button"
                                 id="btn-adauga-manual"
                                 class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-amber-500"
