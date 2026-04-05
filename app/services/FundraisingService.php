@@ -1193,6 +1193,124 @@ function fundraising_f230_render_overlay_pdf(
 }
 
 /**
+ * Fallback de urgență: generează un PDF simplu (fără template FPDI),
+ * astfel încât submit-ul formularului să nu fie blocat de incompatibilități PDF.
+ */
+function fundraising_f230_render_emergency_pdf(array $data, string $signature_abs_path, string $pdf_abs): array
+{
+    try {
+        if (!class_exists('\\Mpdf\\Mpdf')) {
+            return ['success' => false, 'error' => 'mPDF nu este disponibil pentru fallback-ul de urgență.'];
+        }
+
+        $temp_dir = APP_ROOT . '/storage/mpdf-tmp';
+        if (!is_dir($temp_dir)) {
+            @mkdir($temp_dir, 0775, true);
+        }
+        if (!is_dir($temp_dir) || !is_writable($temp_dir)) {
+            $temp_dir = sys_get_temp_dir();
+        }
+
+        $esc = static function (string $value): string {
+            return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        };
+
+        $rows = [
+            'Nume' => (string)($data['nume'] ?? ''),
+            'Inițiala tatălui' => (string)($data['initiala_tatalui'] ?? ''),
+            'Prenume' => (string)($data['prenume'] ?? ''),
+            'CNP' => (string)($data['cnp'] ?? ''),
+            'Localitate' => (string)($data['localitate'] ?? ''),
+            'Județ' => (string)($data['judet'] ?? ''),
+            'Cod poștal' => (string)($data['cod_postal'] ?? ''),
+            'Strada' => (string)($data['strada'] ?? ''),
+            'Număr' => (string)($data['numar'] ?? ''),
+            'Bloc' => (string)($data['bloc'] ?? ''),
+            'Scară' => (string)($data['scara'] ?? ''),
+            'Etaj' => (string)($data['etaj'] ?? ''),
+            'Apartament' => (string)($data['apartament'] ?? ''),
+            'Telefon' => (string)($data['telefon'] ?? ''),
+            'Email' => (string)($data['email'] ?? ''),
+            'Acord GDPR' => ((int)($data['gdpr_acord'] ?? 0) === 1) ? 'DA' : 'NU',
+            'Data completării' => date('Y-m-d H:i:s'),
+        ];
+
+        $rows_html = '';
+        foreach ($rows as $label => $value) {
+            $rows_html .= '<tr>'
+                . '<th>' . $esc((string)$label) . '</th>'
+                . '<td>' . $esc((string)$value) . '</td>'
+                . '</tr>';
+        }
+
+        $signature_html = '<div class="signature-empty">Semnătură indisponibilă</div>';
+        if (is_file($signature_abs_path)) {
+            $sig_bin = @file_get_contents($signature_abs_path);
+            if ($sig_bin !== false && $sig_bin !== '') {
+                $signature_html = '<img class="signature-img" alt="Semnătură" src="data:image/png;base64,'
+                    . base64_encode($sig_bin) . '" />';
+            }
+        }
+
+        $html = '<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <title>Formular 230 - fallback de urgență</title>
+  <style>
+    body { font-family: DejaVu Sans, sans-serif; font-size: 11pt; color: #111; }
+    h1 { font-size: 16pt; margin: 0 0 6mm 0; }
+    .meta { color: #444; margin-bottom: 4mm; }
+    .notice { background: #fff6e5; border: 1px solid #f0c36d; padding: 3mm; margin-bottom: 5mm; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #333; padding: 2mm; vertical-align: top; }
+    th { width: 38%; text-align: left; background: #f2f2f2; }
+    .signature-wrap { margin-top: 6mm; }
+    .signature-title { font-weight: bold; margin-bottom: 2mm; }
+    .signature-box { border: 1px solid #333; min-height: 28mm; display: flex; align-items: center; justify-content: center; padding: 2mm; }
+    .signature-img { max-width: 100%; max-height: 24mm; object-fit: contain; }
+    .signature-empty { color: #777; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>Formular 230 - date colectate</h1>
+  <div class="meta">Generat automat de ERP ANR Bihor</div>
+  <div class="notice">
+    Acest document a fost generat în mod de urgență deoarece template-ul PDF activ este incompatibil FPDI.
+    Datele au fost salvate integral în ERP.
+  </div>
+  <table>' . $rows_html . '</table>
+  <div class="signature-wrap">
+    <div class="signature-title">Semnătură</div>
+    <div class="signature-box">' . $signature_html . '</div>
+  </div>
+</body>
+</html>';
+
+        $mpdf = new \Mpdf\Mpdf([
+            'format' => 'A4',
+            'mode' => 'utf-8',
+            'tempDir' => $temp_dir,
+            'margin_top' => 10,
+            'margin_right' => 10,
+            'margin_bottom' => 10,
+            'margin_left' => 10,
+        ]);
+        $mpdf->SetTitle('Formular 230 - fallback');
+        $mpdf->WriteHTML($html);
+        $mpdf->Output($pdf_abs, 'F');
+
+        if (!is_file($pdf_abs) || filesize($pdf_abs) <= 0) {
+            return ['success' => false, 'error' => 'Fallback-ul de urgență nu a putut salva PDF-ul.'];
+        }
+
+        return ['success' => true];
+    } catch (Throwable $e) {
+        return ['success' => false, 'error' => (string)$e->getMessage()];
+    }
+}
+
+/**
  * Transformă maparea salvată în poziții absolute (mm) pentru overlay.
  */
 function fundraising_f230_get_overlay_placements(PDO $pdo, float $page_width_mm, float $page_height_mm, int $page_no): array
@@ -1237,30 +1355,6 @@ function fundraising_f230_get_overlay_placements(PDO $pdo, float $page_width_mm,
  */
 function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_abs_path, int $record_id): array
 {
-    $template_rel = fundraising_f230_resolve_template_rel($pdo);
-    if ($template_rel === '') {
-        return ['success' => false, 'error' => 'Nu există template PDF configurat în Setări Fundraising.'];
-    }
-    $template_abs = fundraising_f230_abs_path($template_rel);
-    if (!is_file($template_abs)) {
-        return ['success' => false, 'error' => 'Template-ul PDF configurat nu există pe server.'];
-    }
-
-    $autoload = APP_ROOT . '/vendor/autoload.php';
-    if (!file_exists($autoload)) {
-        return ['success' => false, 'error' => 'Lipsesc bibliotecile Composer (vendor/autoload.php).'];
-    }
-    require_once $autoload;
-    if (!class_exists('setasign\\Fpdi\\Fpdi')) {
-        return ['success' => false, 'error' => 'FPDI nu este disponibil pentru procesarea template-ului PDF.'];
-    }
-
-    $tag_values = fundraising_f230_build_tag_values($data);
-    $map = fundraising_f230_get_template_map($pdo);
-    if (empty($map['mapped'])) {
-        return ['success' => false, 'error' => 'Template-ul PDF nu este mapat complet. Configurează maparea în tabul Setări.'];
-    }
-
     $storage = fundraising_f230_ensure_private_storage();
     $nume_part = fundraising_f230_filename_part((string)$data['nume'], 70);
     $prenume_part = fundraising_f230_filename_part((string)$data['prenume'], 70);
@@ -1273,11 +1367,66 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
     }
     $pdf_abs = $storage['base_dir'] . '/' . $pdf_filename;
 
+    $autoload = APP_ROOT . '/vendor/autoload.php';
+    if (!file_exists($autoload)) {
+        return ['success' => false, 'error' => 'Lipsesc bibliotecile Composer (vendor/autoload.php).'];
+    }
+    require_once $autoload;
+
+    $build_success_payload = static function () use ($pdf_abs, $pdf_filename): array {
+        return [
+            'success' => true,
+            'pdf_abs_path' => $pdf_abs,
+            'pdf_rel_path' => fundraising_f230_rel_path($pdf_abs),
+            'pdf_filename' => $pdf_filename,
+        ];
+    };
+
+    $try_emergency = static function (string $reason) use (
+        $pdo,
+        $data,
+        $signature_abs_path,
+        $pdf_abs,
+        $build_success_payload
+    ): array {
+        @error_log('[Fundraising F230] Emergency fallback activat: ' . $reason);
+        $safe = fundraising_f230_render_emergency_pdf($data, $signature_abs_path, $pdf_abs);
+        if (empty($safe['success'])) {
+            return [
+                'success' => false,
+                'error' => 'Template PDF incompatibil FPDI și fallback-ul de urgență nu a putut fi generat: '
+                    . (string)($safe['error'] ?? 'necunoscut'),
+            ];
+        }
+        fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'fallback');
+        $payload = $build_success_payload();
+        $payload['emergency_fallback'] = true;
+        return $payload;
+    };
+
+    $template_rel = fundraising_f230_resolve_template_rel($pdo);
+    if ($template_rel === '') {
+        return $try_emergency('template lipsă în setări');
+    }
+    $template_abs = fundraising_f230_abs_path($template_rel);
+    if (!is_file($template_abs)) {
+        return $try_emergency('fișier template inexistent: ' . $template_rel);
+    }
+
+    $tag_values = fundraising_f230_build_tag_values($data);
+    $map = fundraising_f230_get_template_map($pdo);
+    if (empty($map['mapped'])) {
+        return $try_emergency('mapare incompletă sau absentă');
+    }
+    if (!class_exists('setasign\\Fpdi\\Fpdi')) {
+        return $try_emergency('clasa FPDI indisponibilă');
+    }
+
     $render = fundraising_f230_render_overlay_pdf($pdo, $template_abs, $pdf_abs, $signature_abs_path, $tag_values);
     if (empty($render['success'])) {
         $message = (string)($render['error'] ?? 'Eroare necunoscută la randarea PDF.');
         if (!fundraising_f230_is_fpdi_unsupported_compression_error($message)) {
-            return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . $message];
+            return $try_emergency('randare activă eșuată: ' . $message);
         }
 
         $converted = fundraising_f230_get_or_create_fpdi_compatible_template($template_abs);
@@ -1287,7 +1436,7 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
             if (empty($retry_render['success'])) {
                 $message = (string)($retry_render['error'] ?? 'Randare eșuată după conversie.');
                 if (!fundraising_f230_is_fpdi_unsupported_compression_error($message)) {
-                    return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . $message];
+                    return $try_emergency('randare după conversie eșuată: ' . $message);
                 }
                 // Continuăm cu fallback pe template-ul default din aplicație.
             } else {
@@ -1296,14 +1445,9 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
                     fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, fundraising_f230_default_template_rel());
                 }
                 if (!is_file($pdf_abs)) {
-                    return ['success' => false, 'error' => 'PDF-ul completat nu a fost salvat pe server.'];
+                    return $try_emergency('fișier PDF lipsă după randare post-conversie');
                 }
-                return [
-                    'success' => true,
-                    'pdf_abs_path' => $pdf_abs,
-                    'pdf_rel_path' => fundraising_f230_rel_path($pdf_abs),
-                    'pdf_filename' => $pdf_filename,
-                ];
+                return $build_success_payload();
             }
         }
 
@@ -1311,7 +1455,7 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
         $default_rel = fundraising_f230_default_template_rel();
         $default_abs = fundraising_f230_abs_path($default_rel);
         if (!is_file($default_abs)) {
-            return ['success' => false, 'error' => 'Template PDF incompatibil FPDI și nu a putut fi convertit automat pe server.'];
+            return $try_emergency('template default inexistent: ' . $default_rel);
         }
         $default_render = fundraising_f230_render_overlay_pdf($pdo, $default_abs, $pdf_abs, $signature_abs_path, $tag_values);
         if (empty($default_render['success'])) {
@@ -1322,13 +1466,13 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
                     $default_retry_abs = (string)($default_converted['path'] ?? '');
                     $default_retry_render = fundraising_f230_render_overlay_pdf($pdo, $default_retry_abs, $pdf_abs, $signature_abs_path, $tag_values);
                     if (empty($default_retry_render['success'])) {
-                        return ['success' => false, 'error' => 'Template PDF incompatibil FPDI și nu a putut fi convertit automat pe server.'];
+                        return $try_emergency('randare default după conversie eșuată');
                     }
                 } else {
-                    return ['success' => false, 'error' => 'Template PDF incompatibil FPDI și nu a putut fi convertit automat pe server.'];
+                    return $try_emergency('conversie template default indisponibilă');
                 }
             } else {
-                return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . $default_message];
+                return $try_emergency('randare template default eșuată: ' . $default_message);
             }
         }
 
@@ -1336,27 +1480,17 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
         fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, $default_rel);
         fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'fallback');
         if (!is_file($pdf_abs)) {
-            return ['success' => false, 'error' => 'PDF-ul completat nu a fost salvat pe server.'];
+            return $try_emergency('fișier PDF lipsă după fallback default');
         }
-        return [
-            'success' => true,
-            'pdf_abs_path' => $pdf_abs,
-            'pdf_rel_path' => fundraising_f230_rel_path($pdf_abs),
-            'pdf_filename' => $pdf_filename,
-        ];
+        return $build_success_payload();
     }
     fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'direct');
 
     if (!is_file($pdf_abs)) {
-        return ['success' => false, 'error' => 'PDF-ul completat nu a fost salvat pe server.'];
+        return $try_emergency('fișier PDF lipsă după randarea directă');
     }
 
-    return [
-        'success' => true,
-        'pdf_abs_path' => $pdf_abs,
-        'pdf_rel_path' => fundraising_f230_rel_path($pdf_abs),
-        'pdf_filename' => $pdf_filename,
-    ];
+    return $build_success_payload();
 }
 
 /**
