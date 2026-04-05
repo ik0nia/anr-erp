@@ -103,8 +103,8 @@ if (!$template_exists) {
                 <input type="hidden" name="salveaza_mapare_template_f230" value="1">
                 <input type="hidden" name="template_map_json" id="template-map-json-f230" value="">
 
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
-                    <aside class="xl:col-span-1 space-y-3">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                    <aside class="lg:col-span-1 space-y-3">
                         <div>
                             <label for="map-tag-select-f230" class="block text-sm font-medium mb-1">Tag activ</label>
                             <select id="map-tag-select-f230" class="w-full px-3 py-2 rounded-lg border border-slate-300">
@@ -140,7 +140,7 @@ if (!$template_exists) {
                         <div id="map-status-list-f230" class="space-y-1 max-h-64 overflow-auto pr-1"></div>
                     </aside>
 
-                    <section class="xl:col-span-2 min-w-0">
+                    <section class="lg:col-span-2 min-w-0">
                         <div class="border border-slate-200 rounded-lg bg-slate-50 p-3">
                             <div class="flex items-center justify-between gap-2 mb-2">
                                 <p class="text-xs text-slate-600">Click pe suprafața preview pentru poziționare.</p>
