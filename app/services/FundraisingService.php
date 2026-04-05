@@ -388,7 +388,7 @@ function fundraising_f230_validate_template_map(array $payload, string $expected
         $y_pct = (float)($raw_item['y_pct'] ?? 0.0);
         $w_pct = (float)($raw_item['w_pct'] ?? 0.0);
         $h_pct = (float)($raw_item['h_pct'] ?? 0.0);
-        $font_pt = (float)($raw_item['font_pt'] ?? 10.0);
+        $font_pt = (float)($raw_item['font_pt'] ?? 14.0);
 
         $max_allowed_pages = max(1, $max_pages);
         if ($page < 1 || $page > $max_allowed_pages) {
@@ -1114,7 +1114,7 @@ function fundraising_f230_render_overlay_pdf(
             $placements = fundraising_f230_get_overlay_placements($pdo, $page_width_mm, $page_height_mm, $page_no);
             foreach ($placements as $pl) {
                 $tag = (string)($pl['tag'] ?? '');
-                $font_pt = max(7.0, min(14.0, (float)($pl['font_pt'] ?? 10.0)));
+                $font_pt = max(7.0, min(14.0, (float)($pl['font_pt'] ?? 14.0)));
                 $x_mm = (float)($pl['x_mm'] ?? 0.0);
                 $y_mm_top = (float)($pl['y_mm'] ?? 0.0);
                 $w_mm = max(3.0, (float)($pl['w_mm'] ?? 3.0));
@@ -1182,7 +1182,7 @@ function fundraising_f230_get_overlay_placements(PDO $pdo, float $page_width_mm,
         $y_pct = (float)($item['y_pct'] ?? 0.0);
         $w_pct = (float)($item['w_pct'] ?? 0.0);
         $h_pct = (float)($item['h_pct'] ?? 0.0);
-        $font_pt = (float)($item['font_pt'] ?? 10.0);
+        $font_pt = (float)($item['font_pt'] ?? 14.0);
 
         $placements[] = [
             'tag' => (string)$tag,
