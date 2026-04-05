@@ -185,7 +185,7 @@
             </form>
 
             <div class="mt-4 flex flex-wrap gap-3 justify-center">
-                <button type="button" id="btn-share-generic" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed">
+                <button type="button" id="btn-share-generic" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed">
                     <i data-lucide="share-2" class="w-4 h-4" aria-hidden="true"></i>
                     Distribuie
                 </button>
