@@ -76,27 +76,26 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chitanță <?php echo htmlspecialchars($seria . ' ' . $nr); ?></title>
     <style>
-        /* Forțăm pagina fără margini la print - compatibil A4 și Letter */
+        /* Print pe A4; conținutul util rămâne în 21 x 28 cm. */
         @page {
-            size: auto;
+            size: A4 portrait;
             margin: 0;
         }
         @media print {
             html, body { margin: 0 !important; padding: 0 !important; }
             .no-print { display: none !important; }
-            .a4-sheet { box-shadow: none !important; page-break-after: avoid; page-break-inside: avoid; }
+            .a4-sheet { box-shadow: none !important; page-break-after: avoid; page-break-inside: avoid; break-inside: avoid; }
         }
         * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; font-size: 11px; color: #000; margin: 0; padding: 0; }
         .no-print { text-align: center; padding: 10px 0; }
         .no-print a, .no-print button { margin: 0 4px; padding: 8px 16px; text-decoration: none; background: #b45309; color: #fff; border: 0; border-radius: 6px; cursor: pointer; font-size: 14px; }
         .no-print a:hover, .no-print button:hover { background: #92400a; }
-        /* Letter = 279.4mm înălțime, A4 = 297mm. Folosim Letter ca referință (mai mic). */
-        /* Jumătate din Letter minus margini minime browser (~5mm sus/jos) = ~134mm per chitanță */
-        .a4-sheet { width: 200mm; max-height: 275mm; margin: 0 auto; padding: 0; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        /* Șablon de tipărire: 21 x 28 cm (două chitanțe a câte 21 x 14 cm). */
+        .a4-sheet { width: 210mm; height: 280mm; margin: 0 auto; padding: 0; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .chitanta-half {
-            width: 100%;
-            height: 134mm;  /* jumătate din Letter minus margini browser */
+            width: 210mm;
+            height: 140mm;
             padding: 5mm 8mm;
             overflow: hidden;
         }
