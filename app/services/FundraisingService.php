@@ -299,9 +299,8 @@ function fundraising_f230_get_settings(PDO $pdo): array
         $fpdf_cache_abs = APP_ROOT . '/uploads/fundraising/fpdi-compatible/template-fpdi-' . $template_sha256 . '.pdf';
         $fpdf_cache_exists = is_file($fpdf_cache_abs) && filesize($fpdf_cache_abs) > 0;
     }
-    if ($fpdf_status === 'fallback' && !$fpdf_cache_exists) {
-        $fpdf_status = 'direct';
-    }
+    // În fallback putem genera și PDF de urgență (mPDF), caz în care nu există cache FPDI.
+    // Păstrăm statusul "fallback" dacă este setat explicit în DB.
     if ($fpdf_status === 'direct' && $fpdf_cache_exists) {
         // Avem variantă compatibilă pregătită pentru fallback la nevoie.
         $fpdf_status = 'fallback';
