@@ -151,6 +151,23 @@
                                 <strong><?php echo htmlspecialchars((string)$setari_modul['template_uploaded_at_display']); ?></strong>
                             </p>
                         <?php endif; ?>
+                        <?php if (!empty($setari_modul['template_fpdf_status_label'])): ?>
+                            <?php if (!empty($setari_modul['template_fpdf_fallback_active'])): ?>
+                                <p class="text-xs text-indigo-700 dark:text-indigo-300">
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-indigo-100 dark:bg-indigo-900/30">
+                                        <i data-lucide="wrench" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                        <?php echo htmlspecialchars((string)$setari_modul['template_fpdf_status_label']); ?>
+                                    </span>
+                                </p>
+                            <?php else: ?>
+                                <p class="text-xs text-emerald-700 dark:text-emerald-300">
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900/30">
+                                        <i data-lucide="shield-check" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                        <?php echo htmlspecialchars((string)$setari_modul['template_fpdf_status_label']); ?>
+                                    </span>
+                                </p>
+                            <?php endif; ?>
+                        <?php endif; ?>
                         <?php if (!empty($setari_modul['template_exists'])): ?>
                             <div class="text-xs">
                                 <?php if (!empty($setari_modul['template_mapat'])): ?>

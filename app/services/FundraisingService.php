@@ -19,6 +19,7 @@ const FUNDRAISING_SETARE_TEMPLATE = 'fundraising_f230_template_pdf';
 const FUNDRAISING_SETARE_CONFIRM = 'fundraising_f230_mesaj_confirmare_html';
 const FUNDRAISING_SETARE_TEMPLATE_MAPPING = 'fundraising_f230_template_mapping_json';
 const FUNDRAISING_SETARE_TEMPLATE_UPLOADED_AT = 'fundraising_f230_template_uploaded_at';
+const FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS = 'fundraising_f230_template_fpdf_status';
 
 /**
  * Returnează lista de taguri suportate în template-ul PDF.
@@ -286,6 +287,28 @@ function fundraising_f230_get_settings(PDO $pdo): array
             $template_uploaded_at_display = '';
         }
     }
+    $fpdf_status = trim((string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS) ?? ''));
+    if ($fpdf_status === '') {
+        $fpdf_status = 'direct';
+    }
+    if (!in_array($fpdf_status, ['direct', 'fallback'], true)) {
+        $fpdf_status = 'direct';
+    }
+    $fpdf_cache_exists = false;
+    if ($template_sha256 !== '') {
+        $fpdf_cache_abs = APP_ROOT . '/uploads/fundraising/fpdi-compatible/template-fpdi-' . $template_sha256 . '.pdf';
+        $fpdf_cache_exists = is_file($fpdf_cache_abs) && filesize($fpdf_cache_abs) > 0;
+    }
+    if ($fpdf_status === 'fallback' && !$fpdf_cache_exists) {
+        $fpdf_status = 'direct';
+    }
+    if ($fpdf_status === 'direct' && $fpdf_cache_exists) {
+        // Avem variantă compatibilă pregătită pentru fallback la nevoie.
+        $fpdf_status = 'fallback';
+    }
+    $fpdf_status_label = $fpdf_status === 'fallback'
+        ? 'Fallback compatibil activ (template convertit pentru FPDI)'
+        : 'Direct (template original compatibil FPDI)';
 
     return [
         'template_rel' => $template_rel,
@@ -299,6 +322,9 @@ function fundraising_f230_get_settings(PDO $pdo): array
         'template_map_defaults_by_tag' => fundraising_f230_template_map_defaults_by_tag((array)($template_map['items_by_tag'] ?? [])),
         'template_uploaded_at' => $template_uploaded_at_raw,
         'template_uploaded_at_display' => $template_uploaded_at_display,
+        'template_fpdf_status' => $fpdf_status,
+        'template_fpdf_status_label' => $fpdf_status_label,
+        'template_fpdf_fallback_active' => $fpdf_status === 'fallback',
         'confirm_html' => $confirm_html,
         'public_url' => fundraising_f230_public_url(),
         'storage_folder' => 'F230PDF',
@@ -609,6 +635,7 @@ function fundraising_f230_upload_template_file(PDO $pdo, array $files): array
     fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE, $new_rel);
     fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_MAPPING, '');
     fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_UPLOADED_AT, date('c'));
+    fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'direct');
 
     if ($old_rel !== '') {
         $old_abs = fundraising_f230_abs_path($old_rel);
@@ -1225,9 +1252,12 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
             if (empty($retry_render['success'])) {
                 return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . (string)($retry_render['error'] ?? 'Randare eșuată după conversie.')];
             }
+            fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'fallback');
         } else {
             return ['success' => false, 'error' => 'Template PDF incompatibil FPDI și nu a putut fi convertit automat pe server.'];
         }
+    } else {
+        fundraising_setare_set($pdo, FUNDRAISING_SETARE_TEMPLATE_FPDF_STATUS, 'direct');
     }
 
     if (!is_file($pdf_abs)) {
