@@ -12,6 +12,8 @@ $eroare = '';
 $succes = '';
 $warning = '';
 $manual_modal_open = false;
+$edit_modal_open = false;
+$edit_formular_id = 0;
 
 $valori_formular = [
     'nume' => '',
@@ -32,6 +34,7 @@ $valori_formular = [
     'gdpr_acord' => 0,
     'signature_data' => '',
 ];
+$valori_editare = $valori_formular;
 
 if ($tab === 'formular230' && isset($_GET['export']) && (string)$_GET['export'] === 'csv') {
     fundraising_f230_export_csv($pdo);
@@ -90,6 +93,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         $eroare = (string)($result['error'] ?? 'Tabelul de formulare nu a putut fi golit.');
+    } elseif (isset($_POST['sterge_formular_230'])) {
+        csrf_require_valid();
+        $tab = 'formular230';
+        $id = (int)($_POST['formular_id'] ?? 0);
+        $result = fundraising_f230_delete_formular($pdo, $id);
+        if (!empty($result['success'])) {
+            header('Location: /fundraising?tab=formular230&succes_stergere=1');
+            exit;
+        }
+        $eroare = (string)($result['error'] ?? 'Formularul nu a putut fi șters.');
+    } elseif (isset($_POST['editeaza_formular_230'])) {
+        csrf_require_valid();
+        $tab = 'formular230';
+        $edit_modal_open = true;
+        $edit_formular_id = (int)($_POST['formular_id'] ?? 0);
+        $row = fundraising_f230_get_formular($pdo, $edit_formular_id);
+        if ($row) {
+            $valori_editare = array_merge($valori_editare, [
+                'nume' => (string)$row['nume'],
+                'initiala_tatalui' => (string)($row['initiala_tatalui'] ?? ''),
+                'prenume' => (string)$row['prenume'],
+                'cnp' => (string)$row['cnp'],
+                'localitate' => (string)$row['localitate'],
+                'judet' => (string)$row['judet'],
+                'cod_postal' => (string)($row['cod_postal'] ?? ''),
+                'strada' => (string)$row['strada'],
+                'numar' => (string)$row['numar'],
+                'bloc' => (string)($row['bloc'] ?? ''),
+                'scara' => (string)($row['scara'] ?? ''),
+                'etaj' => (string)($row['etaj'] ?? ''),
+                'apartament' => (string)($row['apartament'] ?? ''),
+                'telefon' => (string)$row['telefon'],
+                'email' => (string)$row['email'],
+                'gdpr_acord' => (int)$row['gdpr_acord'],
+            ]);
+        }
+    } elseif (isset($_POST['salveaza_modificari_formular_230'])) {
+        csrf_require_valid();
+        $tab = 'formular230';
+        $edit_formular_id = (int)($_POST['formular_id'] ?? 0);
+        $edit_modal_open = true;
+        $valori_editare = array_merge($valori_editare, fundraising_f230_extract_data($_POST));
+        $result = fundraising_f230_update_formular($pdo, $edit_formular_id, $_POST);
+        if (!empty($result['success'])) {
+            header('Location: /fundraising?tab=formular230&succes_editare=1');
+            exit;
+        }
+        $eroare = (string)($result['error'] ?? 'Modificările nu au putut fi salvate.');
     }
 }
 
@@ -108,10 +159,41 @@ if (isset($_GET['succes_manual'])) {
 if (isset($_GET['succes_golire'])) {
     $succes = 'Tabelul „Formulare 230 completate” a fost golit.';
 }
+if (isset($_GET['succes_stergere'])) {
+    $succes = 'Formularul 230 a fost șters.';
+}
+if (isset($_GET['succes_editare'])) {
+    $succes = 'Formularul 230 a fost actualizat.';
+}
 
 $setari_modul = fundraising_f230_get_settings($pdo);
 $taguri_f230 = fundraising_f230_taguri_display();
 $lista_formulare = fundraising_f230_list_formulare($pdo, 2000);
+
+if ($edit_formular_id > 0 && !$edit_modal_open) {
+    $edit_formular = fundraising_f230_get_formular($pdo, $edit_formular_id);
+    if ($edit_formular) {
+        $edit_modal_open = true;
+        $valori_editare = array_merge($valori_editare, [
+            'nume' => (string)$edit_formular['nume'],
+            'initiala_tatalui' => (string)($edit_formular['initiala_tatalui'] ?? ''),
+            'prenume' => (string)$edit_formular['prenume'],
+            'cnp' => (string)$edit_formular['cnp'],
+            'localitate' => (string)$edit_formular['localitate'],
+            'judet' => (string)$edit_formular['judet'],
+            'cod_postal' => (string)($edit_formular['cod_postal'] ?? ''),
+            'strada' => (string)$edit_formular['strada'],
+            'numar' => (string)$edit_formular['numar'],
+            'bloc' => (string)($edit_formular['bloc'] ?? ''),
+            'scara' => (string)($edit_formular['scara'] ?? ''),
+            'etaj' => (string)($edit_formular['etaj'] ?? ''),
+            'apartament' => (string)($edit_formular['apartament'] ?? ''),
+            'telefon' => (string)$edit_formular['telefon'],
+            'email' => (string)$edit_formular['email'],
+            'gdpr_acord' => (int)$edit_formular['gdpr_acord'],
+        ]);
+    }
+}
 
 include APP_ROOT . '/header.php';
 include APP_ROOT . '/sidebar.php';

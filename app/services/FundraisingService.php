@@ -838,7 +838,7 @@ function fundraising_f230_valid_cnp(string $cnp): bool
 /**
  * Validează datele formularului.
  */
-function fundraising_f230_validate(array $data): ?string
+function fundraising_f230_validate(array $data, bool $require_signature = true): ?string
 {
     $required = [
         'nume' => 'Nume',
@@ -869,7 +869,7 @@ function fundraising_f230_validate(array $data): ?string
     if ((int)$data['gdpr_acord'] !== 1) {
         return 'Acordul GDPR este obligatoriu.';
     }
-    if (trim((string)$data['signature_data']) === '') {
+    if ($require_signature && trim((string)$data['signature_data']) === '') {
         return 'Semnătura este obligatorie.';
     }
 
@@ -1842,6 +1842,172 @@ function fundraising_f230_get_formular(PDO $pdo, int $id): ?array
     $stmt->execute([$id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ?: null;
+}
+
+/**
+ * Golește tabelul formularelor 230 și șterge fișierele asociate.
+ */
+function fundraising_f230_clear_formulare(PDO $pdo): array
+{
+    try {
+        $rows = fundraising_f230_list_formulare($pdo, 50000);
+
+        foreach ($rows as $row) {
+            $pdf_abs = fundraising_f230_get_pdf_abs_path((array)$row);
+            if ($pdf_abs !== '' && is_file($pdf_abs)) {
+                @unlink($pdf_abs);
+            }
+            $sig_rel = trim((string)($row['semnatura_path'] ?? ''));
+            if ($sig_rel !== '') {
+                $sig_abs = fundraising_f230_abs_path($sig_rel);
+                if (is_file($sig_abs)) {
+                    @unlink($sig_abs);
+                }
+            }
+        }
+
+        $pdo->exec('DELETE FROM fundraising_f230_formulare');
+        $pdo->exec('ALTER TABLE fundraising_f230_formulare AUTO_INCREMENT = 1');
+        return ['success' => true];
+    } catch (Throwable $e) {
+        return ['success' => false, 'error' => 'Tabelul nu a putut fi golit: ' . $e->getMessage()];
+    }
+}
+
+/**
+ * Șterge un formular 230 și fișierele asociate (PDF + semnătură).
+ */
+function fundraising_f230_delete_formular(PDO $pdo, int $id): array
+{
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'ID formular invalid.'];
+    }
+
+    $formular = fundraising_f230_get_formular($pdo, $id);
+    if (!$formular) {
+        return ['success' => false, 'error' => 'Formularul nu a fost găsit.'];
+    }
+
+    $pdf_abs = fundraising_f230_get_pdf_abs_path($formular);
+    $sig_abs = fundraising_f230_abs_path((string)($formular['semnatura_path'] ?? ''));
+
+    try {
+        $stmt = $pdo->prepare('DELETE FROM fundraising_f230_formulare WHERE id = ?');
+        $stmt->execute([$id]);
+    } catch (Throwable $e) {
+        return ['success' => false, 'error' => 'Formularul nu a putut fi șters: ' . $e->getMessage()];
+    }
+
+    if ($pdf_abs !== '' && is_file($pdf_abs)) {
+        @unlink($pdf_abs);
+    }
+    if ($sig_abs !== '' && is_file($sig_abs)) {
+        @unlink($sig_abs);
+    }
+
+    return ['success' => true];
+}
+
+/**
+ * Actualizează un formular 230 existent (date + PDF), cu opțiune de semnătură nouă.
+ */
+function fundraising_f230_update_formular(PDO $pdo, int $id, array $post): array
+{
+    if ($id <= 0) {
+        return ['success' => false, 'error' => 'ID formular invalid.'];
+    }
+
+    $formular = fundraising_f230_get_formular($pdo, $id);
+    if (!$formular) {
+        return ['success' => false, 'error' => 'Formularul selectat nu există.'];
+    }
+
+    $data = fundraising_f230_extract_data($post);
+    $has_new_signature = trim((string)$data['signature_data']) !== '';
+    $valid_err = fundraising_f230_validate($data, $has_new_signature);
+    if ($valid_err !== null) {
+        return ['success' => false, 'error' => $valid_err];
+    }
+
+    $old_pdf_abs = fundraising_f230_get_pdf_abs_path($formular);
+    $old_sig_rel = (string)($formular['semnatura_path'] ?? '');
+    $old_sig_abs = $old_sig_rel !== '' ? fundraising_f230_abs_path($old_sig_rel) : '';
+
+    $sig_rel = $old_sig_rel;
+    $sig_abs = $old_sig_abs;
+    $new_sig_abs_for_cleanup = '';
+    $new_pdf_abs_for_cleanup = '';
+    $new_pdf_rel = '';
+    $new_pdf_name = '';
+
+    if ($has_new_signature) {
+        $sig = fundraising_f230_store_signature((string)$data['signature_data']);
+        if (empty($sig['success'])) {
+            return ['success' => false, 'error' => (string)($sig['error'] ?? 'Semnătura nu a putut fi salvată.')];
+        }
+        $sig_rel = (string)$sig['rel_path'];
+        $sig_abs = (string)$sig['abs_path'];
+        $new_sig_abs_for_cleanup = $sig_abs;
+    }
+
+    if ($sig_abs === '' || !is_file($sig_abs)) {
+        return ['success' => false, 'error' => 'Semnătura existentă lipsește. Semnați din nou înainte de salvare.'];
+    }
+
+    try {
+        $pdf = fundraising_f230_generate_pdf($pdo, $data, $sig_abs, $id);
+        if (empty($pdf['success'])) {
+            throw new RuntimeException((string)($pdf['error'] ?? 'Generarea PDF a eșuat.'));
+        }
+        $new_pdf_abs_for_cleanup = (string)$pdf['pdf_abs_path'];
+        $new_pdf_rel = (string)$pdf['pdf_rel_path'];
+        $new_pdf_name = (string)$pdf['pdf_filename'];
+
+        $stmt = $pdo->prepare("UPDATE fundraising_f230_formulare SET
+            nume = ?, initiala_tatalui = ?, prenume = ?, cnp = ?, localitate = ?, judet = ?,
+            cod_postal = ?, strada = ?, numar = ?, bloc = ?, scara = ?, etaj = ?, apartament = ?,
+            telefon = ?, email = ?, gdpr_acord = ?, semnatura_path = ?, pdf_path = ?, pdf_filename = ?
+            WHERE id = ?");
+        $stmt->execute([
+            $data['nume'],
+            $data['initiala_tatalui'] !== '' ? $data['initiala_tatalui'] : null,
+            $data['prenume'],
+            $data['cnp'],
+            $data['localitate'],
+            $data['judet'],
+            $data['cod_postal'] !== '' ? $data['cod_postal'] : null,
+            $data['strada'],
+            $data['numar'],
+            $data['bloc'] !== '' ? $data['bloc'] : null,
+            $data['scara'] !== '' ? $data['scara'] : null,
+            $data['etaj'] !== '' ? $data['etaj'] : null,
+            $data['apartament'] !== '' ? $data['apartament'] : null,
+            $data['telefon'],
+            $data['email'],
+            (int)$data['gdpr_acord'],
+            $sig_rel,
+            $new_pdf_rel,
+            $new_pdf_name,
+            $id,
+        ]);
+    } catch (Throwable $e) {
+        if ($new_pdf_abs_for_cleanup !== '' && is_file($new_pdf_abs_for_cleanup)) {
+            @unlink($new_pdf_abs_for_cleanup);
+        }
+        if ($has_new_signature && $new_sig_abs_for_cleanup !== '' && is_file($new_sig_abs_for_cleanup)) {
+            @unlink($new_sig_abs_for_cleanup);
+        }
+        return ['success' => false, 'error' => 'Formularul nu a putut fi actualizat: ' . $e->getMessage()];
+    }
+
+    if ($old_pdf_abs !== '' && is_file($old_pdf_abs) && $old_pdf_abs !== $new_pdf_abs_for_cleanup) {
+        @unlink($old_pdf_abs);
+    }
+    if ($has_new_signature && $old_sig_abs !== '' && is_file($old_sig_abs) && $old_sig_abs !== $sig_abs) {
+        @unlink($old_sig_abs);
+    }
+
+    return ['success' => true];
 }
 
 /**
