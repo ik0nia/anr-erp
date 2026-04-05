@@ -927,6 +927,210 @@ function fundraising_f230_template_map_max_pages(string $template_abs): int
 }
 
 /**
+ * Detectează eroarea FPDI de compresie neacceptată.
+ */
+function fundraising_f230_is_fpdi_unsupported_compression_error(string $message): bool
+{
+    $msg = strtolower(trim($message));
+    if ($msg === '') {
+        return false;
+    }
+    return strpos($msg, 'compression technique') !== false
+        || strpos($msg, 'free parser shipped with fpdi') !== false
+        || strpos($msg, 'fpdi-pdf-parser') !== false;
+}
+
+/**
+ * Returnează true dacă un binary shell este disponibil.
+ */
+function fundraising_f230_command_available(string $binary): bool
+{
+    $bin = trim($binary);
+    if ($bin === '') {
+        return false;
+    }
+    if (strpos($bin, '/') !== false || strpos($bin, '\\') !== false) {
+        return is_file($bin) && is_executable($bin);
+    }
+
+    if (!function_exists('documente_exec_available') || !documente_exec_available()) {
+        return false;
+    }
+    $check = 'command -v ' . escapeshellarg($bin) . ' >/dev/null 2>&1';
+    @exec($check, $out, $code);
+    return (int)$code === 0;
+}
+
+/**
+ * Returnează path FPDI-compatible pentru template-ul dat (din cache sau generat).
+ */
+function fundraising_f230_get_or_create_fpdi_compatible_template(string $template_abs): array
+{
+    if (!is_file($template_abs)) {
+        return ['success' => false, 'error' => 'Template-ul sursă nu există pentru conversie FPDI.'];
+    }
+    if (!function_exists('documente_exec_available') || !documente_exec_available()) {
+        return ['success' => false, 'error' => 'Conversia automată necesită exec() activ pe server.'];
+    }
+
+    $hash = fundraising_f230_template_sha256($template_abs);
+    if ($hash === '') {
+        return ['success' => false, 'error' => 'Nu s-a putut calcula hash-ul template-ului PDF.'];
+    }
+
+    $dir_abs = APP_ROOT . '/uploads/fundraising/fpdi-compatible/';
+    if (!is_dir($dir_abs) && !@mkdir($dir_abs, 0755, true) && !is_dir($dir_abs)) {
+        return ['success' => false, 'error' => 'Nu s-a putut crea directorul de cache FPDI-compatible.'];
+    }
+    $dest_abs = $dir_abs . 'template-fpdi-' . $hash . '.pdf';
+    if (is_file($dest_abs) && filesize($dest_abs) > 0) {
+        return ['success' => true, 'path' => $dest_abs, 'cached' => true];
+    }
+
+    $tmp_base = $dir_abs . 'tmp-fpdi-' . $hash . '-' . substr(md5((string)uniqid('', true)), 0, 8);
+    $candidates = [
+        [
+            'bin' => 'qpdf',
+            'build' => static function (string $bin, string $src, string $dest) {
+                $cmd = escapeshellarg($bin)
+                    . ' --object-streams=disable --stream-data=uncompress '
+                    . escapeshellarg($src) . ' ' . escapeshellarg($dest) . ' 2>&1';
+                return ['cmd' => $cmd, 'output' => $dest];
+            },
+        ],
+        [
+            'bin' => 'gs',
+            'build' => static function (string $bin, string $src, string $dest) {
+                $cmd = escapeshellarg($bin)
+                    . ' -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH '
+                    . '-sOutputFile=' . escapeshellarg($dest) . ' '
+                    . escapeshellarg($src) . ' 2>&1';
+                return ['cmd' => $cmd, 'output' => $dest];
+            },
+        ],
+        [
+            'bin' => 'pdftocairo',
+            'build' => static function (string $bin, string $src, string $dest) use ($tmp_base) {
+                $out_base = $tmp_base . '-pdftocairo';
+                $cmd = escapeshellarg($bin)
+                    . ' -pdf ' . escapeshellarg($src) . ' ' . escapeshellarg($out_base) . ' 2>&1';
+                return ['cmd' => $cmd, 'output' => $out_base . '.pdf'];
+            },
+        ],
+    ];
+
+    $last_error = 'Niciun utilitar de conversie PDF nu este disponibil (qpdf/gs/pdftocairo).';
+    foreach ($candidates as $cand) {
+        $bin = (string)$cand['bin'];
+        if (!fundraising_f230_command_available($bin)) {
+            continue;
+        }
+        $meta = $cand['build']($bin, $template_abs, $dest_abs);
+        $cmd = (string)($meta['cmd'] ?? '');
+        $out_file = (string)($meta['output'] ?? '');
+        if ($cmd === '' || $out_file === '') {
+            continue;
+        }
+        $output = [];
+        $code = 1;
+        @exec($cmd, $output, $code);
+        if ((int)$code !== 0 || !is_file($out_file) || filesize($out_file) <= 0) {
+            $last_error = 'Conversia cu ' . $bin . ' a eșuat.';
+            continue;
+        }
+
+        if ($out_file !== $dest_abs) {
+            if (!@rename($out_file, $dest_abs)) {
+                $copy_ok = @copy($out_file, $dest_abs);
+                @unlink($out_file);
+                if (!$copy_ok) {
+                    $last_error = 'Conversia a reușit, dar fișierul rezultat nu a putut fi mutat în cache.';
+                    continue;
+                }
+            }
+        }
+        if (!is_file($dest_abs) || filesize($dest_abs) <= 0) {
+            $last_error = 'Fișierul PDF convertit nu este valid.';
+            continue;
+        }
+        return ['success' => true, 'path' => $dest_abs, 'cached' => false];
+    }
+
+    return ['success' => false, 'error' => $last_error];
+}
+
+/**
+ * Renderizează overlay-ul mapat într-un PDF rezultat.
+ */
+function fundraising_f230_render_overlay_pdf(
+    PDO $pdo,
+    string $template_abs,
+    string $pdf_abs,
+    string $signature_abs_path,
+    array $tag_values
+): array {
+    try {
+        $pdf = new \setasign\Fpdi\Fpdi();
+        $page_count = $pdf->setSourceFile($template_abs);
+        for ($page_no = 1; $page_no <= $page_count; $page_no++) {
+            $tpl = $pdf->importPage($page_no);
+            $size = $pdf->getTemplateSize($tpl);
+            if ($size && isset($size['width'], $size['height'], $size['orientation'])) {
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+            } else {
+                $pdf->AddPage();
+            }
+            $pdf->useTemplate($tpl);
+
+            $page_width_mm = (float)($size['width'] ?? 210.0);
+            $page_height_mm = (float)($size['height'] ?? 297.0);
+            $placements = fundraising_f230_get_overlay_placements($pdo, $page_width_mm, $page_height_mm, $page_no);
+            foreach ($placements as $pl) {
+                $tag = (string)($pl['tag'] ?? '');
+                $font_pt = max(7.0, min(14.0, (float)($pl['font_pt'] ?? 10.0)));
+                $x_mm = (float)($pl['x_mm'] ?? 0.0);
+                $y_mm_top = (float)($pl['y_mm'] ?? 0.0);
+                $w_mm = max(3.0, (float)($pl['w_mm'] ?? 3.0));
+                $h_mm = max(1.2, (float)($pl['h_mm'] ?? 1.2));
+                $y_mm_bottom = $page_height_mm - $y_mm_top;
+                $font_mm = documente_pdf_pt_to_mm($font_pt);
+
+                // PDF Overlay: scriem valorile în zona mapată.
+                $pdf->SetFillColor(255, 255, 255);
+                $pdf->Rect($x_mm, max(0.0, $y_mm_bottom - $h_mm), $w_mm, $h_mm, 'F');
+
+                if ($tag === '230semnatura') {
+                    $sig_h = max(4.0, $h_mm);
+                    $sig_w = max(6.0, $w_mm);
+                    $sig_y = max(0.0, $page_height_mm - $y_mm_top - $sig_h);
+                    $pdf->Image($signature_abs_path, $x_mm, $sig_y, $sig_w, $sig_h, 'PNG');
+                    continue;
+                }
+
+                $value = trim((string)($tag_values[$tag] ?? ''));
+                if ($value === '') {
+                    continue;
+                }
+                $value = preg_replace('/\s+/u', ' ', $value);
+                $enc = @iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $value);
+                if ($enc === false) {
+                    $enc = $value;
+                }
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->SetFont('Helvetica', '', $font_pt);
+                $text_y = max(1.0, $y_mm_bottom - max(0.1, ($h_mm - $font_mm) * 0.35));
+                $pdf->Text($x_mm + 0.4, $text_y, (string)$enc);
+            }
+        }
+
+        $pdf->Output('F', $pdf_abs);
+        return ['success' => true];
+    } catch (Throwable $e) {
+        return ['success' => false, 'error' => (string)$e->getMessage()];
+    }
+}
+
+/**
  * Transformă maparea salvată în poziții absolute (mm) pentru overlay.
  */
 function fundraising_f230_get_overlay_placements(PDO $pdo, float $page_width_mm, float $page_height_mm, int $page_no): array
@@ -1007,63 +1211,23 @@ function fundraising_f230_generate_pdf(PDO $pdo, array $data, string $signature_
     }
     $pdf_abs = $storage['base_dir'] . '/' . $pdf_filename;
 
-    try {
-        $pdf = new \setasign\Fpdi\Fpdi();
-        $page_count = $pdf->setSourceFile($template_abs);
-        for ($page_no = 1; $page_no <= $page_count; $page_no++) {
-            $tpl = $pdf->importPage($page_no);
-            $size = $pdf->getTemplateSize($tpl);
-            if ($size && isset($size['width'], $size['height'], $size['orientation'])) {
-                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            } else {
-                $pdf->AddPage();
-            }
-            $pdf->useTemplate($tpl);
-
-            $page_width_mm = (float)($size['width'] ?? 210.0);
-            $page_height_mm = (float)($size['height'] ?? 297.0);
-            $placements = fundraising_f230_get_overlay_placements($pdo, $page_width_mm, $page_height_mm, $page_no);
-            foreach ($placements as $pl) {
-                $tag = (string)($pl['tag'] ?? '');
-                $font_pt = max(7.0, min(14.0, (float)($pl['font_pt'] ?? 10.0)));
-                $x_mm = (float)($pl['x_mm'] ?? 0.0);
-                $y_mm_top = (float)($pl['y_mm'] ?? 0.0);
-                $w_mm = max(3.0, (float)($pl['w_mm'] ?? 3.0));
-                $h_mm = max(1.2, (float)($pl['h_mm'] ?? 1.2));
-                $y_mm_bottom = $page_height_mm - $y_mm_top;
-                $font_mm = documente_pdf_pt_to_mm($font_pt);
-
-                // PDF Overlay: scriem valorile în zona mapată.
-                $pdf->SetFillColor(255, 255, 255);
-                $pdf->Rect($x_mm, max(0.0, $y_mm_bottom - $h_mm), $w_mm, $h_mm, 'F');
-
-                if ($tag === '230semnatura') {
-                    $sig_h = max(4.0, $h_mm);
-                    $sig_w = max(6.0, $w_mm);
-                    $sig_y = max(0.0, $page_height_mm - $y_mm_top - $sig_h);
-                    $pdf->Image($signature_abs_path, $x_mm, $sig_y, $sig_w, $sig_h, 'PNG');
-                    continue;
-                }
-
-                $value = trim((string)($tag_values[$tag] ?? ''));
-                if ($value === '') {
-                    continue;
-                }
-                $value = preg_replace('/\s+/u', ' ', $value);
-                $enc = @iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $value);
-                if ($enc === false) {
-                    $enc = $value;
-                }
-                $pdf->SetTextColor(0, 0, 0);
-                $pdf->SetFont('Helvetica', '', $font_pt);
-                $text_y = max(1.0, $y_mm_bottom - max(0.1, ($h_mm - $font_mm) * 0.35));
-                $pdf->Text($x_mm + 0.4, $text_y, (string)$enc);
-            }
+    $render = fundraising_f230_render_overlay_pdf($pdo, $template_abs, $pdf_abs, $signature_abs_path, $tag_values);
+    if (empty($render['success'])) {
+        $message = (string)($render['error'] ?? 'Eroare necunoscută la randarea PDF.');
+        if (!fundraising_f230_is_fpdi_unsupported_compression_error($message)) {
+            return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . $message];
         }
 
-        $pdf->Output('F', $pdf_abs);
-    } catch (Throwable $e) {
-        return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . $e->getMessage()];
+        $converted = fundraising_f230_get_or_create_fpdi_compatible_template($template_abs);
+        if (!empty($converted['success'])) {
+            $retry_abs = (string)($converted['path'] ?? '');
+            $retry_render = fundraising_f230_render_overlay_pdf($pdo, $retry_abs, $pdf_abs, $signature_abs_path, $tag_values);
+            if (empty($retry_render['success'])) {
+                return ['success' => false, 'error' => 'Eroare la generarea PDF: ' . (string)($retry_render['error'] ?? 'Randare eșuată după conversie.')];
+            }
+        } else {
+            return ['success' => false, 'error' => 'Template PDF incompatibil FPDI și nu a putut fi convertit automat pe server.'];
+        }
     }
 
     if (!is_file($pdf_abs)) {
