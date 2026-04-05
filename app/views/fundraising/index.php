@@ -400,30 +400,103 @@
     </div>
 </dialog>
 
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
 (function () {
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 
-    var tab = <?php echo json_encode($tab); ?>;
-    if (tab === 'setari' && typeof tinymce !== 'undefined') {
+    function loadScript(src) {
+        return new Promise(function (resolve, reject) {
+            var s = document.createElement('script');
+            s.src = src;
+            s.async = true;
+            s.referrerPolicy = 'origin';
+            s.onload = function () { resolve(); };
+            s.onerror = function () { reject(new Error('Nu s-a putut încărca: ' + src)); };
+            document.head.appendChild(s);
+        });
+    }
+
+    function initConfirmEditorTiny() {
+        var textarea = document.getElementById('mesaj-confirmare-editor');
+        var hidden = document.getElementById('mesaj-confirmare-html');
+        var setariForm = document.querySelector('form[action="/fundraising?tab=setari"]');
+        if (!textarea || !hidden) return false;
+
+        // Ensure editor is interactive even if browser cached stale attributes.
+        textarea.removeAttribute('readonly');
+        textarea.removeAttribute('disabled');
+        textarea.style.pointerEvents = 'auto';
+        textarea.style.cursor = 'text';
+
+        if (typeof tinymce === 'undefined') {
+            return false;
+        }
+
         tinymce.init({
             selector: '#mesaj-confirmare-editor',
             height: 260,
             menubar: true,
+            branding: false,
+            promotion: false,
+            readonly: false,
             plugins: 'link lists table code',
             toolbar: 'undo redo | formatselect | bold italic underline | bullist numlist | link | removeformat | code',
             content_style: 'body{font-family:Inter,Arial,sans-serif;font-size:14px;}',
             setup: function (editor) {
                 var sync = function () {
-                    var hidden = document.getElementById('mesaj-confirmare-html');
                     if (hidden) hidden.value = editor.getContent();
                 };
-                editor.on('init change keyup undo redo SetContent', sync);
+                editor.on('init change keyup undo redo input SetContent', sync);
             }
+        }).then(function (editors) {
+            var ed = editors && editors.length ? editors[0] : null;
+            if (ed) {
+                hidden.value = ed.getContent();
+            }
+        }).catch(function () {
+            // Keep plain textarea editable if Tiny init fails.
         });
+
+        if (setariForm) {
+            setariForm.addEventListener('submit', function () {
+                var ed = (typeof tinymce !== 'undefined') ? tinymce.get('mesaj-confirmare-editor') : null;
+                hidden.value = ed ? ed.getContent() : textarea.value;
+            });
+        }
+
+        return true;
+    }
+
+    var tab = <?php echo json_encode($tab); ?>;
+    if (tab === 'setari') {
+        // Prefer CDNJS (no API key requirement). Keep Tiny Cloud as secondary fallback.
+        var primaryTinyUrl = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.6/tinymce.min.js';
+        var fallbackTinyUrl = 'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js';
+
+        if (!initConfirmEditorTiny()) {
+            loadScript(primaryTinyUrl)
+                .then(function () { return initConfirmEditorTiny(); })
+                .catch(function () { return loadScript(fallbackTinyUrl).then(function () { return initConfirmEditorTiny(); }); })
+                .catch(function () {
+                    // Last-resort fallback: plain textarea remains editable and is saved.
+                    var textarea = document.getElementById('mesaj-confirmare-editor');
+                    var hidden = document.getElementById('mesaj-confirmare-html');
+                    var setariForm = document.querySelector('form[action="/fundraising?tab=setari"]');
+                    if (textarea) {
+                        textarea.removeAttribute('readonly');
+                        textarea.removeAttribute('disabled');
+                        textarea.style.pointerEvents = 'auto';
+                        textarea.style.cursor = 'text';
+                    }
+                    if (setariForm && hidden && textarea) {
+                        setariForm.addEventListener('submit', function () {
+                            hidden.value = textarea.value;
+                        });
+                    }
+                });
+        }
     }
 
     var dialog = document.getElementById('dialog-manual-f230');
