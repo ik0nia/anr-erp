@@ -4,7 +4,7 @@
  *
  * Variabile:
  * $tab, $eroare, $succes, $warning, $setari_modul, $taguri_f230,
- * $lista_formulare, $manual_modal_open, $valori_formular
+ * $lista_formulare, $manual_modal_open, $edit_modal_open, $valori_formular, $edit_formular_id
  */
 ?>
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
@@ -60,6 +60,16 @@
                             <i data-lucide="download" class="w-4 h-4" aria-hidden="true"></i>
                             Export
                         </a>
+                        <form method="post" action="/fundraising?tab=formular230" onsubmit="return confirm('Sigur doriți să goliți complet tabelul Formulare 230 completate? Această acțiune șterge toate înregistrările și fișierele aferente.');">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="goleste_tabel_formulare_230" value="1">
+                            <button type="submit"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-red-500"
+                                    aria-label="Golește tabelul Formulare 230 completate">
+                                <i data-lucide="trash-2" class="w-4 h-4" aria-hidden="true"></i>
+                                Golește tabelul
+                            </button>
+                        </form>
                         <button type="button"
                                 id="btn-adauga-manual"
                                 class="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-amber-500"
@@ -84,12 +94,13 @@
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Sursă</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Data</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Document PDF</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Acțiuni</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-slate-200 dark:divide-gray-700">
                             <?php if (empty($lista_formulare)): ?>
                                 <tr>
-                                    <td colspan="9" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">
+                                    <td colspan="10" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">
                                         Nu există formulare înregistrate.
                                     </td>
                                 </tr>
@@ -111,6 +122,28 @@
                                                 <i data-lucide="file-down" class="w-3.5 h-3.5" aria-hidden="true"></i>
                                                 Descarcă PDF
                                             </a>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <div class="flex flex-wrap gap-2">
+                                                <button type="button"
+                                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 btn-editeaza-f230"
+                                                        data-formular-id="<?php echo (int)$f['id']; ?>"
+                                                        aria-haspopup="dialog"
+                                                        aria-controls="dialog-editeaza-f230">
+                                                    <i data-lucide="pencil" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                                    Editează
+                                                </button>
+                                                <form method="post" action="/fundraising?tab=formular230" onsubmit="return confirm('Sigur doriți să ștergeți formularul #<?php echo (int)$f['id']; ?>? Această acțiune este ireversibilă și șterge și fișierele aferente.');">
+                                                    <?php echo csrf_field(); ?>
+                                                    <input type="hidden" name="sterge_formular_230" value="1">
+                                                    <input type="hidden" name="formular_id" value="<?php echo (int)$f['id']; ?>">
+                                                    <button type="submit"
+                                                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium focus:ring-2 focus:ring-red-500">
+                                                        <i data-lucide="trash-2" class="w-3.5 h-3.5" aria-hidden="true"></i>
+                                                        Șterge
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -400,6 +433,116 @@
     </div>
 </dialog>
 
+<dialog id="dialog-editeaza-f230" class="p-0 rounded-lg shadow-xl max-w-5xl w-[calc(100%-1.5rem)] mx-auto border border-slate-200 dark:border-gray-700 dark:bg-gray-800 backdrop:bg-black/50">
+    <div class="p-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Editează formular 230</h2>
+            <button type="button"
+                    id="btn-inchide-editare-f230"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-full text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500"
+                    aria-label="Închide fereastra de editare formular">
+                <i data-lucide="x" class="w-5 h-5" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <form method="post" action="/fundraising?tab=formular230" class="space-y-4">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="salveaza_modificari_formular_230" value="1">
+            <input type="hidden" name="formular_id" id="edit-formular-id" value="<?php echo (int)$edit_formular_id; ?>">
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Nume <span class="text-red-600">*</span></label>
+                    <input type="text" name="nume" id="edit-nume" required value="<?php echo htmlspecialchars((string)$valori_editare['nume']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Inițiala tatălui</label>
+                    <input type="text" name="initiala_tatalui" id="edit-initiala_tatalui" maxlength="3" value="<?php echo htmlspecialchars((string)$valori_editare['initiala_tatalui']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Prenume <span class="text-red-600">*</span></label>
+                    <input type="text" name="prenume" id="edit-prenume" required value="<?php echo htmlspecialchars((string)$valori_editare['prenume']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">CNP <span class="text-red-600">*</span></label>
+                    <input type="text" name="cnp" id="edit-cnp" inputmode="numeric" pattern="[0-9]{13}" maxlength="13" required value="<?php echo htmlspecialchars((string)$valori_editare['cnp']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Telefon <span class="text-red-600">*</span></label>
+                    <input type="text" name="telefon" id="edit-telefon" required value="<?php echo htmlspecialchars((string)$valori_editare['telefon']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Email <span class="text-red-600">*</span></label>
+                    <input type="email" name="email" id="edit-email" required value="<?php echo htmlspecialchars((string)$valori_editare['email']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                </div>
+            </div>
+
+            <fieldset class="rounded-lg border border-slate-200 dark:border-gray-700 p-3">
+                <legend class="px-1 text-sm font-medium text-slate-800 dark:text-gray-200">Adresă</legend>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-2">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Localitate <span class="text-red-600">*</span></label>
+                        <input type="text" name="localitate" id="edit-localitate" required value="<?php echo htmlspecialchars((string)$valori_editare['localitate']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Județ <span class="text-red-600">*</span></label>
+                        <input type="text" name="judet" id="edit-judet" required value="<?php echo htmlspecialchars((string)$valori_editare['judet']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Cod poștal</label>
+                        <input type="text" name="cod_postal" id="edit-cod_postal" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" value="<?php echo htmlspecialchars((string)$valori_editare['cod_postal']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Strada <span class="text-red-600">*</span></label>
+                        <input type="text" name="strada" id="edit-strada" required value="<?php echo htmlspecialchars((string)$valori_editare['strada']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Număr <span class="text-red-600">*</span></label>
+                        <input type="text" name="numar" id="edit-numar" required value="<?php echo htmlspecialchars((string)$valori_editare['numar']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Bloc</label>
+                        <input type="text" name="bloc" id="edit-bloc" maxlength="10" value="<?php echo htmlspecialchars((string)$valori_editare['bloc']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Scară</label>
+                        <input type="text" name="scara" id="edit-scara" maxlength="10" value="<?php echo htmlspecialchars((string)$valori_editare['scara']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Etaj</label>
+                        <input type="text" name="etaj" id="edit-etaj" maxlength="10" value="<?php echo htmlspecialchars((string)$valori_editare['etaj']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Apartament</label>
+                        <input type="text" name="apartament" id="edit-apartament" maxlength="10" value="<?php echo htmlspecialchars((string)$valori_editare['apartament']); ?>" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                    </div>
+                </div>
+            </fieldset>
+
+            <div>
+                <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-gray-200">
+                    <input type="checkbox" name="gdpr_acord" id="edit-gdpr_acord" value="1" <?php echo !empty($valori_editare['gdpr_acord']) ? 'checked' : ''; ?> class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
+                    Acord GDPR <span class="text-red-600">*</span>
+                </label>
+            </div>
+
+            <p class="text-xs text-slate-600 dark:text-gray-400">Semnătura existentă și PDF-ul generat sunt păstrate neschimbate. Pentru actualizare semnătură/PDF folosiți un formular nou.</p>
+
+            <div class="flex justify-end gap-3 pt-1">
+                <button type="button" id="btn-renunta-editare-f230" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700">
+                    Renunță
+                </button>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium focus:ring-2 focus:ring-blue-500">
+                    Salvează modificările
+                </button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
 <script>
 (function () {
     if (typeof lucide !== 'undefined') {
@@ -503,6 +646,96 @@
     var openBtn = document.getElementById('btn-adauga-manual');
     var closeBtn = document.getElementById('btn-inchide-manual');
     var cancelBtn = document.getElementById('btn-anuleaza-manual');
+    var editDialog = document.getElementById('dialog-editeaza-f230');
+    var editCloseBtn = document.getElementById('btn-inchide-editare-f230');
+    var editCancelBtn = document.getElementById('btn-renunta-editare-f230');
+    var editButtons = document.querySelectorAll('.btn-editeaza-f230');
+    var formularRows = <?php echo json_encode(array_map(static function ($r) {
+        return [
+            'id' => (int)($r['id'] ?? 0),
+            'nume' => (string)($r['nume'] ?? ''),
+            'initiala_tatalui' => (string)($r['initiala_tatalui'] ?? ''),
+            'prenume' => (string)($r['prenume'] ?? ''),
+            'cnp' => (string)($r['cnp'] ?? ''),
+            'localitate' => (string)($r['localitate'] ?? ''),
+            'judet' => (string)($r['judet'] ?? ''),
+            'cod_postal' => (string)($r['cod_postal'] ?? ''),
+            'strada' => (string)($r['strada'] ?? ''),
+            'numar' => (string)($r['numar'] ?? ''),
+            'bloc' => (string)($r['bloc'] ?? ''),
+            'scara' => (string)($r['scara'] ?? ''),
+            'etaj' => (string)($r['etaj'] ?? ''),
+            'apartament' => (string)($r['apartament'] ?? ''),
+            'telefon' => (string)($r['telefon'] ?? ''),
+            'email' => (string)($r['email'] ?? ''),
+            'gdpr_acord' => (int)($r['gdpr_acord'] ?? 0),
+        ];
+    }, (array)$lista_formulare), JSON_UNESCAPED_UNICODE); ?>;
+
+    function closeEditDialog() {
+        if (editDialog && editDialog.open) editDialog.close();
+    }
+
+    function setEditValue(id, value) {
+        var el = document.getElementById(id);
+        if (el) el.value = value || '';
+    }
+
+    function openEditDialogFor(formularId) {
+        if (!editDialog) return;
+        var formData = null;
+        for (var i = 0; i < formularRows.length; i++) {
+            if (Number(formularRows[i].id) === Number(formularId)) {
+                formData = formularRows[i];
+                break;
+            }
+        }
+        if (!formData) return;
+
+        setEditValue('edit-formular-id', String(formData.id));
+        setEditValue('edit-nume', formData.nume);
+        setEditValue('edit-initiala_tatalui', formData.initiala_tatalui);
+        setEditValue('edit-prenume', formData.prenume);
+        setEditValue('edit-cnp', formData.cnp);
+        setEditValue('edit-localitate', formData.localitate);
+        setEditValue('edit-judet', formData.judet);
+        setEditValue('edit-cod_postal', formData.cod_postal);
+        setEditValue('edit-strada', formData.strada);
+        setEditValue('edit-numar', formData.numar);
+        setEditValue('edit-bloc', formData.bloc);
+        setEditValue('edit-scara', formData.scara);
+        setEditValue('edit-etaj', formData.etaj);
+        setEditValue('edit-apartament', formData.apartament);
+        setEditValue('edit-telefon', formData.telefon);
+        setEditValue('edit-email', formData.email);
+        var gdpr = document.getElementById('edit-gdpr_acord');
+        if (gdpr) gdpr.checked = Number(formData.gdpr_acord) === 1;
+
+        editDialog.showModal();
+    }
+
+    if (editButtons && editButtons.length) {
+        editButtons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = this.getAttribute('data-formular-id');
+                openEditDialogFor(id);
+            });
+        });
+    }
+    if (editCloseBtn) editCloseBtn.addEventListener('click', closeEditDialog);
+    if (editCancelBtn) editCancelBtn.addEventListener('click', closeEditDialog);
+    if (editDialog) {
+        editDialog.addEventListener('click', function (e) {
+            var rect = editDialog.getBoundingClientRect();
+            var inside = rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+                && rect.left <= e.clientX && e.clientX <= rect.left + rect.width;
+            if (!inside) closeEditDialog();
+        });
+    }
+    <?php if (!empty($edit_modal_open)): ?>
+    if (editDialog) editDialog.showModal();
+    <?php endif; ?>
+
 
     function closeDialog() {
         if (dialog && dialog.open) dialog.close();
