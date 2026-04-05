@@ -404,6 +404,7 @@ Schema bazei de date este organizată în mai multe fișiere SQL pentru ușurin�
 **Notă business:**
 - template-ul PDF este configurat în `setari` (cheia `fundraising_f230_template_pdf`),
 - data ultimului upload template este salvată în `setari` (cheia `fundraising_f230_template_uploaded_at`),
+- statusul fallback-ului FPDI pentru template-ul curent este disponibil în UI pe baza existenței fișierului cache din `uploads/fundraising/fpdi-compatible/template-fpdi-[sha256].pdf`,
 - maparea zonelor PDF (workflow mapper) este configurată în `setari` (cheia `fundraising_f230_template_mapping_json`),
 - mesajul de confirmare email este configurat în `setari` (cheia `fundraising_f230_mesaj_confirmare_html`),
 - fișierele PDF generate sunt stocate în `F230PDF` cu acces public blocat la nivel web.
