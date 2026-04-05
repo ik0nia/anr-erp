@@ -1157,10 +1157,6 @@ function fundraising_f230_render_overlay_pdf(
                 $h_mm = max(1.2, min($page_height_mm - $y_mm_top, (float)($pl['h_mm'] ?? 1.2)));
                 $font_mm = documente_pdf_pt_to_mm($font_pt);
 
-                // PDF Overlay: scriem valorile în zona mapată.
-                $pdf->SetFillColor(255, 255, 255);
-                $pdf->Rect($x_mm, $y_mm_top, $w_mm, $h_mm, 'F');
-
                 if ($tag === '230semnatura') {
                     $sig_h = max(4.0, $h_mm);
                     $sig_w = max(6.0, $w_mm);
@@ -1168,6 +1164,11 @@ function fundraising_f230_render_overlay_pdf(
                     $pdf->Image($signature_abs_path, $x_mm, $sig_y, $sig_w, $sig_h, 'PNG');
                     continue;
                 }
+
+                // PDF Overlay: pentru text acoperim zona tagului cu alb;
+                // pentru semnătură păstrăm fundalul original (transparent).
+                $pdf->SetFillColor(255, 255, 255);
+                $pdf->Rect($x_mm, $y_mm_top, $w_mm, $h_mm, 'F');
 
                 $value = trim((string)($tag_values[$tag] ?? ''));
                 if ($value === '') {

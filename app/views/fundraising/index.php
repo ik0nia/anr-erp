@@ -461,7 +461,7 @@
         var ctx = canvas.getContext('2d');
         var drawing = false;
         var hasStroke = false;
-        var color = '#0f2a63';
+        var color = '#003399';
         var ratio = Math.max(window.devicePixelRatio || 1, 1);
 
         function resizeCanvas() {
