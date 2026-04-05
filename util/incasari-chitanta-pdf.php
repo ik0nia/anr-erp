@@ -122,27 +122,23 @@ try {
         ]);
         $mpdf->WriteHTML('<div style="font-family:sans-serif; position:relative; min-height:130mm;">' . $one . '</div>');
     } else {
-        // 2 chitanțe pe o pagină A4 - fiecare exact pe jumătate (148.5mm)
+        // 2 chitanțe pe o pagină A4 - fiecare 210x140mm (în interiorul paginii 210x280mm)
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
-            'margin_left' => 8,
-            'margin_right' => 8,
-            'margin_top' => 5,
-            'margin_bottom' => 5,
+            'margin_left' => 0,
+            'margin_right' => 0,
+            'margin_top' => 0,
+            'margin_bottom' => 0,
         ]);
         $mpdf->autoPageBreak = false;
 
-        // Prima chitanță
-        $mpdf->WriteHTML('<div style="font-family:sans-serif; position:relative; min-height:130mm;">' . $one . '</div>');
-
-        // Forțăm poziția Y la exact jumătatea paginii A4 (297mm / 2 = 148.5mm)
-        $mpdf->SetY(148.5);
-        // Linie separatoare la jumătate
-        $mpdf->WriteHTML('<div style="border-top:1px dashed #999; padding-top:2mm;"></div>');
-
-        // A doua chitanță
-        $mpdf->WriteHTML('<div style="font-family:sans-serif; position:relative; min-height:130mm;">' . $one . '</div>');
+        $half_style = 'font-family:sans-serif; position:relative; width:210mm; height:140mm; overflow:hidden; padding:5mm 8mm;';
+        $sheet = '<div style="position:relative; width:210mm; height:280mm; margin:0; padding:0; overflow:hidden;">';
+        $sheet .= '<div style="' . $half_style . ' border-bottom:1px dashed #999;">' . $one . '</div>';
+        $sheet .= '<div style="' . $half_style . '">' . $one . '</div>';
+        $sheet .= '</div>';
+        $mpdf->WriteHTML($sheet);
     }
 
     $filename = 'chitanta-' . preg_replace('/[^a-z0-9_-]/i', '-', $seria . '-' . $nr) . ($format === 'a5' ? '-a5' : '') . '.pdf';
