@@ -219,7 +219,7 @@ if (!$template_exists) {
                 y_pct: 5,
                 w_pct: isSignature ? 22 : 18,
                 h_pct: isSignature ? 8 : 2.8,
-                font_pt: 10
+                font_pt: 14
             };
         }
         return mapDefaults[tag];
@@ -288,7 +288,7 @@ if (!$template_exists) {
         var item = ensureTag(state.activeTag);
         if (!item) return;
         item.page = Math.max(1, Math.min(pageCount, parseInt(inputPage.value || '1', 10) || 1));
-        item.font_pt = Math.max(6, Math.min(24, parseFloat(inputFont.value || '10') || 10));
+        item.font_pt = Math.max(6, Math.min(24, parseFloat(inputFont.value || '14') || 14));
         item.w_pct = Math.max(0.5, Math.min(100, parseFloat(inputW.value || '10') || 10));
         item.h_pct = Math.max(0.5, Math.min(100, parseFloat(inputH.value || '2') || 2));
         state.currentPage = item.page;

@@ -352,7 +352,7 @@ function fundraising_f230_default_map_item(string $tag): array
         'y_pct' => 5.0,
         'w_pct' => $is_signature ? 22.0 : 18.0,
         'h_pct' => $is_signature ? 8.0 : 2.8,
-        'font_pt' => $is_signature ? 10.0 : 10.0,
+        'font_pt' => 14.0,
     ];
 }
 
