@@ -1635,11 +1635,10 @@ function fundraising_f230_send_confirmation_email(PDO $pdo, array $data): bool
     }
     $subject = 'Confirmare Formular 230 – ' . $data['nume'] . ' ' . $data['prenume'];
     $html = fundraising_f230_replace_tags($template, $data);
-    $text = trim((string)html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-    if ($text === '') {
-        $text = 'Confirmare Formular 230';
+    if (trim((string)html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8')) === '') {
+        return false;
     }
-    return sendAutomatedEmail($pdo, $to, $subject, $text);
+    return sendAutomatedEmail($pdo, $to, $subject, $html, true);
 }
 
 /**
