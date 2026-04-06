@@ -112,7 +112,11 @@ if ($tip_form === 'donatie') {
             $asistent = cotizatii_map_insotitor_to_asistent($row['insotitor'] ?? '');
             $suma = incasari_valoare_cotizatie_anuala($pdo, $anul, $grad, $asistent);
         }
-        $reprezentand = $reprezentand ?: 'Cotizatie membru';
+        if ($mod_plata === INCASARI_MOD_MANDAT_POSTAL) {
+            $reprezentand = 'Cotizatie membru - mandat postal';
+        } else {
+            $reprezentand = $reprezentand ?: 'Cotizatie membru';
+        }
         $id = incasari_adauga($pdo, $membru_id, INCASARI_TIP_COTIZATIE, $anul, $suma, $mod_plata, $data_incasare, $utilizator, null, null, $reprezentand);
     } else {
         if ($suma <= 0) {
@@ -157,4 +161,5 @@ echo json_encode([
     'id' => $id,
     'seria_chitanta' => $inc['seria_chitanta'] ?? null,
     'nr_chitanta' => $inc['nr_chitanta'] ?? null,
+    'mod_plata' => $inc['mod_plata'] ?? null,
 ], JSON_UNESCAPED_UNICODE);

@@ -36,7 +36,9 @@ if ($tip === INCASARI_TIP_COTIZATIE) {
     // Cerință business: plata cotizației din modal marchează membrul ca achitat pentru anul curent.
     $anul = (int)date('Y');
     cotizatii_ensure_tables($pdo);
-    if ($reprezentand === null || $reprezentand === '') {
+    if ($mod_plata === INCASARI_MOD_MANDAT_POSTAL) {
+        $reprezentand = 'Cotizatie membru - mandat postal';
+    } elseif ($reprezentand === null || $reprezentand === '') {
         $reprezentand = 'Cotizatie membru';
     }
     if ($suma <= 0) {

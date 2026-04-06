@@ -44,7 +44,7 @@
                     <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="card_pos">POS</button>
                     <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="transfer_bancar">Transfer bancar</button>
                     <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="card_online">Plata online</button>
-                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="mandat_postal">Echitanta ERP</button>
+                    <button type="button" role="radio" aria-checked="false" class="incasari-mod-btn px-3 py-2 rounded-lg border border-slate-700 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white hover:bg-emerald-700 dark:hover:bg-emerald-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="mandat_postal">Mandat postal</button>
                 </div>
                 <input type="hidden" name="mod_plata" id="incasari-mod" value="">
             </div>
@@ -115,7 +115,7 @@
     }
 
     function actualizeazaReprezentandPentruMandatPostal() {
-        var textMandat = 'Cotizatie membru - achitata prin mandat postal.';
+        var textMandat = 'Cotizatie membru - mandat postal';
         if (tipInput.value !== 'cotizatie') return;
         wrapReprezentand.classList.remove('hidden');
         if (modInput.value === 'mandat_postal') {
@@ -124,6 +124,27 @@
         }
         if (!inputReprezentand.value || inputReprezentand.value === textMandat) {
             inputReprezentand.value = 'Cotizatie membru';
+        }
+    }
+
+    function modEmiteChitanta() {
+        if (modInput.value === 'numerar') return true;
+        if (modInput.value === 'mandat_postal') return true;
+        return false;
+    }
+
+    function actualizeazaActiuni() {
+        if (!modInput.value || !tipInput.value) {
+            btnChitanta.classList.add('hidden');
+            btnSalveaza.classList.add('hidden');
+            return;
+        }
+        if (modEmiteChitanta()) {
+            btnChitanta.classList.remove('hidden');
+            btnSalveaza.classList.add('hidden');
+        } else {
+            btnChitanta.classList.add('hidden');
+            btnSalveaza.classList.remove('hidden');
         }
     }
 
@@ -227,7 +248,7 @@
                 inputReprezentand.value = 'Cotizatie membru';
             }
             actualizeazaReprezentandPentruMandatPostal();
-            if (modInput.value) { if (modInput.value === 'numerar' || modInput.value === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); } else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); } }
+            actualizeazaActiuni();
         });
     });
 
@@ -238,8 +259,7 @@
             afiseazaMesaj('');
             seteazaSelectie('.incasari-mod-btn', this);
             actualizeazaReprezentandPentruMandatPostal();
-            if (m === 'numerar' || m === 'chitanta_veche') { btnChitanta.classList.remove('hidden'); btnSalveaza.classList.add('hidden'); }
-            else { btnChitanta.classList.add('hidden'); btnSalveaza.classList.remove('hidden'); }
+            actualizeazaActiuni();
         });
     });
 
@@ -285,13 +305,18 @@
 
     btnChitanta.addEventListener('click', function(){
         salveazaIncasare(function(data){
-            window.open('util/incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
+            if (data.seria_chitanta) {
+                window.open('util/incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
+            } else {
+                alert('Încasarea a fost înregistrată cu succes.');
+            }
             dialog.close();
+            if (typeof window.location.reload === 'function') window.location.reload();
         });
     });
     btnSalveaza.addEventListener('click', function(){
         salveazaIncasare(function(){
-            alert('Încasarea a fost salvată.');
+            alert('Încasarea a fost înregistrată cu succes.');
             dialog.close();
             if (typeof window.location.reload === 'function') window.location.reload();
         });
