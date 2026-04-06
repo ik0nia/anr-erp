@@ -7,8 +7,20 @@
 require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/app/services/FundraisingService.php';
 
-fundraising_f230_ensure_schema($pdo);
-$setari_modul = fundraising_f230_get_settings($pdo);
+$fundraising_bootstrap_ok = true;
+$setari_modul = [
+    'public_url' => fundraising_f230_public_url(),
+    'template_exists' => false,
+    'template_mapat' => false,
+];
+try {
+    fundraising_f230_ensure_schema($pdo);
+    $setari_modul = fundraising_f230_get_settings($pdo);
+} catch (Throwable $e) {
+    $fundraising_bootstrap_ok = false;
+    error_log('Fundraising bootstrap error (public): ' . $e->getMessage());
+}
+
 $public_url = (string)$setari_modul['public_url'];
 $template_activ = !empty($setari_modul['template_exists']) && !empty($setari_modul['template_mapat']);
 
@@ -43,7 +55,11 @@ if (!empty($_SESSION['fundraising_public_flash']) && is_array($_SESSION['fundrai
     $warning = (string)($flash['warning'] ?? '');
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_formular_230_public'])) {
+if (!$fundraising_bootstrap_ok) {
+    $eroare = 'Formularul public este temporar indisponibil. Încercați din nou în câteva minute.';
+}
+
+if ($fundraising_bootstrap_ok && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_formular_230_public'])) {
     csrf_require_valid();
     $valori = array_merge($valori, fundraising_f230_extract_data($_POST));
     $result = fundraising_f230_process_submission($pdo, $_POST, [
