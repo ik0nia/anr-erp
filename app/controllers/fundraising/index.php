@@ -46,7 +46,7 @@ if ($tab === 'formular230' && isset($_GET['export']) && (string)$_GET['export'] 
     fundraising_f230_export_csv($pdo);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($fundraising_bootstrap_ok && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['salveaza_template_f230'])) {
         csrf_require_valid();
         $tab = 'setari';
@@ -148,6 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $eroare = (string)($result['error'] ?? 'Modificările nu au putut fi salvate.');
     }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && !$fundraising_bootstrap_ok) {
+    $eroare = 'Modulul Fundraising este temporar indisponibil (eroare internă de inițializare).';
 }
 
 if (isset($_GET['succes_setari'])) {
