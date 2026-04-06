@@ -1845,36 +1845,6 @@ function fundraising_f230_get_formular(PDO $pdo, int $id): ?array
 }
 
 /**
- * Golește tabelul formularelor 230 și șterge fișierele asociate.
- */
-function fundraising_f230_clear_formulare(PDO $pdo): array
-{
-    try {
-        $rows = fundraising_f230_list_formulare($pdo, 50000);
-
-        foreach ($rows as $row) {
-            $pdf_abs = fundraising_f230_get_pdf_abs_path((array)$row);
-            if ($pdf_abs !== '' && is_file($pdf_abs)) {
-                @unlink($pdf_abs);
-            }
-            $sig_rel = trim((string)($row['semnatura_path'] ?? ''));
-            if ($sig_rel !== '') {
-                $sig_abs = fundraising_f230_abs_path($sig_rel);
-                if (is_file($sig_abs)) {
-                    @unlink($sig_abs);
-                }
-            }
-        }
-
-        $pdo->exec('DELETE FROM fundraising_f230_formulare');
-        $pdo->exec('ALTER TABLE fundraising_f230_formulare AUTO_INCREMENT = 1');
-        return ['success' => true];
-    } catch (Throwable $e) {
-        return ['success' => false, 'error' => 'Tabelul nu a putut fi golit: ' . $e->getMessage()];
-    }
-}
-
-/**
  * Șterge un formular 230 și fișierele asociate (PDF + semnătură).
  */
 function fundraising_f230_delete_formular(PDO $pdo, int $id): array
