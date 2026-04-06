@@ -5,7 +5,13 @@
 require_once __DIR__ . '/../../bootstrap.php';
 require_once APP_ROOT . '/app/services/FundraisingService.php';
 
-fundraising_f230_ensure_schema($pdo);
+$fundraising_bootstrap_ok = true;
+try {
+    fundraising_f230_ensure_schema($pdo);
+} catch (Throwable $e) {
+    $fundraising_bootstrap_ok = false;
+    error_log('Fundraising bootstrap error (admin): ' . $e->getMessage());
+}
 
 $tab = isset($_GET['tab']) && in_array($_GET['tab'], ['formular230', 'setari'], true) ? (string)$_GET['tab'] : 'formular230';
 $eroare = '';
@@ -40,7 +46,7 @@ if ($tab === 'formular230' && isset($_GET['export']) && (string)$_GET['export'] 
     fundraising_f230_export_csv($pdo);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($fundraising_bootstrap_ok && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['salveaza_template_f230'])) {
         csrf_require_valid();
         $tab = 'setari';
@@ -142,6 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $eroare = (string)($result['error'] ?? 'Modificările nu au putut fi salvate.');
     }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && !$fundraising_bootstrap_ok) {
+    $eroare = 'Modulul Fundraising este temporar indisponibil (eroare internă de inițializare).';
 }
 
 if (isset($_GET['succes_setari'])) {
@@ -166,9 +174,43 @@ if (isset($_GET['succes_editare'])) {
     $succes = 'Formularul 230 a fost actualizat.';
 }
 
-$setari_modul = fundraising_f230_get_settings($pdo);
+$setari_modul = [
+    'template_rel' => '',
+    'template_exists' => false,
+    'template_sha256' => '',
+    'template_preview_url' => '/util/f230-template-preview.php',
+    'template_page_count' => 0,
+    'template_mapat' => false,
+    'template_map_missing_tags' => [],
+    'template_map_items_by_tag' => [],
+    'template_map_defaults_by_tag' => [],
+    'template_uploaded_at' => '',
+    'template_uploaded_at_display' => '',
+    'template_fpdf_status' => 'direct',
+    'template_fpdf_status_label' => 'Direct (template original compatibil FPDI)',
+    'template_fpdf_fallback_active' => false,
+    'confirm_html' => '',
+    'public_url' => fundraising_f230_public_url(),
+    'storage_folder' => 'F230PDF',
+];
 $taguri_f230 = fundraising_f230_taguri_display();
-$lista_formulare = fundraising_f230_list_formulare($pdo, 2000);
+$lista_formulare = [];
+
+if ($fundraising_bootstrap_ok) {
+    try {
+        $setari_modul = fundraising_f230_get_settings($pdo);
+        $lista_formulare = fundraising_f230_list_formulare($pdo, 2000);
+    } catch (Throwable $e) {
+        error_log('Fundraising load error (admin): ' . $e->getMessage());
+        if ($eroare === '') {
+            $eroare = 'Modulul Fundraising nu a putut fi încărcat complet. Verifică logurile serverului.';
+        }
+    }
+} else {
+    if ($eroare === '') {
+        $eroare = 'Modulul Fundraising este temporar indisponibil (eroare internă de inițializare).';
+    }
+}
 
 if ($edit_formular_id > 0 && !$edit_modal_open) {
     $edit_formular = fundraising_f230_get_formular($pdo, $edit_formular_id);

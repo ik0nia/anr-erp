@@ -18,6 +18,18 @@ function auth_pagini_publice() {
         'install-auth.php',
         'setare-admin.php',
         'fundraising-formular-230.php',
+        'public-form.php',
+    ];
+}
+
+/** Rute clean URL care nu necesită autentificare */
+function auth_rute_publice() {
+    return [
+        '/login',
+        '/logout',
+        '/recuperare-parola',
+        '/reset-parola',
+        '/fundraising/formular-230',
     ];
 }
 
@@ -30,7 +42,12 @@ function require_login() {
         session_start();
     }
     $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $requestPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    $requestPath = '/' . trim((string)$requestPath, '/');
     if (in_array($script, auth_pagini_publice(), true)) {
+        return;
+    }
+    if (in_array($requestPath, auth_rute_publice(), true)) {
         return;
     }
     if (empty($_SESSION['user_id']) || empty($_SESSION['utilizator'])) {

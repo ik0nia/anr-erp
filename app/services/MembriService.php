@@ -690,7 +690,7 @@ function membri_toggle_alert_informat(PDO $pdo, int $membru_id, string $alert_ti
             $stmt->execute([$membru_id, $alert_tip]);
             if ($stmt->rowCount() > 0) {
                 log_activitate($pdo, "membri: Membru informat resetat pentru avertizare {$alert_label} / {$nume_complet}", null, $membru_id);
-                membri_log_alert_in_registru_interactiuni($pdo, $membru_id, $nume_complet, $telefon_membru, 'Membru informat resetat', $alert_label);
+                membri_log_alert_in_registru_interactiuni($pdo, $membru_id, $nume_complet, $telefon_membru, 'Membru informat resetat', $alert_label, $alert_tip);
             }
         } else {
             $pdo->exec("CREATE TABLE IF NOT EXISTS membri_alerts_dismissed (
@@ -708,8 +708,12 @@ function membri_toggle_alert_informat(PDO $pdo, int $membru_id, string $alert_ti
             if (!$stmt_check->fetch()) {
                 $stmt = $pdo->prepare('INSERT INTO membri_alerts_dismissed (membru_id, alert_tip) VALUES (?, ?)');
                 $stmt->execute([$membru_id, $alert_tip]);
-                log_activitate($pdo, "membri: Membru informat bifat pentru avertizare {$alert_label} / {$nume_complet}", null, $membru_id);
-                membri_log_alert_in_registru_interactiuni($pdo, $membru_id, $nume_complet, $telefon_membru, 'Membru informat', $alert_label);
+                $log_msg = "membri: Membru informat bifat pentru avertizare {$alert_label} / {$nume_complet}";
+                if (in_array($alert_tip, ['ci', 'ch'], true)) {
+                    $log_msg = "membri: Membru informat telefonic (apel) pentru avertizare {$alert_label} / {$nume_complet}";
+                }
+                log_activitate($pdo, $log_msg, null, $membru_id);
+                membri_log_alert_in_registru_interactiuni($pdo, $membru_id, $nume_complet, $telefon_membru, 'Membru informat', $alert_label, $alert_tip);
             }
         }
 
@@ -723,17 +727,23 @@ function membri_toggle_alert_informat(PDO $pdo, int $membru_id, string $alert_ti
 /**
  * Logheaza in registru_interactiuni_v2 evenimentul de membru informat.
  */
-function membri_log_alert_in_registru_interactiuni(PDO $pdo, int $membru_id, string $nume_complet, ?string $telefon, string $actiune, string $alert_label): void {
+function membri_log_alert_in_registru_interactiuni(PDO $pdo, int $membru_id, string $nume_complet, ?string $telefon, string $actiune, string $alert_label, string $alert_tip): void {
     try {
         $subiect_id = membri_ensure_registru_v2_subiect($pdo, 'Actualizare Date');
         $utilizator = $_SESSION['utilizator'] ?? 'Sistem';
         $utilizator_id = $_SESSION['utilizator_id'] ?? null;
         $notite = $actiune . ' pentru ' . $alert_label . ' / Membru ID ' . $membru_id;
+        // Cerință business: la bifarea alertelor de expirare C.I./C.H. se loghează apel telefonic.
+        $tip_interactiune = 'vizita';
+        if ($actiune === 'Membru informat' && in_array($alert_tip, ['ci', 'ch'], true)) {
+            $tip_interactiune = 'apel';
+            $notite .= ' (apel telefonic)';
+        }
 
         $stmt = $pdo->prepare("INSERT INTO registru_interactiuni_v2
             (tip, persoana, telefon, subiect_id, notite, utilizator, utilizator_id, data_ora)
-            VALUES ('vizita', ?, ?, ?, ?, ?, ?, NOW())");
-        $stmt->execute([$nume_complet, $telefon, $subiect_id, $notite, $utilizator, $utilizator_id]);
+            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+        $stmt->execute([$tip_interactiune, $nume_complet, $telefon, $subiect_id, $notite, $utilizator, $utilizator_id]);
     } catch (PDOException $e) {
         // Nu blocam fluxul principal daca logarea in registru esueaza.
     }
