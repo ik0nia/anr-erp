@@ -32,7 +32,7 @@ $where = [];
 $params = [];
 // Borderou Chitante: includem doar documentele "Chitanta ERP":
 // - numerar
-// - cotizatie prin mandat postal
+// - mandat postal
 $where[] = '(i.mod_plata = ? OR (i.mod_plata = ? AND i.tip = ?))';
 $params[] = INCASARI_MOD_NUMERAR;
 $params[] = INCASARI_MOD_MANDAT_POSTAL;

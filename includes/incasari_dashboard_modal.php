@@ -265,7 +265,11 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
             .then(function(data){
                 if (data.ok) {
                     dialog.close();
-                    window.open('util/incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
+                    if (data.seria_chitanta) {
+                        window.open('util/incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
+                    } else {
+                        alert('Încasarea a fost înregistrată cu succes.');
+                    }
                     resetModalDashboard();
                     if (typeof window.location.reload === 'function') window.location.reload();
                 } else {
