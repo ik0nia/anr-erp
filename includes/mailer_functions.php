@@ -63,7 +63,7 @@ function mailer_get_settings(PDO $pdo): array {
  * @param string $to Adresa destinatar
  * @param string $subject Subiect
  * @param string $body Corpul mesajului (fără semnătură; se adaugă automat)
- * @param bool $bodyIsHtml Dacă true, $body este tratat ca HTML
+ * @param bool $bodyIsHtml Dacă true, body este tratat ca HTML
  * @return bool true la succes, false la eroare
  */
 function sendAutomatedEmail(PDO $pdo, string $to, string $subject, string $body, bool $bodyIsHtml = false): bool {
@@ -76,7 +76,6 @@ function sendAutomatedEmail(PDO $pdo, string $to, string $subject, string $body,
 
     $isSignatureHtml = (strpos($signature, '<') !== false);
     $isHtml = $bodyIsHtml || $isSignatureHtml;
-
     $fullBodyPlain = $bodyIsHtml
         ? trim((string)html_entity_decode(strip_tags($body), ENT_QUOTES | ENT_HTML5, 'UTF-8'))
         : $body;
@@ -98,7 +97,6 @@ function sendAutomatedEmail(PDO $pdo, string $to, string $subject, string $body,
             $bodyEscaped = htmlspecialchars($body, ENT_QUOTES, 'UTF-8');
             $fullBody = '<p style="white-space:pre-wrap;">' . nl2br($bodyEscaped) . '</p>';
         }
-
         if ($signature !== '') {
             if ($isSignatureHtml) {
                 $fullBody .= $signature;

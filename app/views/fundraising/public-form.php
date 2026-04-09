@@ -79,6 +79,7 @@
 
             <form method="post" action="/fundraising/formular-230" class="space-y-4" id="form-public-230" aria-describedby="<?php echo empty($template_activ) ? 'f230-emergency-note' : ''; ?>">
                 <?php echo csrf_field(); ?>
+                <input type="hidden" name="_f230_time_token" value="<?php echo htmlspecialchars((string)($antibot_time_token ?? '')); ?>">
                 <input type="hidden" name="trimite_formular_230_public" value="1">
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -88,7 +89,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-initiala">Inițiala tatălui</label>
-                        <input id="f230-initiala" type="text" name="initiala_tatalui" maxlength="3" value="<?php echo htmlspecialchars((string)$valori['initiala_tatalui']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500">
+                        <input id="f230-initiala" type="text" name="initiala_tatalui" maxlength="3" pattern="[A-Za-zĂÂÎȘŞȚŢăâîșşțţ]{0,3}" value="<?php echo htmlspecialchars((string)$valori['initiala_tatalui']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-prenume">Prenume <span class="text-red-600">*</span></label>
@@ -103,7 +104,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-telefon">Telefon <span class="text-red-600">*</span></label>
-                        <input id="f230-telefon" type="text" name="telefon" required value="<?php echo htmlspecialchars((string)$valori['telefon']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500">
+                        <input id="f230-telefon" type="text" name="telefon" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required value="<?php echo htmlspecialchars((string)$valori['telefon']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-email">Email <span class="text-red-600">*</span></label>
@@ -217,8 +218,47 @@
     }
 
     var templateActive = true;
+    var formRenderedAt = Date.now();
     var publicUrl = <?php echo json_encode((string)$public_url); ?>;
     var shareMessage = 'Te rog, completeaza si tu Formularul 230 pentru Asociatia Nevazatorilor Bihor pentru a redirectiona 3,5% pentru nevazatori. Ai aici linkul formularului online, se poate completa de pe telefon: ' + publicUrl;
+    var forbiddenChars = /[~!#$%^&*()+\/\[\]{}|\\?><:;]/;
+
+    function validateCNP(cnp) {
+        if (!/^\d{13}$/.test(cnp)) return false;
+        var s = parseInt(cnp.charAt(0), 10);
+        var aa = parseInt(cnp.slice(1, 3), 10);
+        var ll = parseInt(cnp.slice(3, 5), 10);
+        var zz = parseInt(cnp.slice(5, 7), 10);
+        var jj = parseInt(cnp.slice(7, 9), 10);
+        var allowedJJ = new Set((function () {
+            var arr = [];
+            for (var i = 1; i <= 46; i++) arr.push(i);
+            arr.push(51, 52, 99);
+            return arr;
+        })());
+        if (!allowedJJ.has(jj)) return false;
+
+        var yearBase = 1900;
+        if (s === 1 || s === 2) yearBase = 1900;
+        else if (s === 3 || s === 4) yearBase = 1800;
+        else if (s === 5 || s === 6 || s === 7 || s === 8) yearBase = 2000;
+        else if (s === 9) yearBase = 1900;
+        else return false;
+
+        var year = yearBase + aa;
+        var birth = new Date(year, ll - 1, zz);
+        if (birth.getFullYear() !== year || (birth.getMonth() + 1) !== ll || birth.getDate() !== zz) return false;
+        if (birth.getTime() > Date.now()) return false;
+
+        var controlKey = '279146358279';
+        var sum = 0;
+        for (var p = 0; p < 12; p++) {
+            sum += parseInt(cnp.charAt(p), 10) * parseInt(controlKey.charAt(p), 10);
+        }
+        var control = sum % 11;
+        if (control === 10) control = 1;
+        return control === parseInt(cnp.charAt(12), 10);
+    }
 
     var shareBtn = document.getElementById('btn-share-generic');
     if (shareBtn) {
@@ -334,6 +374,62 @@
         var form = document.getElementById('form-public-230');
         if (form) {
             form.addEventListener('submit', function (e) {
+                // Anti-bot client hint: minim 5 secunde completare.
+                var seconds = Math.floor((Date.now() - formRenderedAt) / 1000);
+                if (seconds < 5) {
+                    e.preventDefault();
+                    alert('Te rugam sa verifici datele inainte de trimitere (minim 5 secunde).');
+                    return;
+                }
+
+                var cnp = (document.getElementById('f230-cnp') || {}).value || '';
+                var telefon = (document.getElementById('f230-telefon') || {}).value || '';
+                var codPostal = (document.getElementById('f230-cp') || {}).value || '';
+                var email = (document.getElementById('f230-email') || {}).value || '';
+                var initiala = (document.getElementById('f230-initiala') || {}).value || '';
+                var textFields = [
+                    'f230-nume', 'f230-initiala', 'f230-prenume', 'f230-cnp', 'f230-localitate', 'f230-judet',
+                    'f230-cp', 'f230-strada', 'f230-numar', 'f230-bloc', 'f230-scara', 'f230-etaj', 'f230-apartament', 'f230-telefon'
+                ];
+                for (var i = 0; i < textFields.length; i++) {
+                    var el = document.getElementById(textFields[i]);
+                    if (!el) continue;
+                    if (forbiddenChars.test(el.value || '')) {
+                        e.preventDefault();
+                        alert('Formularul conține caractere nepermise. Elimină simbolurile speciale și reîncearcă.');
+                        return;
+                    }
+                }
+                if (!validateCNP(cnp)) {
+                    e.preventDefault();
+                    alert('CNP invalid. Verificați cele 13 cifre, data nașterii, codul de județ și cifra de control.');
+                    return;
+                }
+                if (!/^[0-9]{10}$/.test(telefon)) {
+                    e.preventDefault();
+                    alert('Telefon invalid. Sunt necesare exact 10 cifre.');
+                    return;
+                }
+                if (codPostal && !/^[0-9]{6}$/.test(codPostal)) {
+                    e.preventDefault();
+                    alert('Cod poștal invalid. Sunt necesare exact 6 cifre.');
+                    return;
+                }
+                if (initiala && !/^[A-Za-zĂÂÎȘŞȚŢăâîșşțţ]{1,3}$/.test(initiala)) {
+                    e.preventDefault();
+                    alert('Inițiala tatălui poate avea maxim 3 caractere și doar litere.');
+                    return;
+                }
+                if (/\s/.test(email) || email.indexOf('@') === -1) {
+                    e.preventDefault();
+                    alert('Email invalid. Adresa trebuie să conțină @ și nu poate conține spații.');
+                    return;
+                }
+                if (forbiddenChars.test(email)) {
+                    e.preventDefault();
+                    alert('Emailul conține caractere nepermise.');
+                    return;
+                }
                 if (!hidden.value) {
                     e.preventDefault();
                     alert('Semnătura este obligatorie.');

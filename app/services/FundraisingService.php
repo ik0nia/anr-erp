@@ -258,6 +258,100 @@ function fundraising_f230_public_url(): string
 }
 
 /**
+ * Generează token anti-bot cu timestamp semnat HMAC (secret stocat în sesiune).
+ * Tokenul este one-time pentru a limita replay-ul automatizat.
+ */
+function fundraising_f230_generate_antibot_time_token(): string
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['fundraising_f230_antibot_secret'])) {
+        $_SESSION['fundraising_f230_antibot_secret'] = bin2hex(random_bytes(32));
+    }
+    if (!isset($_SESSION['fundraising_f230_antibot_nonces']) || !is_array($_SESSION['fundraising_f230_antibot_nonces'])) {
+        $_SESSION['fundraising_f230_antibot_nonces'] = [];
+    }
+
+    $now = time();
+    foreach ($_SESSION['fundraising_f230_antibot_nonces'] as $nonce => $ts) {
+        if (!is_string($nonce) || !is_int($ts) || ($now - $ts) > 7200) {
+            unset($_SESSION['fundraising_f230_antibot_nonces'][$nonce]);
+        }
+    }
+
+    $ts = (string)$now;
+    $nonce = bin2hex(random_bytes(8));
+    $_SESSION['fundraising_f230_antibot_nonces'][$nonce] = $now;
+    $payload = $ts . '.' . $nonce;
+    $sig = hash_hmac('sha256', $payload, (string)$_SESSION['fundraising_f230_antibot_secret']);
+    $raw = $payload . '.' . $sig;
+    return rtrim(strtr(base64_encode($raw), '+/', '-_'), '=');
+}
+
+/**
+ * Validează tokenul anti-bot bazat pe timp.
+ * - respinge sub 5 secunde (silent reject recomandat);
+ * - respinge tokenuri invalide/expirate/replay.
+ */
+function fundraising_f230_validate_antibot_time_token(string $token, int $min_seconds = 5): array
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if ($token === '') {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'missing'];
+    }
+    $secret = (string)($_SESSION['fundraising_f230_antibot_secret'] ?? '');
+    if ($secret === '') {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'no_secret'];
+    }
+
+    $b64 = strtr($token, '-_', '+/');
+    $pad = strlen($b64) % 4;
+    if ($pad > 0) {
+        $b64 .= str_repeat('=', 4 - $pad);
+    }
+    $decoded = base64_decode($b64, true);
+    if (!is_string($decoded) || $decoded === '') {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'decode'];
+    }
+    $parts = explode('.', $decoded);
+    if (count($parts) !== 3) {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'parts'];
+    }
+    [$ts_raw, $nonce, $sig] = $parts;
+    if (!preg_match('/^\d{10}$/', (string)$ts_raw) || !preg_match('/^[a-f0-9]{16}$/', (string)$nonce) || !preg_match('/^[a-f0-9]{64}$/', (string)$sig)) {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'format'];
+    }
+
+    $payload = $ts_raw . '.' . $nonce;
+    $expected = hash_hmac('sha256', $payload, $secret);
+    if (!hash_equals($expected, (string)$sig)) {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'hmac'];
+    }
+
+    $issued = (int)$ts_raw;
+    $now = time();
+    $age = $now - $issued;
+    if ($age < 0 || $age > 7200) {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'expired'];
+    }
+
+    $known_nonces = $_SESSION['fundraising_f230_antibot_nonces'] ?? [];
+    if (!is_array($known_nonces) || !isset($known_nonces[$nonce])) {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'replay'];
+    }
+    unset($_SESSION['fundraising_f230_antibot_nonces'][$nonce]);
+
+    if ($age < max(1, $min_seconds)) {
+        return ['ok' => false, 'silent_reject' => true, 'reason' => 'too_fast'];
+    }
+
+    return ['ok' => true, 'silent_reject' => false, 'reason' => null];
+}
+
+/**
  * Returnează setările curente ale modulului.
  */
 function fundraising_f230_get_settings(PDO $pdo): array
@@ -737,12 +831,35 @@ function fundraising_f230_save_settings(PDO $pdo, array $post, array $files): ar
  */
 function fundraising_f230_text(?string $val, int $max = 255): string
 {
-    $txt = trim((string)$val);
+    $txt = html_entity_decode((string)$val, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $txt = strip_tags($txt);
+    $txt = preg_replace('/[\x00-\x1F\x7F]/u', ' ', $txt);
+    $txt = trim((string)$txt);
     $txt = preg_replace('/\s+/u', ' ', $txt);
     if ($txt === null) {
         $txt = '';
     }
     return mb_substr($txt, 0, $max);
+}
+
+/**
+ * Sanitizare și validare strictă pentru email.
+ */
+function fundraising_f230_email(?string $val): string
+{
+    $email = html_entity_decode((string)$val, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $email = strip_tags($email);
+    $email = trim((string)$email);
+    $email = str_replace(["\r", "\n", "\t"], '', $email);
+    return mb_substr($email, 0, 255);
+}
+
+/**
+ * Detectează caractere interzise global pentru prevenire injection/XSS.
+ */
+function fundraising_f230_contains_forbidden_chars(string $value): bool
+{
+    return preg_match('/[~!#$%\^&*()+\/\[\]{}|\\\\?><:;]/u', $value) === 1;
 }
 
 /**
@@ -785,8 +902,8 @@ function fundraising_f230_extract_data(array $post): array
         'scara' => fundraising_f230_text($post['scara'] ?? '', 10),
         'etaj' => fundraising_f230_text($post['etaj'] ?? '', 10),
         'apartament' => fundraising_f230_text($post['apartament'] ?? '', 10),
-        'telefon' => fundraising_f230_text($post['telefon'] ?? '', 50),
-        'email' => fundraising_f230_text($post['email'] ?? '', 255),
+        'telefon' => fundraising_f230_text($post['telefon'] ?? '', 10),
+        'email' => fundraising_f230_email($post['email'] ?? ''),
         'gdpr_acord' => !empty($post['gdpr_acord']) ? 1 : 0,
         'signature_data' => trim((string)($post['signature_data'] ?? '')),
     ];
@@ -818,8 +935,18 @@ function fundraising_f230_valid_cnp(string $cnp): bool
         return false;
     }
 
+    $judet = (int)substr($cnp, 7, 2);
+    $judete_valide = array_merge(range(1, 46), [51, 52, 99]);
+    if (!in_array($judet, $judete_valide, true)) {
+        return false;
+    }
+
     $an = $secol + $aa;
     if (!checkdate($ll, $zz, $an)) {
+        return false;
+    }
+    $birth_ts = @strtotime(sprintf('%04d-%02d-%02d', $an, $ll, $zz));
+    if ($birth_ts === false || $birth_ts > time()) {
         return false;
     }
 
@@ -857,14 +984,39 @@ function fundraising_f230_validate(array $data, bool $require_signature = true):
         }
     }
 
+    $campuri_text = [
+        'nume', 'initiala_tatalui', 'prenume', 'cnp', 'localitate', 'judet',
+        'cod_postal', 'strada', 'numar', 'bloc', 'scara', 'etaj', 'apartament', 'telefon',
+    ];
+    foreach ($campuri_text as $key) {
+        $val = (string)($data[$key] ?? '');
+        if ($val !== '' && fundraising_f230_contains_forbidden_chars($val)) {
+            return 'Câmpul „' . $key . '” conține caractere nepermise.';
+        }
+    }
+
+    $email = (string)($data['email'] ?? '');
+    if ($email === '' || strpos($email, '@') === false || preg_match('/\s/', $email)) {
+        return 'Adresa de email trebuie să conțină @ și nu poate conține spații.';
+    }
+    if (fundraising_f230_contains_forbidden_chars($email)) {
+        return 'Adresa de email conține caractere nepermise.';
+    }
+
     if (!fundraising_f230_valid_cnp((string)$data['cnp'])) {
         return 'CNP invalid. Verificați cele 13 cifre și algoritmul de control.';
     }
+    if (!preg_match('/^[0-9]{10}$/', (string)$data['telefon'])) {
+        return 'Telefon invalid. Sunt permise exact 10 cifre.';
+    }
+    if (!preg_match('/^[A-Za-zĂÂÎȘŞȚŢăâîșşțţ]{0,3}$/u', (string)$data['initiala_tatalui'])) {
+        return 'Inițiala tatălui poate avea maximum 3 caractere și doar litere.';
+    }
+    if ($data['cod_postal'] !== '' && !preg_match('/^[0-9]{6}$/', (string)$data['cod_postal'])) {
+        return 'Codul poștal trebuie să conțină exact 6 cifre.';
+    }
     if (!filter_var((string)$data['email'], FILTER_VALIDATE_EMAIL)) {
         return 'Adresa de email nu este validă.';
-    }
-    if ($data['cod_postal'] !== '' && !preg_match('/^\d{6}$/', (string)$data['cod_postal'])) {
-        return 'Codul poștal trebuie să conțină exact 6 cifre.';
     }
     if ((int)$data['gdpr_acord'] !== 1) {
         return 'Acordul GDPR este obligatoriu.';
@@ -1702,6 +1854,8 @@ function fundraising_f230_process_submission(PDO $pdo, array $post, array $opts 
     try {
         $pdo->beginTransaction();
 
+        // Security note: this flow should use a least-privilege DB user in production
+        // (strict minimum: SELECT + INSERT on required tables for this operation).
         $stmt = $pdo->prepare("INSERT INTO fundraising_f230_formulare
             (nume, initiala_tatalui, prenume, cnp, localitate, judet, cod_postal, strada, numar, bloc, scara, etaj, apartament, telefon, email, gdpr_acord, semnatura_path, pdf_path, pdf_filename, sursa, ip_adresa, user_agent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', ?, ?, ?)");

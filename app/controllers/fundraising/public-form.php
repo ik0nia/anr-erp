@@ -23,6 +23,7 @@ try {
 
 $public_url = (string)$setari_modul['public_url'];
 $template_activ = !empty($setari_modul['template_exists']) && !empty($setari_modul['template_mapat']);
+$antibot_time_token = fundraising_f230_generate_antibot_time_token();
 
 $eroare = '';
 $succes = '';
@@ -61,6 +62,23 @@ if (!$fundraising_bootstrap_ok) {
 
 if ($fundraising_bootstrap_ok && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['trimite_formular_230_public'])) {
     csrf_require_valid();
+    $antibot = fundraising_f230_validate_antibot_time_token((string)($_POST['_f230_time_token'] ?? ''), 5);
+    if (empty($antibot['ok'])) {
+        // Silent reject pentru submit suspect (anti-bot): nu procesăm datele.
+        if (!empty($antibot['silent_reject'])) {
+            $_SESSION['fundraising_public_flash'] = [
+                'succes' => 'Formularul a fost trimis cu succes. Vă mulțumim!',
+                'warning' => '',
+            ];
+            header('Location: /fundraising/formular-230?trimis=1');
+            exit;
+        }
+        $eroare = 'Sesiunea formularului a expirat. Reîncărcați pagina și încercați din nou.';
+    }
+    if ($eroare !== '') {
+        include APP_ROOT . '/app/views/fundraising/public-form.php';
+        return;
+    }
     $valori = array_merge($valori, fundraising_f230_extract_data($_POST));
     $result = fundraising_f230_process_submission($pdo, $_POST, [
         'sursa' => 'online',
