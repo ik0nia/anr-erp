@@ -1009,8 +1009,8 @@ function fundraising_f230_validate(array $data, bool $require_signature = true):
     if (!preg_match('/^[0-9]{10}$/', (string)$data['telefon'])) {
         return 'Telefon invalid. Sunt permise exact 10 cifre.';
     }
-    if (!preg_match('/^[A-Za-zĂÂÎȘŞȚŢăâîșşțţ]{0,3}$/u', (string)$data['initiala_tatalui'])) {
-        return 'Inițiala tatălui poate avea maximum 3 caractere și doar litere.';
+    if (!preg_match('/^[A-Za-zĂÂÎȘŞȚŢăâîșşțţ.]{0,3}$/u', (string)$data['initiala_tatalui'])) {
+        return 'Inițiala tatălui poate avea maximum 3 caractere (litere și punct).';
     }
     if ($data['cod_postal'] !== '' && !preg_match('/^[0-9]{6}$/', (string)$data['cod_postal'])) {
         return 'Codul poștal trebuie să conțină exact 6 cifre.';
