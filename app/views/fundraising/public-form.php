@@ -85,7 +85,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-initiala">Inițiala tatălui</label>
-                        <input id="f230-initiala" type="text" name="initiala_tatalui" maxlength="3" pattern="[A-Za-zĂÂÎȘŞȚŢăâîșşțţ]{0,3}" value="<?php echo htmlspecialchars((string)$valori['initiala_tatalui']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500">
+                        <input id="f230-initiala" type="text" name="initiala_tatalui" maxlength="3" pattern="[A-Za-zĂÂÎȘŞȚŢăâîșşțţ.]{0,3}" value="<?php echo htmlspecialchars((string)$valori['initiala_tatalui']); ?>" class="w-full px-3 py-2 rounded-lg border border-black bg-white text-black focus:ring-2 focus:ring-amber-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1" for="f230-prenume">Prenume <span class="text-red-600">*</span></label>
@@ -176,7 +176,7 @@
                     </button>
                     <button type="reset" id="btn-reset-form-public" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-slate-500 disabled:opacity-60 disabled:cursor-not-allowed">
                         <i data-lucide="rotate-ccw" class="w-4 h-4" aria-hidden="true"></i>
-                        Resetează
+                        Reseteaza formularul
                     </button>
                 </div>
             </form>
@@ -411,9 +411,9 @@
                     alert('Cod poștal invalid. Sunt necesare exact 6 cifre.');
                     return;
                 }
-                if (initiala && !/^[A-Za-zĂÂÎȘŞȚŢăâîșşțţ]{1,3}$/.test(initiala)) {
+                if (initiala && !/^[A-Za-zĂÂÎȘŞȚŢăâîșşțţ.]{1,3}$/.test(initiala)) {
                     e.preventDefault();
-                    alert('Inițiala tatălui poate avea maxim 3 caractere și doar litere.');
+                    alert('Inițiala tatălui poate avea maxim 3 caractere (litere și punct).');
                     return;
                 }
                 if (/\s/.test(email) || email.indexOf('@') === -1) {
