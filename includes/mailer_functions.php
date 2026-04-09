@@ -63,26 +63,47 @@ function mailer_get_settings(PDO $pdo): array {
  * @param string $to Adresa destinatar
  * @param string $subject Subiect
  * @param string $body Corpul mesajului (fără semnătură; se adaugă automat)
+ * @param bool $bodyIsHtml Dacă true, body este tratat ca HTML
  * @return bool true la succes, false la eroare
  */
-function sendAutomatedEmail(PDO $pdo, string $to, string $subject, string $body): bool {
+function sendAutomatedEmail(PDO $pdo, string $to, string $subject, string $body, bool $bodyIsHtml = false): bool {
     $to = trim($to);
     if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
     $settings = mailer_get_settings($pdo);
     $signature = trim($settings['email_signature'] ?? '');
-    $fullBodyPlain = $body;
-    if ($signature !== '') {
-        $fullBodyPlain .= "\n\n" . $signature;
+
+    $isSignatureHtml = (strpos($signature, '<') !== false);
+    $isHtml = $bodyIsHtml || $isSignatureHtml;
+    $fullBodyPlain = $bodyIsHtml
+        ? trim((string)html_entity_decode(strip_tags($body), ENT_QUOTES | ENT_HTML5, 'UTF-8'))
+        : $body;
+    if ($fullBodyPlain === '') {
+        $fullBodyPlain = ' ';
     }
-    $isHtml = (strpos($signature, '<') !== false);
+    if ($signature !== '') {
+        $signaturePlain = trim((string)html_entity_decode(strip_tags($signature), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($signaturePlain !== '') {
+            $fullBodyPlain .= "\n\n" . $signaturePlain;
+        }
+    }
+
     $fullBody = $fullBodyPlain;
     if ($isHtml) {
-        $bodyEscaped = htmlspecialchars($body, ENT_QUOTES, 'UTF-8');
-        $fullBody = '<p style="white-space:pre-wrap;">' . nl2br($bodyEscaped) . '</p>';
+        if ($bodyIsHtml) {
+            $fullBody = $body;
+        } else {
+            $bodyEscaped = htmlspecialchars($body, ENT_QUOTES, 'UTF-8');
+            $fullBody = '<p style="white-space:pre-wrap;">' . nl2br($bodyEscaped) . '</p>';
+        }
         if ($signature !== '') {
-            $fullBody .= $signature;
+            if ($isSignatureHtml) {
+                $fullBody .= $signature;
+            } else {
+                $signatureEscaped = htmlspecialchars($signature, ENT_QUOTES, 'UTF-8');
+                $fullBody .= '<p style="white-space:pre-wrap;">' . nl2br($signatureEscaped) . '</p>';
+            }
         }
     }
     $fromName = trim($settings['from_name'] ?? '');
