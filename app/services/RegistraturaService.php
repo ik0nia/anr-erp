@@ -9,6 +9,36 @@ require_once APP_ROOT . '/includes/registratura_helper.php';
 require_once APP_ROOT . '/includes/log_helper.php';
 
 /**
+ * Normalizeaza valoarea checkbox-ului task_deschis din formulare.
+ */
+function registratura_task_deschis_flag(array $data): int {
+    return isset($data['task_deschis']) && (string)$data['task_deschis'] === '1' ? 1 : 0;
+}
+
+/**
+ * Normalizeaza data documentului in format SQL (Y-m-d).
+ * Accepta doar DD.MM.YYYY sau Y-m-d.
+ */
+function registratura_normalize_data_document(?string $value): ?string {
+    $value = trim((string)$value);
+    if ($value === '') {
+        return null;
+    }
+
+    if (preg_match('/^\d{2}\.\d{2}\.\d{4}$/', $value) === 1) {
+        $dt = DateTime::createFromFormat('d.m.Y', $value);
+        return ($dt && $dt->format('d.m.Y') === $value) ? $dt->format('Y-m-d') : null;
+    }
+
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+        $dt = DateTime::createFromFormat('Y-m-d', $value);
+        return ($dt && $dt->format('Y-m-d') === $value) ? $value : null;
+    }
+
+    return null;
+}
+
+/**
  * Lista inregistrari cu paginare.
  *
  * @return array ['inregistrari'=>[], 'total'=>int, 'total_pages'=>int]
@@ -50,12 +80,20 @@ function registratura_get(PDO $pdo, int $id): ?array {
 function registratura_create(PDO $pdo, array $data, string $utilizator = 'Sistem'): array {
     ensure_registratura_table($pdo);
 
+    $tip_act_input = trim($data['tip_act'] ?? '');
+    $tip_act = in_array($tip_act_input, ['Document primit', 'Document emis'], true)
+        ? $tip_act_input
+        : 'Înregistrare document';
     $nr_document = trim($data['nr_document'] ?? '') ?: null;
-    $data_document = trim($data['data_document'] ?? '') ?: null;
+    $data_document_raw = trim($data['data_document'] ?? '');
+    $data_document = registratura_normalize_data_document($data_document_raw);
+    if ($data_document_raw !== '' && $data_document === null) {
+        return ['success' => false, 'id' => null, 'nr_inregistrare' => null, 'error' => 'Data document trebuie completată în format DD.MM.YYYY.'];
+    }
     $provine_din = trim($data['provine_din'] ?? '') ?: null;
     $continut_document = trim($data['continut_document'] ?? '') ?: null;
     $destinatar_document = trim($data['destinatar_document'] ?? '') ?: null;
-    $task_deschis = isset($data['task_deschis']) ? 1 : 0;
+    $task_deschis = registratura_task_deschis_flag($data);
 
     try {
         // Retry în caz de conflict pe nr_intern (UNIQUE constraint)
@@ -71,7 +109,7 @@ function registratura_create(PDO $pdo, array $data, string $utilizator = 'Sistem
             try {
                 $stmt = $pdo->prepare('INSERT INTO registratura (nr_intern, nr_inregistrare, utilizator, tip_act, nr_document, data_document, provine_din, continut_document, destinatar_document, task_deschis) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                 $stmt->execute([
-                    $nr_intern, $nr_inregistrare, $utilizator, 'Înregistrare document',
+                    $nr_intern, $nr_inregistrare, $utilizator, $tip_act,
                     $nr_document, $data_document, $provine_din, $continut_document, $destinatar_document, $task_deschis
                 ]);
                 $id = (int)$pdo->lastInsertId();
@@ -115,11 +153,15 @@ function registratura_update(PDO $pdo, int $id, array $data, string $utilizator 
     if (empty($data_str)) return ['success' => false, 'error' => 'Data este obligatorie.'];
 
     $nr_document = trim($data['nr_document'] ?? '') ?: null;
-    $data_document = trim($data['data_document'] ?? '') ?: null;
+    $data_document_raw = trim($data['data_document'] ?? '');
+    $data_document = registratura_normalize_data_document($data_document_raw);
+    if ($data_document_raw !== '' && $data_document === null) {
+        return ['success' => false, 'error' => 'Data document trebuie completată în format DD.MM.YYYY.'];
+    }
     $provine_din = trim($data['provine_din'] ?? '') ?: null;
     $continut_document = trim($data['continut_document'] ?? '') ?: null;
     $destinatar_document = trim($data['destinatar_document'] ?? '') ?: null;
-    $task_deschis = isset($data['task_deschis']) ? 1 : 0;
+    $task_deschis = registratura_task_deschis_flag($data);
 
     try {
         $data_ora = $data_str . ' ' . date('H:i:s', strtotime($r['data_ora']));

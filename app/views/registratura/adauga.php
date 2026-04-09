@@ -11,27 +11,32 @@
         <a href="<?php echo htmlspecialchars($redirect_url); ?>" class="text-amber-600 dark:text-amber-400 hover:underline focus:ring-2 focus:ring-amber-500 rounded" aria-label="Înapoi">← Înapoi</a>
     </header>
 
-    <div class="p-6 overflow-y-auto flex-1 max-w-2xl">
+    <div class="p-6 overflow-y-auto flex-1">
         <?php if (!empty($eroare)): ?>
-        <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border-l-4 border-red-600 text-red-800 dark:text-red-200 rounded-r" role="alert">
+        <div class="mb-4 p-4 max-w-2xl mx-auto bg-red-100 dark:bg-red-900/30 border-l-4 border-red-600 text-red-800 dark:text-red-200 rounded-r" role="alert">
             <?php echo htmlspecialchars($eroare); ?>
         </div>
         <?php endif; ?>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
+        <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
             <form method="post" action="/registratura/adauga?redirect=<?php echo htmlspecialchars($redirect_param); ?>" id="form-registratura">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="salveaza_registratura" value="1">
                 <div class="space-y-4">
                     <!-- Butoane tip document -->
-                    <div class="flex gap-3 mb-4">
-                        <button type="button" id="btn-document-primit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors" aria-label="Document primit - completează automat destinatarul cu ANR Bihor">
+                    <div class="flex gap-3 mb-2" role="group" aria-label="Tip document">
+                        <button type="button" id="btn-document-primit" aria-pressed="false" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-blue-500 transition-colors" aria-label="Document primit - completează automat destinatarul cu ANR Bihor">
                             Document primit
                         </button>
-                        <button type="button" id="btn-document-emis" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-green-500 transition-colors" aria-label="Document emis - completează automat proveniența cu ANR Bihor">
+                        <button type="button" id="btn-document-emis" aria-pressed="false" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-green-500 transition-colors" aria-label="Document emis - completează automat proveniența cu ANR Bihor">
                             Document emis
                         </button>
                     </div>
+                    <input type="hidden" id="reg-tip-act" name="tip_act" value="<?php echo htmlspecialchars($_POST['tip_act'] ?? 'Înregistrare document'); ?>">
+                    <p class="text-xs text-slate-600 dark:text-gray-400">
+                        Tip selectat: <strong id="selected-tip-label"><?php echo htmlspecialchars($_POST['tip_act'] ?? 'Înregistrare document'); ?></strong>
+                    </p>
+                    <p id="document-type-status" class="sr-only" role="status" aria-live="polite"></p>
                     <p class="text-sm text-slate-600 dark:text-gray-400 mb-2" role="status" aria-live="polite">
                         Nr. înregistrare intern și data se alocă automat la salvare.
                     </p>
@@ -44,8 +49,13 @@
                         </div>
                         <div>
                             <label for="reg-data-document" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Data document</label>
-                            <input type="date" id="reg-data-document" name="data_document" value="<?php echo htmlspecialchars($_POST['data_document'] ?? ''); ?>"
-                                   class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700">
+                            <input type="text" id="reg-data-document" name="data_document" value="<?php echo htmlspecialchars($_POST['data_document'] ?? ''); ?>"
+                                   class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                                   placeholder="Ex: 31.03.2026"
+                                   inputmode="numeric"
+                                   pattern="\d{2}\.\d{2}\.\d{4}"
+                                   aria-describedby="reg-data-document-help">
+                            <p id="reg-data-document-help" class="mt-1 text-xs text-slate-600 dark:text-gray-400">Format obligatoriu: DD.MM.YYYY</p>
                         </div>
                     </div>
                     <div>
@@ -70,9 +80,9 @@
                         Operator: <strong><?php echo htmlspecialchars($_SESSION['utilizator'] ?? 'Utilizator'); ?></strong>
                     </div>
                     <div>
-                        <label class="flex items-center">
+                        <label for="reg-task-deschis" class="flex items-center">
                             <input type="hidden" name="task_deschis" value="0">
-                            <input type="checkbox" name="task_deschis" value="1" <?php echo isset($_POST['task_deschis']) ? 'checked' : ''; ?>
+                            <input type="checkbox" id="reg-task-deschis" name="task_deschis" value="1" <?php echo ((string)($_POST['task_deschis'] ?? '0') === '1') ? 'checked' : ''; ?>
                                    class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700"
                                    aria-describedby="task-desc">
                             <span id="task-desc" class="ml-2 text-sm text-slate-800 dark:text-gray-200">Task deschis (se trimite către modulul Taskuri)</span>
@@ -80,7 +90,7 @@
                     </div>
                 </div>
                 <div class="mt-6 flex gap-3">
-                    <a href="<?php echo htmlspecialchars($redirect_url); ?>" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Anulează">Anulare</a>
+                    <a href="<?php echo htmlspecialchars($redirect_url); ?>" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-amber-500" aria-label="Renunță">Renunță</a>
                     <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500" aria-label="Salvează înregistrarea">Salvează</button>
                 </div>
             </form>
@@ -91,33 +101,65 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    
+
     // Buton Document primit
     const btnDocumentPrimit = document.getElementById('btn-document-primit');
+    const btnDocumentEmis = document.getElementById('btn-document-emis');
+    const documentTypeStatus = document.getElementById('document-type-status');
+
+    function seteazaTipDocument(tip) {
+        if (!btnDocumentPrimit || !btnDocumentEmis) {
+            return;
+        }
+        const tipActInput = document.getElementById('reg-tip-act');
+        const selectedTipLabel = document.getElementById('selected-tip-label');
+        const estePrimit = tip === 'primit';
+        const valoareTip = estePrimit ? 'Document primit' : 'Document emis';
+        btnDocumentPrimit.classList.toggle('ring-2', estePrimit);
+        btnDocumentPrimit.classList.toggle('ring-blue-400', estePrimit);
+        btnDocumentEmis.classList.toggle('ring-2', !estePrimit);
+        btnDocumentEmis.classList.toggle('ring-green-400', !estePrimit);
+        btnDocumentPrimit.setAttribute('aria-pressed', estePrimit ? 'true' : 'false');
+        btnDocumentEmis.setAttribute('aria-pressed', estePrimit ? 'false' : 'true');
+        if (tipActInput) {
+            tipActInput.value = valoareTip;
+        }
+        if (selectedTipLabel) {
+            selectedTipLabel.textContent = valoareTip;
+        }
+        if (documentTypeStatus) {
+            documentTypeStatus.textContent = estePrimit
+                ? 'Tip selectat: document primit. Destinatar completat cu ANR Bihor.'
+                : 'Tip selectat: document emis. Proveniență completată cu ANR Bihor.';
+        }
+    }
+
     if (btnDocumentPrimit) {
         btnDocumentPrimit.addEventListener('click', function() {
             const destinatarInput = document.getElementById('reg-destinatar');
             if (destinatarInput) {
                 destinatarInput.value = 'ANR Bihor';
-                // Marchează butonul ca activ
-                btnDocumentPrimit.classList.add('ring-2', 'ring-blue-400');
-                document.getElementById('btn-document-emis').classList.remove('ring-2', 'ring-green-400');
+                seteazaTipDocument('primit');
             }
         });
     }
-    
+
     // Buton Document emis
-    const btnDocumentEmis = document.getElementById('btn-document-emis');
     if (btnDocumentEmis) {
         btnDocumentEmis.addEventListener('click', function() {
             const provineInput = document.getElementById('reg-provine');
             if (provineInput) {
                 provineInput.value = 'ANR Bihor';
-                // Marchează butonul ca activ
-                btnDocumentEmis.classList.add('ring-2', 'ring-green-400');
-                document.getElementById('btn-document-primit').classList.remove('ring-2', 'ring-blue-400');
+                seteazaTipDocument('emis');
             }
         });
+    }
+
+    const tipActInitial = (document.getElementById('reg-tip-act')?.value || '').toLowerCase();
+    if (tipActInitial.includes('emis')) {
+        seteazaTipDocument('emis');
+    } else if (tipActInitial.includes('primit')) {
+        seteazaTipDocument('primit');
     }
 });
 </script>
