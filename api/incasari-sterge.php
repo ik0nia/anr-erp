@@ -94,15 +94,17 @@ log_activitate($pdo, $log_msg, null, $inc['membru_id'] ?? null);
 
 $email_notificare = trim((string)(incasari_get_setare($pdo, 'email_notificari_stergere_chitanta') ?? ''));
 if ($email_notificare !== '' && filter_var($email_notificare, FILTER_VALIDATE_EMAIL)) {
-    $subiect = 'Notificare ștergere chitanță - CRM ANR Bihor';
-    $mesaj = "A fost ștearsă o chitanță din modulul Încasări.\n"
-        . "ID încasare: {$id}\n"
+    $subiect = 'Notificare stergere document de incasare';
+    $membru_label = $nume !== '' ? $nume : ('Membru ID ' . (int)($inc['membru_id'] ?? 0));
+    $user_label = (string)($_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? 'Utilizator');
+    $mesaj = "A fost stearsa o inregistrare de incasare din ERP.\n"
+        . "Membru: {$membru_label}\n"
+        . "Utilizator: {$user_label}\n"
+        . "ID incasare: {$id}\n"
         . "Tip: {$tip}\n"
-        . "Persoană: {$nume}\n"
-        . "Sumă: {$suma} RON\n"
-        . "Chitanță: " . ($seria ? ($seria . ' nr. ' . $nr_chitanta) : 'fără serie') . "\n"
-        . "Șters de: " . ($_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? 'Utilizator') . "\n"
-        . "Data/ora: " . date('d.m.Y H:i:s');
+        . "Suma: {$suma} RON\n"
+        . "Document/chitanta: " . ($seria ? ($seria . ' nr. ' . $nr_chitanta) : 'fara serie') . "\n"
+        . "Data/ora stergere: " . date('d.m.Y H:i:s');
     sendAutomatedEmail($pdo, $email_notificare, $subiect, $mesaj);
 }
 

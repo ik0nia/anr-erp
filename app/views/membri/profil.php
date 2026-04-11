@@ -1311,12 +1311,49 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <?php if (!empty($doc['url'])): ?>
-                                <a href="<?php echo $doc['url']; ?>" target="_blank"
-                                   class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/30"
-                                   aria-label="Descarca documentul <?php echo htmlspecialchars($doc['nume']); ?>">
-                                    <i data-lucide="download" class="w-3 h-3" aria-hidden="true"></i>
-                                    Descarca
-                                </a>
+                                <?php
+                                    $doc_url = (string)$doc['url'];
+                                    $doc_view_url = $doc_url . (strpos($doc_url, '?') !== false ? '&' : '?') . 'inline=1';
+                                    $doc_print_url = '/util/print-document-generat.php?url=' . rawurlencode($doc_view_url);
+                                    $doc_file_hint = trim((string)($doc['fisier_pdf'] ?? ''));
+                                    if ($doc_file_hint === '' && $doc_url !== '') {
+                                        $parts = @parse_url($doc_url);
+                                        if (!empty($parts['query'])) {
+                                            $q = [];
+                                            parse_str((string)$parts['query'], $q);
+                                            $tok = (string)($q['token'] ?? '');
+                                            if ($tok !== '') {
+                                                $decoded = base64_decode($tok, true);
+                                                if (is_string($decoded) && $decoded !== '') {
+                                                    $doc_file_hint = basename($decoded);
+                                                }
+                                            }
+                                        }
+                                    }
+                                ?>
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="<?php echo htmlspecialchars($doc_view_url); ?>" target="_blank" rel="noopener noreferrer"
+                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-blue-500 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                                       aria-label="Vezi documentul <?php echo htmlspecialchars($doc['nume']); ?>">
+                                        <i data-lucide="eye" class="w-3 h-3" aria-hidden="true"></i>
+                                        Vezi documentul
+                                    </a>
+                                    <a href="<?php echo htmlspecialchars($doc_print_url); ?>" target="_blank" rel="noopener noreferrer"
+                                       class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-orange-500 text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30"
+                                       aria-label="Print documentul <?php echo htmlspecialchars($doc['nume']); ?>">
+                                        <i data-lucide="printer" class="w-3 h-3" aria-hidden="true"></i>
+                                        Print
+                                    </a>
+                                    <button type="button"
+                                            class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded border border-red-500 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 btn-sterge-document-generat"
+                                            data-id="<?php echo (int)($doc['id'] ?? 0); ?>"
+                                            data-fisier="<?php echo htmlspecialchars($doc_file_hint); ?>"
+                                            data-nume="<?php echo htmlspecialchars((string)$doc['nume']); ?>"
+                                            aria-label="Sterge documentul <?php echo htmlspecialchars($doc['nume']); ?>">
+                                        <i data-lucide="trash-2" class="w-3 h-3" aria-hidden="true"></i>
+                                        Sterge
+                                    </button>
+                                </div>
                                 <?php else: ?>
                                 <span class="text-xs text-slate-400 dark:text-gray-500">Fisier indisponibil</span>
                                 <?php endif; ?>
@@ -1384,6 +1421,14 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                                         <i data-lucide="file-down" class="w-4 h-4" aria-hidden="true"></i>
                                         Descarca PDF
                                     </a>
+                                    <button type="button"
+                                            class="inline-flex items-center gap-1 px-2 py-1.5 rounded border border-red-500 dark:border-red-400 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-red-500 btn-sterge-incasare-membru"
+                                            data-id="<?php echo (int)$inc['id']; ?>"
+                                            data-info="<?php echo htmlspecialchars(($tipuri_afisare[$inc['tip']] ?? $inc['tip']) . ' / ' . number_format((float)$inc['suma'], 2, ',', ' ') . ' RON / ' . ($inc['data_incasare'] ? date(DATE_FORMAT, strtotime($inc['data_incasare'])) : '-')); ?>"
+                                            aria-label="Sterge incasarea <?php echo htmlspecialchars((string)$inc['id']); ?>">
+                                        <i data-lucide="trash-2" class="w-4 h-4" aria-hidden="true"></i>
+                                        Sterge incasarea
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -1602,6 +1647,73 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
+
+    var csrfInput = document.querySelector('input[name="_csrf_token"]');
+    var csrfToken = csrfInput && csrfInput.value ? csrfInput.value : '';
+
+    document.addEventListener('click', function (e) {
+        var btnDoc = e.target.closest('.btn-sterge-document-generat');
+        if (btnDoc) {
+            e.preventDefault();
+            var docId = btnDoc.getAttribute('data-id');
+            var docNume = btnDoc.getAttribute('data-nume') || 'document';
+            if (!docId || docId === '0') {
+                alert('Documentul nu poate fi sters (ID invalid).');
+                return;
+            }
+            if (!confirm('Sigur doresti sa stergi documentul?\n\n' + docNume + '\n\nAceasta actiune nu poate fi anulata.')) {
+                return;
+            }
+
+            var fdDoc = new FormData();
+            fdDoc.append('document_id', docId);
+            fdDoc.append('fisier_pdf', btnDoc.getAttribute('data-fisier') || '');
+            fdDoc.append('membru_id', '<?php echo (int)$membru_id; ?>');
+            if (csrfToken) fdDoc.append('_csrf_token', csrfToken);
+
+            fetch('/api/membri-documente-sterge', { method: 'POST', body: fdDoc, credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data && data.ok) {
+                        window.location.reload();
+                    } else {
+                        alert((data && data.eroare) ? data.eroare : 'Eroare la stergere document.');
+                    }
+                })
+                .catch(function () { alert('Eroare de retea la stergerea documentului.'); });
+            return;
+        }
+
+        var btnInc = e.target.closest('.btn-sterge-incasare-membru');
+        if (btnInc) {
+            e.preventDefault();
+            var incId = btnInc.getAttribute('data-id');
+            var info = btnInc.getAttribute('data-info') || '';
+            if (!incId) {
+                alert('ID incasare invalid.');
+                return;
+            }
+            if (!confirm('Sigur doresti sa stergi incasarea?\n\n' + info + '\n\nNumerotarea chitantelor va fi recalculata.')) {
+                return;
+            }
+
+            var fdInc = new FormData();
+            fdInc.append('id', incId);
+            fdInc.append('_csrf_token', csrfToken);
+            fdInc.append('context_membru_id', '<?php echo (int)$membru_id; ?>');
+
+            fetch('/api/incasari-sterge', { method: 'POST', body: fdInc, credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data && data.ok) {
+                        window.location.reload();
+                    } else {
+                        alert((data && data.eroare) ? data.eroare : 'Eroare la stergerea incasarii.');
+                    }
+                })
+                .catch(function () { alert('Eroare de retea la stergerea incasarii.'); });
+        }
+    });
 });
 </script>
 <script>
