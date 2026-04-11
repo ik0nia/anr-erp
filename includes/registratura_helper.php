@@ -68,7 +68,12 @@ function registratura_inregistreaza_document(PDO $pdo, array $data) {
     try {
         ensure_registratura_table($pdo);
         $utilizator = $_SESSION['utilizator'] ?? 'Sistem';
-        $task_deschis = !empty($data['task_deschis']) ? 1 : 0;
+        // Task se creează strict doar când checkbox-ul este bifat explicit.
+        $task_deschis = 0;
+        if (array_key_exists('task_deschis', $data)) {
+            $raw_task = is_array($data['task_deschis']) ? '' : trim((string)$data['task_deschis']);
+            $task_deschis = ($raw_task === '1' || strcasecmp($raw_task, 'on') === 0 || strcasecmp($raw_task, 'true') === 0) ? 1 : 0;
+        }
         $task_id = null;
 
         // Retry în caz de conflict pe nr_intern (UNIQUE constraint)
