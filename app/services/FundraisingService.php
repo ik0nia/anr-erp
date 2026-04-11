@@ -1301,24 +1301,26 @@ function fundraising_f230_render_overlay_pdf(
             foreach ($placements as $pl) {
                 $tag = (string)($pl['tag'] ?? '');
                 $font_pt = max(7.0, min(14.0, (float)($pl['font_pt'] ?? 14.0)));
-                $x_mm = (float)($pl['x_mm'] ?? 0.0);
-                $y_mm_top = (float)($pl['y_mm'] ?? 0.0);
-                $w_mm = max(3.0, (float)($pl['w_mm'] ?? 3.0));
-                $h_mm = max(1.2, (float)($pl['h_mm'] ?? 1.2));
-                $y_mm_bottom = $page_height_mm - $y_mm_top;
+                // Mapper-ul salvează coordonate procentuale față de colțul stânga-sus.
+                // FPDF folosește același sistem de coordonate; nu inversăm axa Y.
+                $x_mm = max(0.0, min($page_width_mm - 3.0, (float)($pl['x_mm'] ?? 0.0)));
+                $y_mm_top = max(0.0, min($page_height_mm - 1.2, (float)($pl['y_mm'] ?? 0.0)));
+                $w_mm = max(3.0, min($page_width_mm - $x_mm, (float)($pl['w_mm'] ?? 3.0)));
+                $h_mm = max(1.2, min($page_height_mm - $y_mm_top, (float)($pl['h_mm'] ?? 1.2)));
                 $font_mm = documente_pdf_pt_to_mm($font_pt);
-
-                // PDF Overlay: scriem valorile în zona mapată.
-                $pdf->SetFillColor(255, 255, 255);
-                $pdf->Rect($x_mm, max(0.0, $y_mm_bottom - $h_mm), $w_mm, $h_mm, 'F');
 
                 if ($tag === '230semnatura') {
                     $sig_h = max(4.0, $h_mm);
                     $sig_w = max(6.0, $w_mm);
-                    $sig_y = max(0.0, $page_height_mm - $y_mm_top - $sig_h);
+                    $sig_y = max(0.0, min($page_height_mm - $sig_h, $y_mm_top));
                     $pdf->Image($signature_abs_path, $x_mm, $sig_y, $sig_w, $sig_h, 'PNG');
                     continue;
                 }
+
+                // PDF Overlay: pentru text acoperim zona tagului cu alb;
+                // pentru semnătură păstrăm fundalul original (transparent).
+                $pdf->SetFillColor(255, 255, 255);
+                $pdf->Rect($x_mm, $y_mm_top, $w_mm, $h_mm, 'F');
 
                 $value = trim((string)($tag_values[$tag] ?? ''));
                 if ($value === '') {
@@ -1331,7 +1333,8 @@ function fundraising_f230_render_overlay_pdf(
                 }
                 $pdf->SetTextColor(0, 0, 0);
                 $pdf->SetFont('Helvetica', '', $font_pt);
-                $text_y = max(1.0, $y_mm_bottom - max(0.1, ($h_mm - $font_mm) * 0.35));
+                $baseline_offset = min(max(0.8, $h_mm - 0.2), max(0.8, $font_mm * 0.85));
+                $text_y = min($page_height_mm - 0.5, max(0.8, $y_mm_top + $baseline_offset));
                 $pdf->Text($x_mm + 0.4, $text_y, (string)$enc);
             }
         }
@@ -1921,6 +1924,52 @@ function fundraising_f230_process_submission(PDO $pdo, array $post, array $opts 
 }
 
 /**
+ * Golește tabelul cu formulare 230 completate.
+ * Curăță și fișierele asociate (PDF + semnături) dacă există pe server.
+ */
+function fundraising_f230_clear_formulare(PDO $pdo): array
+{
+    fundraising_f230_ensure_schema($pdo);
+    $rows = [];
+    try {
+        $stmt = $pdo->query("SELECT semnatura_path, pdf_path FROM fundraising_f230_formulare");
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+    } catch (Throwable $e) {
+        $rows = [];
+    }
+
+    $deleted_rows = 0;
+    try {
+        $pdo->beginTransaction();
+        $del = $pdo->prepare("DELETE FROM fundraising_f230_formulare");
+        $del->execute();
+        $deleted_rows = (int)$del->rowCount();
+        $pdo->exec("ALTER TABLE fundraising_f230_formulare AUTO_INCREMENT = 1");
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        return ['success' => false, 'error' => 'Tabelul nu a putut fi golit: ' . $e->getMessage()];
+    }
+
+    foreach ($rows as $row) {
+        foreach (['semnatura_path', 'pdf_path'] as $key) {
+            $rel = trim((string)($row[$key] ?? ''));
+            if ($rel === '') {
+                continue;
+            }
+            $abs = fundraising_f230_abs_path($rel);
+            if (is_file($abs)) {
+                @unlink($abs);
+            }
+        }
+    }
+
+    return ['success' => true, 'deleted' => $deleted_rows];
+}
+
+/**
  * Lista formularelor completate.
  */
 function fundraising_f230_list_formulare(PDO $pdo, int $limit = 1000): array
@@ -1946,36 +1995,6 @@ function fundraising_f230_get_formular(PDO $pdo, int $id): ?array
     $stmt->execute([$id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ?: null;
-}
-
-/**
- * Golește tabelul formularelor 230 și șterge fișierele asociate.
- */
-function fundraising_f230_clear_formulare(PDO $pdo): array
-{
-    try {
-        $rows = fundraising_f230_list_formulare($pdo, 50000);
-
-        foreach ($rows as $row) {
-            $pdf_abs = fundraising_f230_get_pdf_abs_path((array)$row);
-            if ($pdf_abs !== '' && is_file($pdf_abs)) {
-                @unlink($pdf_abs);
-            }
-            $sig_rel = trim((string)($row['semnatura_path'] ?? ''));
-            if ($sig_rel !== '') {
-                $sig_abs = fundraising_f230_abs_path($sig_rel);
-                if (is_file($sig_abs)) {
-                    @unlink($sig_abs);
-                }
-            }
-        }
-
-        $pdo->exec('DELETE FROM fundraising_f230_formulare');
-        $pdo->exec('ALTER TABLE fundraising_f230_formulare AUTO_INCREMENT = 1');
-        return ['success' => true];
-    } catch (Throwable $e) {
-        return ['success' => false, 'error' => 'Tabelul nu a putut fi golit: ' . $e->getMessage()];
-    }
 }
 
 /**

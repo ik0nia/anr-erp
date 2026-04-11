@@ -48,6 +48,10 @@
                 </a>
             </div>
             <h1 class="mt-4 text-2xl font-bold text-center">Formular 230</h1>
+            <p class="mt-2 text-sm text-emerald-900 text-center inline-flex items-center justify-center gap-2 w-full" role="status" aria-live="polite">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600" aria-hidden="true"></i>
+                Formular securizat
+            </p>
             <p class="mt-2 text-sm text-black text-center">
                 Completează formularul pentru redirecționarea a 3.5% către Asociația Nevăzătorilor Bihor.
             </p>
@@ -169,7 +173,7 @@
                     </label>
                 </div>
 
-                <div class="pt-2 flex flex-wrap gap-3">
+                <div class="pt-2 flex flex-wrap gap-3 justify-center">
                     <button type="submit" id="btn-submit-public" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed">
                         <i data-lucide="send" class="w-4 h-4" aria-hidden="true"></i>
                         Trimite formularul
@@ -181,8 +185,8 @@
                 </div>
             </form>
 
-            <div class="mt-4 flex flex-wrap gap-3">
-                <button type="button" id="btn-share-generic" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed">
+            <div class="mt-4 flex flex-wrap gap-3 justify-center">
+                <button type="button" id="btn-share-generic" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed">
                     <i data-lucide="share-2" class="w-4 h-4" aria-hidden="true"></i>
                     Distribuie
                 </button>

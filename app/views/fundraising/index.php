@@ -561,10 +561,52 @@
         });
     }
 
-    function initConfirmEditorTiny() {
+    var tab = <?php echo json_encode($tab); ?>;
+    if (tab === 'setari') {
+        var uploadEndpoint = '/util/f230-email-upload.php';
+        var setariForm = document.querySelector('form[action="/fundraising?tab=setari"]');
+
+        function getCsrfToken() {
+            if (!setariForm) return '';
+            var el = setariForm.querySelector('input[name="_csrf_token"]');
+            return el ? String(el.value || '') : '';
+        }
+
+        function uploadPdfToHosting(file) {
+            return new Promise(function (resolve, reject) {
+                if (!file) {
+                    reject(new Error('Nu a fost selectat niciun fișier PDF.'));
+                    return;
+                }
+                var formData = new FormData();
+                formData.append('_csrf_token', getCsrfToken());
+                formData.append('file', file);
+                fetch(uploadEndpoint, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                }).then(function (response) {
+                    return response.json().catch(function () {
+                        return { success: false, error: 'Răspuns invalid de la server.' };
+                    });
+                }).then(function (data) {
+                    if (!data || !data.success || !data.url) {
+                        reject(new Error((data && data.error) ? data.error : 'Upload PDF eșuat.'));
+                        return;
+                    }
+                    resolve({
+                        url: String(data.url),
+                        filename: String(data.filename || '')
+                    });
+                }).catch(function (err) {
+                    reject(err);
+                });
+            });
+        }
+
+        function initConfirmEditorTiny() {
         var textarea = document.getElementById('mesaj-confirmare-editor');
         var hidden = document.getElementById('mesaj-confirmare-html');
-        var setariForm = document.querySelector('form[action="/fundraising?tab=setari"]');
         if (!textarea || !hidden) return false;
 
         // Ensure editor is interactive even if browser cached stale attributes.
@@ -581,17 +623,58 @@
             selector: '#mesaj-confirmare-editor',
             height: 260,
             menubar: true,
+            plugins: 'link lists table code advlist',
+            toolbar: 'undo redo | formatselect | bold italic underline | bullist numlist | link uploadpdf | removeformat | code',
             branding: false,
             promotion: false,
             readonly: false,
-            plugins: 'link lists table code',
-            toolbar: 'undo redo | formatselect | bold italic underline | bullist numlist | link | removeformat | code',
+            file_picker_types: 'file',
+            file_picker_callback: function (callback, value, meta) {
+                if (meta.filetype !== 'file') return;
+                var picker = document.createElement('input');
+                picker.type = 'file';
+                picker.accept = '.pdf,application/pdf';
+                picker.onchange = function () {
+                    var file = picker.files && picker.files[0] ? picker.files[0] : null;
+                    uploadPdfToHosting(file).then(function (payload) {
+                        callback(payload.url, {
+                            text: payload.filename ? ('Descarcă PDF: ' + payload.filename) : 'Descarcă PDF',
+                            title: payload.filename || 'Document PDF'
+                        });
+                    }).catch(function (err) {
+                        alert('Upload PDF eșuat: ' + (err && err.message ? err.message : 'eroare necunoscută'));
+                    });
+                };
+                picker.click();
+            },
             content_style: 'body{font-family:Inter,Arial,sans-serif;font-size:14px;}',
             setup: function (editor) {
                 var sync = function () {
                     if (hidden) hidden.value = editor.getContent();
                 };
                 editor.on('init change keyup undo redo input SetContent', sync);
+
+                editor.ui.registry.addButton('uploadpdf', {
+                    text: 'Încarcă PDF',
+                    tooltip: 'Încarcă PDF pe hosting și inserează link de download',
+                    onAction: function () {
+                        var picker = document.createElement('input');
+                        picker.type = 'file';
+                        picker.accept = '.pdf,application/pdf';
+                        picker.onchange = function () {
+                            var file = picker.files && picker.files[0] ? picker.files[0] : null;
+                            uploadPdfToHosting(file).then(function (payload) {
+                                var href = editor.dom.encode(payload.url);
+                                var linkText = payload.filename ? ('Descarcă PDF: ' + payload.filename) : 'Descarcă PDF';
+                                editor.insertContent('<a href="' + href + '" target="_blank" rel="noopener">' + editor.dom.encode(linkText) + '</a>');
+                                sync();
+                            }).catch(function (err) {
+                                alert('Upload PDF eșuat: ' + (err && err.message ? err.message : 'eroare necunoscută'));
+                            });
+                        };
+                        picker.click();
+                    }
+                });
             }
         }).then(function (editors) {
             var ed = editors && editors.length ? editors[0] : null;
@@ -610,10 +693,8 @@
         }
 
         return true;
-    }
+        }
 
-    var tab = <?php echo json_encode($tab); ?>;
-    if (tab === 'setari') {
         // Prefer CDNJS (no API key requirement). Keep Tiny Cloud as secondary fallback.
         var primaryTinyUrl = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.6/tinymce.min.js';
         var fallbackTinyUrl = 'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js';
@@ -767,7 +848,7 @@
         var ctx = canvas.getContext('2d');
         var drawing = false;
         var hasStroke = false;
-        var color = '#0f2a63';
+        var color = '#003399';
         var ratio = Math.max(window.devicePixelRatio || 1, 1);
 
         function resizeCanvas() {
