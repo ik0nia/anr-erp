@@ -97,9 +97,9 @@ if ($email_notificare !== '' && filter_var($email_notificare, FILTER_VALIDATE_EM
     $subiect = 'Notificare stergere document de incasare';
     $membru_label = $nume !== '' ? $nume : ('Membru ID ' . (int)($inc['membru_id'] ?? 0));
     $user_label = (string)($_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? 'Utilizator');
-    $mesaj = "A fost stearsa o inregistrare de incasare din ERP.\n"
-        . "Membru: {$membru_label}\n"
-        . "Utilizator: {$user_label}\n"
+    $mesaj = "A fost stearsa o inregistrare de incasare din ERP de la membru [{$membru_label}], utilizator [{$user_label}].\n"
+        . "Membru: [{$membru_label}]\n"
+        . "Utilizator: [{$user_label}]\n"
         . "ID incasare: {$id}\n"
         . "Tip: {$tip}\n"
         . "Suma: {$suma} RON\n"
