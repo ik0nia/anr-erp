@@ -25,8 +25,8 @@ if ($data_de_la > $data_pana_la) {
 
 $raport = rapoarte_borderou_legitimatii($pdo, $data_de_la, $data_pana_la);
 $rows = $raport['operatiuni'] ?? [];
-$stats = $raport['statistici'] ?? ['total' => 0, 'legitimatie_membru_nou' => 0, 'inlocuire_legitimatie_plina' => 0, 'inlocuire_legitimatie_pierduta' => 0];
-$tipuri_actiuni = legitimatie_membru_actiuni();
+$stats = $raport['statistici'] ?? ['total' => 0, 'nou' => 0, 'plina' => 0, 'pierduta' => 0];
+$tipuri_actiuni = membri_legitimatii_tipuri_actiune();
 $antet_html = documente_antet_render($pdo);
 $antet_css = documente_antet_print_css();
 
@@ -110,9 +110,9 @@ log_activitate(
 
     <div class="stats">
         <div class="stat"><div class="k">Total legitimații</div><div class="v"><?php echo (int)$stats['total']; ?></div></div>
-        <div class="stat"><div class="k">Legitimații membru nou</div><div class="v"><?php echo (int)($stats['legitimatie_membru_nou'] ?? 0); ?></div></div>
-        <div class="stat"><div class="k">Înlocuire legitimație plină</div><div class="v"><?php echo (int)($stats['inlocuire_legitimatie_plina'] ?? 0); ?></div></div>
-        <div class="stat"><div class="k">Înlocuire legitimație pierdută</div><div class="v"><?php echo (int)($stats['inlocuire_legitimatie_pierduta'] ?? 0); ?></div></div>
+        <div class="stat"><div class="k">Legitimații membru nou</div><div class="v"><?php echo (int)($stats['nou'] ?? 0); ?></div></div>
+        <div class="stat"><div class="k">Înlocuire legitimație plină</div><div class="v"><?php echo (int)($stats['plina'] ?? 0); ?></div></div>
+        <div class="stat"><div class="k">Înlocuire legitimație pierdută</div><div class="v"><?php echo (int)($stats['pierduta'] ?? 0); ?></div></div>
     </div>
 
     <table aria-label="Borderou legitimatii membru">
@@ -138,7 +138,7 @@ log_activitate(
                 <td><?php echo htmlspecialchars((string)(($row['dosarnr'] ?? '') !== '' ? $row['dosarnr'] : '-')); ?></td>
                 <td>
                     <?php
-                    $tip = (string)($row['tip_actiune'] ?? '');
+                    $tip = (string)($row['actiune'] ?? $row['tip_actiune'] ?? '');
                     echo htmlspecialchars((string)($tipuri_actiuni[$tip] ?? $tip));
                     ?>
                 </td>

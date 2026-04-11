@@ -70,8 +70,8 @@ if ($tab_rapoarte === 'socializare') {
 }
 
 if ($tab_rapoarte === 'borderou-legitimatii') {
-    $input_de_la = trim((string)($_GET['de_la'] ?? ''));
-    $input_pana_la = trim((string)($_GET['pana_la'] ?? ''));
+    $input_de_la = trim((string)($_GET['data_de_la'] ?? ($_GET['de_la'] ?? '')));
+    $input_pana_la = trim((string)($_GET['data_pana_la'] ?? ($_GET['pana_la'] ?? '')));
     if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input_de_la)) {
         $borderou_legitimatii_data_de_la = $input_de_la;
     }

@@ -503,33 +503,21 @@
                 <input type="hidden" name="tab" value="borderou-legitimatii">
                 <div>
                     <label for="borderou-legitimatii-de-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">De la data</label>
-                    <input type="date" id="borderou-legitimatii-de-la" name="data_de_la" value="<?php echo htmlspecialchars($borderou_legitimatii['data_de_la'] ?? date('Y-01-01')); ?>"
+                    <input type="date" id="borderou-legitimatii-de-la" name="de_la" value="<?php echo htmlspecialchars($borderou_legitimatii_data_de_la ?? date('Y-01-01')); ?>"
                            class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                 </div>
                 <div>
                     <label for="borderou-legitimatii-pana-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Pana la data</label>
-                    <input type="date" id="borderou-legitimatii-pana-la" name="data_pana_la" value="<?php echo htmlspecialchars($borderou_legitimatii['data_pana_la'] ?? date('Y-m-d')); ?>"
+                    <input type="date" id="borderou-legitimatii-pana-la" name="pana_la" value="<?php echo htmlspecialchars($borderou_legitimatii_data_pana_la ?? date('Y-m-d')); ?>"
                            class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
                 </div>
                 <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-indigo-500">Confirma</button>
             </form>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-1 gap-4 mb-6">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
-                    <p class="text-sm text-slate-600 dark:text-gray-400">Numarul total de legitimatii</p>
+                    <p class="text-sm text-slate-600 dark:text-gray-400">Numar legitimatii utilizate</p>
                     <p class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2"><?php echo (int)(($borderou_legitimatii['statistici']['total'] ?? 0)); ?></p>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
-                    <p class="text-sm text-slate-600 dark:text-gray-400">Legitimatii membru nou</p>
-                    <p class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-2"><?php echo (int)(($borderou_legitimatii['statistici']['legitimatie_membru_nou'] ?? 0)); ?></p>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
-                    <p class="text-sm text-slate-600 dark:text-gray-400">Inlocuire legitimatie plina</p>
-                    <p class="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-2"><?php echo (int)(($borderou_legitimatii['statistici']['inlocuire_legitimatie_plina'] ?? 0)); ?></p>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-5">
-                    <p class="text-sm text-slate-600 dark:text-gray-400">Inlocuire legitimatie pierduta</p>
-                    <p class="text-3xl font-bold text-rose-600 dark:text-rose-400 mt-2"><?php echo (int)(($borderou_legitimatii['statistici']['inlocuire_legitimatie_pierduta'] ?? 0)); ?></p>
                 </div>
             </div>
 
@@ -538,27 +526,25 @@
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-label="Borderou legitimatii membru">
                         <thead class="bg-slate-100 dark:bg-gray-700">
                             <tr>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Nr. crt.</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Data actiunii</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Membru</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Data</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Numar dosar</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Numele membrului</th>
                                 <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Tip actiune</th>
-                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Utilizator</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Operator (utilizatorul)</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                             <?php if (empty($borderou_legitimatii['operatiuni'] ?? [])): ?>
                             <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista operatiuni in intervalul selectat.</td>
+                                <td colspan="5" class="px-4 py-8 text-center text-slate-500 dark:text-gray-400">Nu exista operatiuni in intervalul selectat.</td>
                             </tr>
                             <?php else: ?>
                             <?php foreach (($borderou_legitimatii['operatiuni'] ?? []) as $idx => $row): ?>
                             <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
-                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo (int)($idx + 1); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo !empty($row['data_actiune']) ? htmlspecialchars(date(DATE_FORMAT, strtotime((string)$row['data_actiune']))) : '-'; ?></td>
-                                <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white"><?php echo htmlspecialchars(trim((string)($row['nume'] ?? '') . ' ' . (string)($row['prenume'] ?? '')) ?: '-'); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars((string)($row['dosarnr'] ?? '-')); ?></td>
-                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars((membri_legitimatii_tipuri_actiune()[$row['tip_actiune'] ?? ''] ?? ($row['tip_actiune'] ?? '-'))); ?></td>
+                                <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white"><?php echo htmlspecialchars((string)($row['membru_nume'] ?? trim((string)($row['nume'] ?? '') . ' ' . (string)($row['prenume'] ?? '')) ?: '-')); ?></td>
+                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars((string)($row['actiune_label'] ?? (membri_legitimatii_tipuri_actiune()[$row['actiune'] ?? ($row['tip_actiune'] ?? '')] ?? ($row['actiune'] ?? ($row['tip_actiune'] ?? '-'))))); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars((string)($row['utilizator'] ?? 'Sistem')); ?></td>
                             </tr>
                             <?php endforeach; ?>
