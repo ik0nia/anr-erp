@@ -175,6 +175,12 @@ $scutire_cotizatie = $cot_info['scutire_cotizatie'];
 $cotizatie_achitata_an_curent = $cot_info['cotizatie_achitata_an_curent'];
 $valoare_cotizatie_an = $cot_info['valoare_cotizatie_an'];
 $an_cotizatie_setata = (int)($cot_info['an_cotizatie'] ?? date('Y'));
+$scutire_cotizatie_membru = null;
+try {
+    $scutire_cotizatie_membru = cotizatii_get_scutire_membru($pdo, $membru_id);
+} catch (Exception $e) {
+    $scutire_cotizatie_membru = null;
+}
 
 // Afisare mesaj succes
 if (isset($_GET['succes']) && $_GET['succes'] == '1') {

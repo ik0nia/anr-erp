@@ -60,6 +60,13 @@ if (!in_array($edit_card, $carduri_editabile, true)) {
 $is_card_in_edit = function($card_name) use ($edit_card) {
     return $edit_card === $card_name;
 };
+
+$scutire_config = [];
+if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
+    $scutire_config = $scutire_cotizatie_membru;
+} elseif (!empty($scutire_cotizatie) && is_array($scutire_cotizatie)) {
+    $scutire_config = $scutire_cotizatie;
+}
 ?>
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
@@ -1072,6 +1079,39 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                     </a>
                 </div>
                 <div class="card-view p-4 <?php echo $is_card_in_edit('observatii') ? 'hidden' : ''; ?>" data-card="observatii">
+                    <?php
+                    $tip_scutire_obs = trim((string)($scutire_config['tip_scutire'] ?? ''));
+                    if (!in_array($tip_scutire_obs, ['temporar', 'permanent'], true)) {
+                        $tip_scutire_obs = 'nu';
+                    }
+                    $tip_labels_obs = ['nu' => 'Nu', 'temporar' => 'Da - temporar', 'permanent' => 'Da - permanent'];
+                    ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Scutire plata cotizatie</span>
+                            <span class="text-slate-900 dark:text-white font-medium"><?php echo htmlspecialchars($tip_labels_obs[$tip_scutire_obs] ?? 'Nu'); ?></span>
+                        </div>
+                        <?php if ($tip_scutire_obs === 'temporar'): ?>
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Perioada scutire</span>
+                            <span class="text-slate-900 dark:text-white">
+                                <?php
+                                $de_la = !empty($scutire_config['data_scutire_de_la']) ? date(DATE_FORMAT, strtotime((string)$scutire_config['data_scutire_de_la'])) : '—';
+                                $pana = !empty($scutire_config['data_scutire_pana_la']) ? date(DATE_FORMAT, strtotime((string)$scutire_config['data_scutire_pana_la'])) : '—';
+                                echo htmlspecialchars($de_la . ' - ' . $pana);
+                                ?>
+                            </span>
+                        </div>
+                        <?php endif; ?>
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Motiv scutire</span>
+                            <span class="text-slate-900 dark:text-white"><?php echo !empty($scutire_config['motiv']) ? htmlspecialchars((string)$scutire_config['motiv']) : '<span class="text-slate-400 dark:text-gray-500">—</span>'; ?></span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Caz social</span>
+                            <span class="text-slate-900 dark:text-white"><?php echo !empty($membru['caz_social']) ? 'Da' : 'Nu'; ?></span>
+                        </div>
+                    </div>
                     <div class="text-slate-900 dark:text-white">
                         <?php echo !empty($membru['notamembru']) ? nl2br(htmlspecialchars($membru['notamembru'])) : '<span class="text-slate-400 dark:text-gray-500">Nicio observatie</span>'; ?>
                     </div>
@@ -1081,6 +1121,42 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                         <input type="hidden" name="card" value="observatii">
                         <input type="hidden" name="actualizeaza_membru" value="1">
                         <?php echo csrf_field(); ?>
+                        <?php
+                        $tip_scutire_form = trim((string)($scutire_config['tip_scutire'] ?? ''));
+                        if (!in_array($tip_scutire_form, ['nu', 'temporar', 'permanent'], true)) {
+                            $tip_scutire_form = !empty($scutire_config) ? 'temporar' : 'nu';
+                        }
+                        $scutire_de_la_form = (string)($scutire_config['data_scutire_de_la'] ?? '');
+                        $scutire_pana_form = (string)($scutire_config['data_scutire_pana_la'] ?? '');
+                        $motiv_scutire_form = (string)($scutire_config['motiv'] ?? '');
+                        ?>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="obs-tip-scutire" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutire plata cotizatie</label>
+                                <select id="obs-tip-scutire" name="tip_scutire_cotizatie" class="<?php echo $input_class; ?>">
+                                    <option value="nu" <?php echo $tip_scutire_form === 'nu' ? 'selected' : ''; ?>>Nu</option>
+                                    <option value="temporar" <?php echo $tip_scutire_form === 'temporar' ? 'selected' : ''; ?>>Da - temporar</option>
+                                    <option value="permanent" <?php echo $tip_scutire_form === 'permanent' ? 'selected' : ''; ?>>Da - permanent</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2 mt-1 md:mt-7">
+                                <input type="hidden" name="caz_social" value="0">
+                                <input type="checkbox" id="obs-caz-social" name="caz_social" value="1" <?php echo !empty($membru['caz_social']) ? 'checked' : ''; ?> class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
+                                <label for="obs-caz-social" class="text-sm font-medium text-slate-700 dark:text-gray-300">Caz social</label>
+                            </div>
+                            <div id="obs-wrap-scutire-de-la">
+                                <label for="obs-scutire-de-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutit de la data</label>
+                                <input type="date" id="obs-scutire-de-la" name="data_scutire_de_la" value="<?php echo htmlspecialchars($scutire_de_la_form); ?>" class="<?php echo $input_class; ?>">
+                            </div>
+                            <div id="obs-wrap-scutire-pana-la">
+                                <label for="obs-scutire-pana-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutit pana la data</label>
+                                <input type="date" id="obs-scutire-pana-la" name="data_scutire_pana_la" value="<?php echo htmlspecialchars($scutire_pana_form); ?>" class="<?php echo $input_class; ?>">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="obs-motiv-scutire" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Motiv scutire</label>
+                                <input type="text" id="obs-motiv-scutire" name="motiv_scutire" value="<?php echo htmlspecialchars($motiv_scutire_form); ?>" class="<?php echo $input_class; ?>" maxlength="255">
+                            </div>
+                        </div>
                         <div>
                             <textarea name="notamembru" rows="5" class="<?php echo $input_class; ?>"><?php echo $val('notamembru'); ?></textarea>
                         </div>
@@ -1628,6 +1704,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    var tipScutireObs = document.getElementById('obs-tip-scutire');
+    var wrapScutireDeLaObs = document.getElementById('obs-wrap-scutire-de-la');
+    var wrapScutirePanaObs = document.getElementById('obs-wrap-scutire-pana-la');
+    var inputScutireDeLaObs = document.getElementById('obs-scutire-de-la');
+    var inputScutirePanaObs = document.getElementById('obs-scutire-pana-la');
+    if (tipScutireObs) {
+        var toggleScutireTemporara = function() {
+            var temporar = tipScutireObs.value === 'temporar';
+            if (wrapScutireDeLaObs) {
+                wrapScutireDeLaObs.style.display = temporar ? '' : 'none';
+            }
+            if (wrapScutirePanaObs) {
+                wrapScutirePanaObs.style.display = temporar ? '' : 'none';
+            }
+            if (inputScutireDeLaObs) {
+                if (temporar) inputScutireDeLaObs.setAttribute('required', 'required');
+                else inputScutireDeLaObs.removeAttribute('required');
+            }
+            if (inputScutirePanaObs) {
+                if (temporar) inputScutirePanaObs.setAttribute('required', 'required');
+                else inputScutirePanaObs.removeAttribute('required');
+            }
+        };
+        tipScutireObs.addEventListener('change', toggleScutireTemporara);
+        toggleScutireTemporara();
+    }
 
     var legitDialog = document.getElementById('modal-legitimatie-membru');
     if (legitDialog) {

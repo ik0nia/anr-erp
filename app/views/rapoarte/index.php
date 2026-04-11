@@ -152,6 +152,17 @@
                         </div>
                     </div>
                 </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-slate-600 dark:text-gray-400">Cazuri sociale</p>
+                            <p class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2"><?php echo (int)$cazuri_sociale; ?></p>
+                        </div>
+                        <div class="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                            <i data-lucide="shield-alert" class="w-8 h-8 text-indigo-600 dark:text-indigo-400" aria-hidden="true"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <?php endif; ?>

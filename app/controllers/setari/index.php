@@ -184,10 +184,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sterge_cotizatie_anua
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_scutire_cotizatie'])) {
     csrf_require_valid();
     $membru_id = (int)($_POST['membru_id_scutire'] ?? 0);
+    $data_de_la = trim($_POST['data_scutire_de_la'] ?? '') ?: null;
     $data_pana = trim($_POST['data_scutire_pana_la'] ?? '') ?: null;
-    $permanenta = !empty($_POST['scutire_permanenta']);
+    $tip_scutire = trim((string)($_POST['tip_scutire'] ?? 'temporar'));
+    if (!in_array($tip_scutire, ['temporar', 'permanent'], true)) {
+        $tip_scutire = !empty($_POST['scutire_permanenta']) ? 'permanent' : 'temporar';
+    }
+    $permanenta = $tip_scutire === 'permanent';
     $motiv = trim($_POST['motiv_scutire'] ?? '');
-    $result = setari_scutire_add($pdo, $membru_id, $data_pana, $permanenta, $motiv);
+    $result = setari_scutire_add($pdo, $membru_id, $tip_scutire, $data_de_la, $data_pana, $permanenta, $motiv);
     if ($result['success']) {
         header('Location: /setari?tab=cotizatii&succes_cotizatii=1');
         exit;
@@ -197,10 +202,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_scutire_cotiza
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_scutire_cotizatie'])) {
     csrf_require_valid();
     $id = (int)($_POST['id_scutire'] ?? 0);
+    $data_de_la = trim($_POST['data_scutire_de_la'] ?? '') ?: null;
     $data_pana = trim($_POST['data_scutire_pana_la'] ?? '') ?: null;
-    $permanenta = !empty($_POST['scutire_permanenta']);
+    $tip_scutire = trim((string)($_POST['tip_scutire'] ?? 'temporar'));
+    if (!in_array($tip_scutire, ['temporar', 'permanent'], true)) {
+        $tip_scutire = !empty($_POST['scutire_permanenta']) ? 'permanent' : 'temporar';
+    }
+    $permanenta = $tip_scutire === 'permanent';
     $motiv = trim($_POST['motiv_scutire'] ?? '');
-    $result = setari_scutire_update($pdo, $id, $data_pana, $permanenta, $motiv);
+    $result = setari_scutire_update($pdo, $id, $tip_scutire, $data_de_la, $data_pana, $permanenta, $motiv);
     if ($result['success']) {
         header('Location: /setari?tab=cotizatii&succes_cotizatii=1');
         exit;

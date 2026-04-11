@@ -517,7 +517,7 @@
 
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="cotizatii-scutiri-heading">
             <h2 id="cotizatii-scutiri-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Membri scutiți de la plata cotizației</h2>
-            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Adăugați membri care sunt scutiți (permanent sau până la o dată) și motivul scutirii.</p>
+            <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">Adăugați membri care sunt scutiți de cotizație (temporar sau permanent), cu perioadă și motiv.</p>
             <div class="mb-4 p-4 bg-slate-50 dark:bg-gray-700/50 rounded-lg border border-slate-200 dark:border-gray-600">
                 <h3 class="font-medium text-slate-800 dark:text-gray-200 mb-3"><?php echo $edit_scutire_cotizatie ? 'Modifică scutire' : 'Adaugă membru scutit'; ?></h3>
                 <form method="post" action="/setari?tab=cotizatii" id="form-scutire-cotizatie">
@@ -539,16 +539,28 @@
                         <p id="membru-selectat-afis" class="text-sm text-slate-600 dark:text-gray-400 mt-1"></p>
                     </div>
                     <?php endif; ?>
+                    <?php
+                    $tip_scutire_setari = trim((string)($edit_scutire_cotizatie['tip_scutire'] ?? ''));
+                    if (!in_array($tip_scutire_setari, ['temporar', 'permanent'], true)) {
+                        $tip_scutire_setari = !empty($edit_scutire_cotizatie['scutire_permanenta']) ? 'permanent' : 'temporar';
+                    }
+                    ?>
                     <div class="mb-3">
-                        <label class="flex items-center gap-2 text-slate-700 dark:text-gray-300">
-                            <input type="hidden" name="scutire_permanenta" value="0">
-                            <input type="checkbox" name="scutire_permanenta" value="1" id="scutire-permanenta" <?php echo ($edit_scutire_cotizatie && !empty($edit_scutire_cotizatie['scutire_permanenta'])) ? 'checked' : ''; ?> class="rounded border-slate-300 dark:border-gray-500 text-amber-600">
-                            Scutire permanentă
-                        </label>
+                        <label for="tip-scutire-setari" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutire plata cotizatie</label>
+                        <select id="tip-scutire-setari" name="tip_scutire" class="w-full md:w-80 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                            <option value="temporar" <?php echo $tip_scutire_setari === 'temporar' ? 'selected' : ''; ?>>Da - temporar</option>
+                            <option value="permanent" <?php echo $tip_scutire_setari === 'permanent' ? 'selected' : ''; ?>>Da - permanent</option>
+                        </select>
                     </div>
-                    <div class="mb-3" id="wrap-data-pana-la">
-                        <label for="data-scutire-pana-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Perioada de scutire: până la data</label>
-                        <input type="date" id="data-scutire-pana-la" name="data_scutire_pana_la" value="<?php echo $edit_scutire_cotizatie && !empty($edit_scutire_cotizatie['data_scutire_pana_la']) ? htmlspecialchars($edit_scutire_cotizatie['data_scutire_pana_la']) : ''; ?>" class="px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" aria-label="Data până la care este valabilă scutirea">
+                    <div class="mb-3 grid grid-cols-1 md:grid-cols-2 gap-3" id="wrap-date-scutire">
+                        <div id="wrap-data-de-la">
+                            <label for="data-scutire-de-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutit de la data</label>
+                            <input type="date" id="data-scutire-de-la" name="data_scutire_de_la" value="<?php echo $edit_scutire_cotizatie && !empty($edit_scutire_cotizatie['data_scutire_de_la']) ? htmlspecialchars($edit_scutire_cotizatie['data_scutire_de_la']) : ''; ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" aria-label="Data de la care este valabilă scutirea">
+                        </div>
+                        <div id="wrap-data-pana-la">
+                            <label for="data-scutire-pana-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutit până la data</label>
+                            <input type="date" id="data-scutire-pana-la" name="data_scutire_pana_la" value="<?php echo $edit_scutire_cotizatie && !empty($edit_scutire_cotizatie['data_scutire_pana_la']) ? htmlspecialchars($edit_scutire_cotizatie['data_scutire_pana_la']) : ''; ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" aria-label="Data până la care este valabilă scutirea">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="motiv-scutire" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Motivul scutirii</label>
@@ -565,7 +577,8 @@
                     <thead class="bg-slate-100 dark:bg-gray-700">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Membru</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Scutire până la / Permanentă</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Tip scutire</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Perioadă</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Motiv</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold text-slate-800 dark:text-gray-200 uppercase">Acțiuni</th>
                         </tr>
@@ -574,7 +587,26 @@
                         <?php foreach ($lista_scutiri_cotizatii as $s): ?>
                         <tr id="scutire-<?php echo (int)$s['id']; ?>">
                             <td class="px-4 py-3 text-slate-900 dark:text-white"><?php echo htmlspecialchars(trim(($s['nume'] ?? '') . ' ' . ($s['prenume'] ?? ''))); ?></td>
-                            <td class="px-4 py-3 text-slate-900 dark:text-white"><?php echo !empty($s['scutire_permanenta']) ? 'Permanentă' : ($s['data_scutire_pana_la'] ? date('d.m.Y', strtotime($s['data_scutire_pana_la'])) : '—'); ?></td>
+                            <td class="px-4 py-3 text-slate-900 dark:text-white">
+                                <?php
+                                $tipRow = trim((string)($s['tip_scutire'] ?? ''));
+                                if (!in_array($tipRow, ['temporar', 'permanent'], true)) {
+                                    $tipRow = !empty($s['scutire_permanenta']) ? 'permanent' : 'temporar';
+                                }
+                                echo $tipRow === 'permanent' ? 'Da - permanent' : 'Da - temporar';
+                                ?>
+                            </td>
+                            <td class="px-4 py-3 text-slate-900 dark:text-white">
+                                <?php if ($tipRow === 'permanent'): ?>
+                                    Permanent
+                                <?php else: ?>
+                                    <?php
+                                    $deLa = !empty($s['data_scutire_de_la']) ? date('d.m.Y', strtotime((string)$s['data_scutire_de_la'])) : '—';
+                                    $panaLa = !empty($s['data_scutire_pana_la']) ? date('d.m.Y', strtotime((string)$s['data_scutire_pana_la'])) : '—';
+                                    echo htmlspecialchars($deLa . ' - ' . $panaLa);
+                                    ?>
+                                <?php endif; ?>
+                            </td>
                             <td class="px-4 py-3 text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars(mb_substr($s['motiv'] ?? '', 0, 80)); ?><?php echo mb_strlen($s['motiv'] ?? '') > 80 ? '...' : ''; ?></td>
                             <td class="px-4 py-3 text-right">
                                 <a href="/setari?tab=cotizatii&edit_scutire=<?php echo (int)$s['id']; ?>#form-scutire-cotizatie" class="text-amber-600 dark:text-amber-400 hover:underline text-sm">Editează</a>
@@ -588,7 +620,7 @@
                         </tr>
                         <?php endforeach; ?>
                         <?php if (empty($lista_scutiri_cotizatii)): ?>
-                        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500 dark:text-gray-400">Nicio scutire. Adăugați un membru scutit cu formularul de mai sus.</td></tr>
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500 dark:text-gray-400">Nicio scutire. Adăugați un membru scutit cu formularul de mai sus.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -596,12 +628,19 @@
         </section>
         <script>
         (function(){
-            var permanenta = document.getElementById('scutire-permanenta');
-            var wrapData = document.getElementById('wrap-data-pana-la');
-            if (permanenta && wrapData) {
-                function toggle() { wrapData.style.display = permanenta.checked ? 'none' : 'block'; }
-                permanenta.addEventListener('change', toggle);
-                toggle();
+            var tipScutire = document.getElementById('tip-scutire-setari');
+            var wrapDate = document.getElementById('wrap-date-scutire');
+            var dataDeLa = document.getElementById('data-scutire-de-la');
+            var dataPanaLa = document.getElementById('data-scutire-pana-la');
+            if (tipScutire && wrapDate) {
+                function toggleDateScutire() {
+                    var isTemporar = tipScutire.value === 'temporar';
+                    wrapDate.style.display = isTemporar ? 'grid' : 'none';
+                    if (dataDeLa) dataDeLa.required = isTemporar;
+                    if (dataPanaLa) dataPanaLa.required = isTemporar;
+                }
+                tipScutire.addEventListener('change', toggleDateScutire);
+                toggleDateScutire();
             }
             var cautare = document.getElementById('cautare-membru-scutire');
             var rezultate = document.getElementById('rezultate-cautare-scutire');
