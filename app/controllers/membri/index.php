@@ -71,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['redirect_aniversari_azi'])) $params['aniversari_azi'] = $_POST['redirect_aniversari_azi'];
         if (!empty($_POST['redirect_cotizatie_neachitata'])) $params['cotizatie_neachitata'] = $_POST['redirect_cotizatie_neachitata'];
         if (!empty($_POST['redirect_fara_contact'])) $params['fara_contact'] = $_POST['redirect_fara_contact'];
+        if (!empty($_POST['redirect_cazuri_sociale'])) $params['cazuri_sociale'] = $_POST['redirect_cazuri_sociale'];
         $redirect = '/membri' . (count($params) ? '?' . http_build_query($params) : '');
         header('Location: ' . $redirect);
         exit;
@@ -99,6 +100,7 @@ $aniversari_azi_filter = isset($_GET['aniversari_azi']) && $_GET['aniversari_azi
 $actualizare_cnp_ci_filter = isset($_GET['actualizare_cnp_ci']) && $_GET['actualizare_cnp_ci'] == '1';
 $cotizatie_neachitata_filter = isset($_GET['cotizatie_neachitata']) && $_GET['cotizatie_neachitata'] == '1';
 $fara_contact_filter = isset($_GET['fara_contact']) && $_GET['fara_contact'] == '1';
+$cazuri_sociale_filter = isset($_GET['cazuri_sociale']) && $_GET['cazuri_sociale'] == '1';
 
 // Filtrele speciale sunt mutual exclusive — doar unul poate fi activ
 $special_filters_active = array_filter([
@@ -107,6 +109,7 @@ $special_filters_active = array_filter([
     'actualizare_cnp_ci' => $actualizare_cnp_ci_filter,
     'cotizatie_neachitata' => $cotizatie_neachitata_filter,
     'fara_contact' => $fara_contact_filter,
+    'cazuri_sociale' => $cazuri_sociale_filter,
 ]);
 if (count($special_filters_active) > 1) {
     // Pastreaza doar ultimul filtru setat (cel mai recent din URL)
@@ -116,6 +119,7 @@ if (count($special_filters_active) > 1) {
     $actualizare_cnp_ci_filter = ($last_key === 'actualizare_cnp_ci');
     $cotizatie_neachitata_filter = ($last_key === 'cotizatie_neachitata');
     $fara_contact_filter = ($last_key === 'fara_contact');
+    $cazuri_sociale_filter = ($last_key === 'cazuri_sociale');
 }
 
 $filters = [
@@ -128,6 +132,7 @@ $filters = [
     'actualizare_cnp_ci' => $actualizare_cnp_ci_filter,
     'cotizatie_neachitata' => $cotizatie_neachitata_filter,
     'fara_contact' => $fara_contact_filter,
+    'cazuri_sociale' => $cazuri_sociale_filter,
     // Filtre avansate (status_dosar avansat override tab status)
     'sex' => $_GET['sex'] ?? '',
     'hgrad' => $_GET['hgrad'] ?? '',
@@ -163,6 +168,7 @@ $membri_aniversari_azi_count = $data['membri_aniversari_azi_count'];
 $membri_arhiva_count = $data['membri_arhiva_count'];
 $membri_cotizatie_neachitata_count = $data['membri_cotizatie_neachitata_count'];
 $membri_fara_contact_count = $data['membri_fara_contact_count'];
+$membri_cazuri_sociale_count = $data['membri_cazuri_sociale_count'];
 $membri_scutiti_cotizatie_ids = $data['membri_scutiti_cotizatie_ids'];
 $membri_cotizatie_achitata_an_curent = $data['membri_cotizatie_achitata_an_curent'];
 $valori_cotizatie_an_curent = $data['valori_cotizatie_an_curent'];

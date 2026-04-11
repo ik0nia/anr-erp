@@ -60,10 +60,16 @@
                             </tr>
                             <?php else: ?>
                             <?php foreach ($lista as $n): ?>
+                            <?php $isHighlighted = !empty($n['highlighted_by_comment']); ?>
                             <tr class="<?php echo $n['status'] === 'nou' ? 'bg-amber-50 dark:bg-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-900/40 border-l-4 border-amber-500 dark:border-amber-400' : 'hover:bg-slate-50 dark:hover:bg-gray-700'; ?>" <?php echo $n['status'] === 'nou' ? 'aria-label="Notificare necitită"' : ''; ?>>
                                 <td class="px-4 py-3 text-sm <?php echo $n['status'] === 'nou' ? 'text-slate-800 dark:text-gray-100 font-medium' : 'text-slate-600 dark:text-gray-400'; ?>"><?php echo (int)$n['id']; ?></td>
                                 <td class="px-4 py-3 text-left align-middle">
                                     <a href="/notificari/view?id=<?php echo (int)$n['id']; ?>" class="block text-left <?php echo $n['status'] === 'nou' ? 'text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 font-bold' : 'text-amber-600 dark:text-amber-400 hover:underline font-medium'; ?> hover:underline"><?php echo htmlspecialchars($n['titlu']); ?></a>
+                                    <?php if ($isHighlighted): ?>
+                                    <p class="text-xs mt-1 text-amber-700 dark:text-amber-300 font-medium" aria-live="polite">
+                                        Evidentiata: comentariu nou notificat catre utilizatori.
+                                    </p>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="px-4 py-3 text-sm <?php echo $n['status'] === 'nou' ? 'text-slate-800 dark:text-gray-100 font-medium' : 'text-slate-700 dark:text-gray-300'; ?>"><?php echo htmlspecialchars($n['importanta']); ?></td>
                                 <td class="px-4 py-3">
@@ -110,6 +116,24 @@
                 <form method="post" action="/notificari" enctype="multipart/form-data" class="space-y-4">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="adauga_notificare" value="1">
+                    <div>
+                        <label for="notificare_pentru" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Notificare pentru:</label>
+                        <select id="notificare_pentru" name="notificare_pentru" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700" aria-describedby="notificare-pentru-desc">
+                            <?php
+                            $selected_target = trim((string)($_POST['notificare_pentru'] ?? 'all'));
+                            if ($selected_target === '') {
+                                $selected_target = 'all';
+                            }
+                            ?>
+                            <option value="all" <?php echo $selected_target === 'all' ? 'selected' : ''; ?>>Toti utilizatorii</option>
+                            <?php foreach (($utilizatori_activi ?? []) as $u): ?>
+                            <option value="<?php echo (int)$u['id']; ?>" <?php echo ((string)(int)$u['id'] === $selected_target) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars((string)($u['eticheta'] ?? ('Utilizator #' . (int)$u['id']))); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p id="notificare-pentru-desc" class="text-xs text-slate-600 dark:text-gray-400 mt-1">Alege „Toti utilizatorii” pentru notificare globală sau selectează un utilizator pentru notificare individuală.</p>
+                    </div>
                     <div>
                         <label for="titlu" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Titlu notificare <span class="text-red-600" aria-hidden="true">*</span></label>
                         <input type="text" id="titlu" name="titlu" required
@@ -165,6 +189,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
 });
 </script>
 </body>

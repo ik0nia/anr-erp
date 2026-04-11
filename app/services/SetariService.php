@@ -653,28 +653,29 @@ function setari_cotizatie_anuala_delete(PDO $pdo, int $id): array
 /**
  * Add a cotizatie exemption.
  */
-function setari_scutire_add(PDO $pdo, int $membru_id, ?string $data_pana, bool $permanenta, string $motiv): array
+function setari_scutire_add(PDO $pdo, int $membru_id, string $tip_scutire, ?string $data_de_la, ?string $data_pana, bool $permanenta, string $motiv): array
 {
     if ($membru_id <= 0) {
         return ['success' => false, 'error' => 'Membru invalid.'];
     }
     cotizatii_ensure_tables($pdo);
-    cotizatii_adauga_scutire($pdo, $membru_id, $data_pana, $permanenta, $motiv);
-    log_activitate($pdo, 'Setări: scutire cotizație adăugată pentru membru ID ' . $membru_id);
+    cotizatii_adauga_scutire($pdo, $membru_id, $tip_scutire, $data_de_la, $data_pana, $permanenta, $motiv);
+    log_activitate($pdo, 'Setări: scutire cotizație adăugată pentru membru ID ' . $membru_id, null, $membru_id);
     return ['success' => true, 'error' => null];
 }
 
 /**
  * Update a cotizatie exemption.
  */
-function setari_scutire_update(PDO $pdo, int $id, ?string $data_pana, bool $permanenta, string $motiv): array
+function setari_scutire_update(PDO $pdo, int $id, string $tip_scutire, ?string $data_de_la, ?string $data_pana, bool $permanenta, string $motiv): array
 {
     if ($id <= 0) {
         return ['success' => false, 'error' => 'Scutire invalidă.'];
     }
     cotizatii_ensure_tables($pdo);
-    cotizatii_actualizeaza_scutire($pdo, $id, $data_pana, $permanenta, $motiv);
-    log_activitate($pdo, 'Setări: scutire cotizație actualizată ID ' . $id);
+    $scutire = cotizatii_get_scutire($pdo, $id);
+    cotizatii_actualizeaza_scutire($pdo, $id, $tip_scutire, $data_de_la, $data_pana, $permanenta, $motiv);
+    log_activitate($pdo, 'Setări: scutire cotizație actualizată ID ' . $id, null, (int)($scutire['membru_id'] ?? 0));
     return ['success' => true, 'error' => null];
 }
 

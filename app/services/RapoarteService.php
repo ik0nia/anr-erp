@@ -45,6 +45,10 @@ function rapoarte_indicatori_membri(PDO $pdo): array {
         $result_barbati = $stmt_barbati->fetch(PDO::FETCH_ASSOC);
         $barbati = (int)($result_barbati['total'] ?? 0);
 
+        $stmt_cazuri_sociale = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE caz_social = 1");
+        $result_cazuri_sociale = $stmt_cazuri_sociale->fetch(PDO::FETCH_ASSOC);
+        $cazuri_sociale = (int)($result_cazuri_sociale['total'] ?? 0);
+
         $stmt_activi = $pdo->query("SELECT COUNT(*) as total FROM membri WHERE status_dosar = 'Activ'");
         $result_activi = $stmt_activi->fetch(PDO::FETCH_ASSOC);
         $membri_activi = (int)($result_activi['total'] ?? 0);
@@ -65,6 +69,7 @@ function rapoarte_indicatori_membri(PDO $pdo): array {
             'grad_mediu' => $grad_mediu,
             'femei' => $femei,
             'barbati' => $barbati,
+            'cazuri_sociale' => $cazuri_sociale,
             'membri_activi' => $membri_activi,
             'membri_suspendati' => $membri_suspendati,
             'membri_arhiva' => $membri_arhiva,
@@ -78,6 +83,7 @@ function rapoarte_indicatori_membri(PDO $pdo): array {
             'grad_mediu' => 0,
             'femei' => 0,
             'barbati' => 0,
+            'cazuri_sociale' => 0,
             'membri_activi' => 0,
             'membri_suspendati' => 0,
             'membri_arhiva' => 0,

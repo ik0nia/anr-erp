@@ -60,6 +60,13 @@ if (!in_array($edit_card, $carduri_editabile, true)) {
 $is_card_in_edit = function($card_name) use ($edit_card) {
     return $edit_card === $card_name;
 };
+
+$scutire_config = [];
+if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
+    $scutire_config = $scutire_cotizatie_membru;
+} elseif (!empty($scutire_cotizatie) && is_array($scutire_cotizatie)) {
+    $scutire_config = $scutire_cotizatie;
+}
 ?>
 
 <main id="main-content" class="flex-1 flex flex-col overflow-hidden" role="main">
@@ -266,10 +273,10 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
         <?php endif; ?>
 
         <!-- Cards grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
 
             <!-- Card 1: Date Personale -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-1 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
@@ -374,7 +381,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card 2: Date Contact -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-2 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="phone" class="w-5 h-5" aria-hidden="true"></i>
@@ -458,7 +465,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card 3: Domiciliu -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-3 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
@@ -582,7 +589,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card 4a: Date despre handicap -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-5 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="heart" class="w-5 h-5" aria-hidden="true"></i>
@@ -659,7 +666,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             $insotitor_raw = $membru['insotitor'] ?? '';
             $insotitor_display = $insotitor_labels[$insotitor_raw] ?? ($insotitor_raw ?: '<span class="text-slate-400 dark:text-gray-500">—</span>');
             ?>
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-6 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="file-badge" class="w-5 h-5" aria-hidden="true"></i>
@@ -794,7 +801,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card 5: Act de Identitate -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-4 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="id-card" class="w-5 h-5" aria-hidden="true"></i>
@@ -936,7 +943,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card 6: Dosar -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-7 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="folder" class="w-5 h-5" aria-hidden="true"></i>
@@ -1003,7 +1010,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card 6b: Legitimatie membru -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-8 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="badge-check" class="w-5 h-5" aria-hidden="true"></i>
@@ -1060,7 +1067,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card 7: Observatii -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-10 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="file-text" class="w-5 h-5" aria-hidden="true"></i>
@@ -1072,6 +1079,39 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                     </a>
                 </div>
                 <div class="card-view p-4 <?php echo $is_card_in_edit('observatii') ? 'hidden' : ''; ?>" data-card="observatii">
+                    <?php
+                    $tip_scutire_obs = trim((string)($scutire_config['tip_scutire'] ?? ''));
+                    if (!in_array($tip_scutire_obs, ['temporar', 'permanent'], true)) {
+                        $tip_scutire_obs = 'nu';
+                    }
+                    $tip_labels_obs = ['nu' => 'Nu', 'temporar' => 'Da - temporar', 'permanent' => 'Da - permanent'];
+                    ?>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Scutire plata cotizatie</span>
+                            <span class="text-slate-900 dark:text-white font-medium"><?php echo htmlspecialchars($tip_labels_obs[$tip_scutire_obs] ?? 'Nu'); ?></span>
+                        </div>
+                        <?php if ($tip_scutire_obs === 'temporar'): ?>
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Perioada scutire</span>
+                            <span class="text-slate-900 dark:text-white">
+                                <?php
+                                $de_la = !empty($scutire_config['data_scutire_de_la']) ? date(DATE_FORMAT, strtotime((string)$scutire_config['data_scutire_de_la'])) : '—';
+                                $pana = !empty($scutire_config['data_scutire_pana_la']) ? date(DATE_FORMAT, strtotime((string)$scutire_config['data_scutire_pana_la'])) : '—';
+                                echo htmlspecialchars($de_la . ' - ' . $pana);
+                                ?>
+                            </span>
+                        </div>
+                        <?php endif; ?>
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Motiv scutire</span>
+                            <span class="text-slate-900 dark:text-white"><?php echo !empty($scutire_config['motiv']) ? htmlspecialchars((string)$scutire_config['motiv']) : '<span class="text-slate-400 dark:text-gray-500">—</span>'; ?></span>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-slate-500 dark:text-gray-400 mb-1">Caz social</span>
+                            <span class="text-slate-900 dark:text-white"><?php echo !empty($membru['caz_social']) ? 'Da' : 'Nu'; ?></span>
+                        </div>
+                    </div>
                     <div class="text-slate-900 dark:text-white">
                         <?php echo !empty($membru['notamembru']) ? nl2br(htmlspecialchars($membru['notamembru'])) : '<span class="text-slate-400 dark:text-gray-500">Nicio observatie</span>'; ?>
                     </div>
@@ -1081,6 +1121,42 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                         <input type="hidden" name="card" value="observatii">
                         <input type="hidden" name="actualizeaza_membru" value="1">
                         <?php echo csrf_field(); ?>
+                        <?php
+                        $tip_scutire_form = trim((string)($scutire_config['tip_scutire'] ?? ''));
+                        if (!in_array($tip_scutire_form, ['nu', 'temporar', 'permanent'], true)) {
+                            $tip_scutire_form = !empty($scutire_config) ? 'temporar' : 'nu';
+                        }
+                        $scutire_de_la_form = (string)($scutire_config['data_scutire_de_la'] ?? '');
+                        $scutire_pana_form = (string)($scutire_config['data_scutire_pana_la'] ?? '');
+                        $motiv_scutire_form = (string)($scutire_config['motiv'] ?? '');
+                        ?>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="obs-tip-scutire" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutire plata cotizatie</label>
+                                <select id="obs-tip-scutire" name="tip_scutire_cotizatie" class="<?php echo $input_class; ?>">
+                                    <option value="nu" <?php echo $tip_scutire_form === 'nu' ? 'selected' : ''; ?>>Nu</option>
+                                    <option value="temporar" <?php echo $tip_scutire_form === 'temporar' ? 'selected' : ''; ?>>Da - temporar</option>
+                                    <option value="permanent" <?php echo $tip_scutire_form === 'permanent' ? 'selected' : ''; ?>>Da - permanent</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2 mt-1 md:mt-7">
+                                <input type="hidden" name="caz_social" value="0">
+                                <input type="checkbox" id="obs-caz-social" name="caz_social" value="1" <?php echo !empty($membru['caz_social']) ? 'checked' : ''; ?> class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
+                                <label for="obs-caz-social" class="text-sm font-medium text-slate-700 dark:text-gray-300">Caz social</label>
+                            </div>
+                            <div id="obs-wrap-scutire-de-la">
+                                <label for="obs-scutire-de-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutit de la data</label>
+                                <input type="date" id="obs-scutire-de-la" name="data_scutire_de_la" value="<?php echo htmlspecialchars($scutire_de_la_form); ?>" class="<?php echo $input_class; ?>">
+                            </div>
+                            <div id="obs-wrap-scutire-pana-la">
+                                <label for="obs-scutire-pana-la" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Scutit pana la data</label>
+                                <input type="date" id="obs-scutire-pana-la" name="data_scutire_pana_la" value="<?php echo htmlspecialchars($scutire_pana_form); ?>" class="<?php echo $input_class; ?>">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="obs-motiv-scutire" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Motiv scutire</label>
+                                <input type="text" id="obs-motiv-scutire" name="motiv_scutire" value="<?php echo htmlspecialchars($motiv_scutire_form); ?>" class="<?php echo $input_class; ?>" maxlength="255">
+                            </div>
+                        </div>
                         <div>
                             <textarea name="notamembru" rows="5" class="<?php echo $input_class; ?>"><?php echo $val('notamembru'); ?></textarea>
                         </div>
@@ -1095,7 +1171,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card: Acces Biblioteca Online -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-9 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="book-open" class="w-5 h-5" aria-hidden="true"></i>
@@ -1144,7 +1220,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </section>
 
             <!-- Card 8: Atasamente Documente -->
-            <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-11 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="paperclip" class="w-5 h-5" aria-hidden="true"></i>
@@ -1267,11 +1343,26 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
                 </div>
             </section>
 
+            <!-- Card 9: Sectiune libera -->
+            <section class="lg:order-12 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700" aria-labelledby="sectiune-libera-heading">
+                <div class="p-4 border-b border-slate-200 dark:border-gray-700">
+                    <h3 id="sectiune-libera-heading" class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="layout-grid" class="w-5 h-5" aria-hidden="true"></i>
+                        Sectiune libera
+                    </h3>
+                </div>
+                <div class="p-4 text-sm text-slate-500 dark:text-gray-400">
+                    Spatiu liber disponibil pentru extinderi viitoare ale profilului de membru.
+                </div>
+            </section>
+
         </div>
         <!-- End cards grid -->
 
+        <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="flex flex-col gap-6">
         <!-- Documente generate -->
-        <section class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-documente-generate">
+        <section class="order-2 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-documente-generate">
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2" id="titlu-documente-generate">
                 <i data-lucide="file-text" class="w-5 h-5" aria-hidden="true"></i>
                 Documente generate
@@ -1367,7 +1458,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
         </section>
 
         <!-- Istoric incasari -->
-        <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-istoric-incasari">
+        <div class="order-1 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-istoric-incasari">
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2" id="titlu-istoric-incasari">
                 <i data-lucide="history" class="w-5 h-5" aria-hidden="true"></i>
                 Istoric incasari
@@ -1438,9 +1529,10 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </div>
             <?php endif; ?>
         </div>
+            </div>
 
         <!-- Jurnal Activitate -->
-        <section class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-jurnal-activitate">
+        <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" id="sectiune-jurnal-activitate">
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2" id="titlu-jurnal-activitate">
                 <i data-lucide="scroll-text" class="w-5 h-5" aria-hidden="true"></i>
                 Istoric activitate
@@ -1506,6 +1598,7 @@ $is_card_in_edit = function($card_name) use ($edit_card) {
             </div>
             <?php endif; ?>
         </section>
+        </div>
 
     </div>
     <?php endif; ?>
@@ -1628,6 +1721,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    var tipScutireObs = document.getElementById('obs-tip-scutire');
+    var wrapScutireDeLaObs = document.getElementById('obs-wrap-scutire-de-la');
+    var wrapScutirePanaObs = document.getElementById('obs-wrap-scutire-pana-la');
+    var inputScutireDeLaObs = document.getElementById('obs-scutire-de-la');
+    var inputScutirePanaObs = document.getElementById('obs-scutire-pana-la');
+    if (tipScutireObs) {
+        var toggleScutireTemporara = function() {
+            var temporar = tipScutireObs.value === 'temporar';
+            if (wrapScutireDeLaObs) {
+                wrapScutireDeLaObs.style.display = temporar ? '' : 'none';
+            }
+            if (wrapScutirePanaObs) {
+                wrapScutirePanaObs.style.display = temporar ? '' : 'none';
+            }
+            if (inputScutireDeLaObs) {
+                if (temporar) inputScutireDeLaObs.setAttribute('required', 'required');
+                else inputScutireDeLaObs.removeAttribute('required');
+            }
+            if (inputScutirePanaObs) {
+                if (temporar) inputScutirePanaObs.setAttribute('required', 'required');
+                else inputScutirePanaObs.removeAttribute('required');
+            }
+        };
+        tipScutireObs.addEventListener('change', toggleScutireTemporara);
+        toggleScutireTemporara();
+    }
 
     var legitDialog = document.getElementById('modal-legitimatie-membru');
     if (legitDialog) {

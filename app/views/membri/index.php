@@ -5,11 +5,11 @@
  * Variabile disponibile (setate de controller):
  *   $membri, $total_membri, $total_pages, $page, $per_page, $sort_col, $sort_dir,
  *   $status_filter, $cautare, $avertizari_filter, $aniversari_azi_filter,
- *   $actualizare_cnp_ci_filter, $cotizatie_neachitata_filter, $fara_contact_filter,
+ *   $actualizare_cnp_ci_filter, $cotizatie_neachitata_filter, $fara_contact_filter, $cazuri_sociale_filter,
  *   $eroare, $eroare_bd, $succes,
  *   $membri_activi_count, $membri_suspendati_expirati_count, $membri_arhiva_count,
  *   $membri_cu_avertizari, $membri_actualizare_cnp_ci, $membri_aniversari_azi_count,
- *   $membri_cotizatie_neachitata_count, $membri_fara_contact_count,
+ *   $membri_cotizatie_neachitata_count, $membri_fara_contact_count, $membri_cazuri_sociale_count,
  *   $membri_scutiti_cotizatie_ids, $membri_cotizatie_achitata_an_curent,
  *   $valori_cotizatie_an_curent
  */
@@ -25,6 +25,7 @@ if ($actualizare_cnp_ci_filter) $sort_link_params['actualizare_cnp_ci'] = '1';
 if ($aniversari_azi_filter) $sort_link_params['aniversari_azi'] = '1';
 if ($cotizatie_neachitata_filter) $sort_link_params['cotizatie_neachitata'] = '1';
 if ($fara_contact_filter) $sort_link_params['fara_contact'] = '1';
+if ($cazuri_sociale_filter) $sort_link_params['cazuri_sociale'] = '1';
 // Pastreaza filtrele avansate in sort links
 foreach (['sex', 'hgrad', 'status_dosar', 'localitate', 'mediu', 'data_nastere_de_la', 'data_nastere_pana_la'] as $fk) {
     if (!empty($_GET[$fk])) $sort_link_params[$fk] = $_GET[$fk];
@@ -183,6 +184,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
             ['param' => 'aniversari_azi', 'active' => $aniversari_azi_filter, 'icon' => 'cake', 'label' => 'Aniversari azi', 'count' => $membri_aniversari_azi_count],
             ['param' => 'cotizatie_neachitata', 'active' => $cotizatie_neachitata_filter, 'icon' => 'dollar-sign', 'label' => 'Cotizatie neachitata', 'count' => $membri_cotizatie_neachitata_count],
             ['param' => 'fara_contact', 'active' => $fara_contact_filter, 'icon' => 'phone-off', 'label' => 'Fara contact', 'count' => $membri_fara_contact_count],
+            ['param' => 'cazuri_sociale', 'active' => $cazuri_sociale_filter, 'icon' => 'users', 'label' => 'Cazuri sociale', 'count' => $membri_cazuri_sociale_count],
         ];
         ?>
         <div class="mb-6 flex items-center gap-2 flex-wrap">
@@ -525,6 +527,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                     <input type="hidden" name="redirect_aniversari_azi" value="<?php echo $aniversari_azi_filter ? '1' : ''; ?>">
                     <input type="hidden" name="redirect_cotizatie_neachitata" value="<?php echo $cotizatie_neachitata_filter ? '1' : ''; ?>">
                     <input type="hidden" name="redirect_fara_contact" value="<?php echo $fara_contact_filter ? '1' : ''; ?>">
+                    <input type="hidden" name="redirect_cazuri_sociale" value="<?php echo $cazuri_sociale_filter ? '1' : ''; ?>">
                     <div class="space-y-3">
                         <div>
                             <label for="mesaj_subiect" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Subiect (pentru email)</label>

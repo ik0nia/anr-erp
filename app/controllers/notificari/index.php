@@ -21,6 +21,7 @@ if ($user_id <= 0) {
 
 $ordine = isset($_GET['ordine']) && $_GET['ordine'] === 'z-a' ? 'z-a' : 'a-z';
 $istoric = isset($_GET['istoric']) && $_GET['istoric'] === '1';
+$utilizatori_activi = notificari_lista_utilizatori_activi($pdo);
 
 // --- POST: Marcheaza necitit ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['marcheaza_necitit'])) {
@@ -42,9 +43,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_notificare']))
     $continut = trim($_POST['continut'] ?? '');
     $link_extern = trim($_POST['link_extern'] ?? '');
     $trimite_email = isset($_POST['trimite_email']) ? 1 : 0;
+    $target_selector = trim((string)($_POST['notificare_pentru'] ?? ''));
+    if ($target_selector === '') {
+        // Backward compatibility for older form payload.
+        $legacy_scope = (($_POST['target_scope'] ?? 'all') === 'user') ? 'user' : 'all';
+        $legacy_user_id = (int)($_POST['target_user_id'] ?? 0);
+        $target_selector = $legacy_scope === 'user' ? (string)$legacy_user_id : 'all';
+    }
+    $target_scope = 'all';
+    $target_user_id = 0;
+    if ($target_selector !== 'all') {
+        if (!ctype_digit($target_selector) || (int)$target_selector <= 0) {
+            $eroare = 'Selectați un utilizator valid pentru notificarea țintită.';
+        } else {
+            $target_scope = 'user';
+            $target_user_id = (int)$target_selector;
+        }
+    }
     if (empty($titlu)) {
         $eroare = 'Titlul notificării este obligatoriu.';
-    } else {
+    } elseif (empty($eroare)) {
         $fisier = isset($_FILES['atasament']) && $_FILES['atasament']['error'] === UPLOAD_ERR_OK ? $_FILES['atasament'] : null;
         if ($fisier && $fisier['size'] > NOTIFICARI_ATAŞAMENT_MAX_MB * 1024 * 1024) {
             $eroare = 'Atașamentul depășește ' . NOTIFICARI_ATAŞAMENT_MAX_MB . ' MB.';
@@ -55,6 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adauga_notificare']))
                 'continut' => $continut,
                 'link_extern' => $link_extern,
                 'trimite_email' => $trimite_email,
+                'target_scope' => $target_scope,
+                'target_user_id' => $target_user_id,
             ], $fisier, $user_id);
             if ($id > 0) {
                 log_activitate($pdo, "Notificare adăugată: {$titlu}");

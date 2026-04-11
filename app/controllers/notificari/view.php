@@ -26,6 +26,7 @@ if (!$notif) {
 
 $succes = '';
 $eroare = '';
+$comentarii = [];
 $redirect_after = '/notificari/view?id=' . $id;
 
 // --- POST actions ---
@@ -53,6 +54,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $eroare = 'Eroare la crearea taskului.';
         }
     }
+    if (isset($_POST['adauga_comentariu'])) {
+        $comentariu = trim((string)($_POST['comentariu'] ?? ''));
+        $notifica_toti = isset($_POST['notifica_toti']) && ((string)$_POST['notifica_toti'] === '1');
+        if ($comentariu === '') {
+            $eroare = 'Comentariul nu poate fi gol.';
+        } else {
+            $comentariu_id = notificari_comentariu_adauga($pdo, $id, $user_id, $comentariu, $notifica_toti);
+            if ($comentariu_id > 0) {
+                log_activitate($pdo, "Comentariu adaugat la notificare: {$notif['titlu']}" . ($notifica_toti ? ' (notificare utilizatori platforma)' : ''));
+                $query = 'comentariu=1';
+                if ($notifica_toti) {
+                    $query .= '&notify_all=1';
+                }
+                header('Location: /notificari/view?id=' . $id . '&' . $query);
+                exit;
+            }
+            $eroare = 'Comentariul nu a putut fi salvat.';
+        }
+    }
 }
 
 // La deschidere (GET): marcheaza ca citita daca era noua
@@ -60,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     notificari_marcheaza_citita($pdo, $id, $user_id);
 }
 $notif = notificari_get_by_id($pdo, $id, $user_id);
+$comentarii = notificari_comentarii_lista($pdo, $id);
 
 // --- Render ---
 include APP_ROOT . '/header.php';

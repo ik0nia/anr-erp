@@ -42,6 +42,7 @@ $grad_accentuat = $indicatori['grad_accentuat'];
 $grad_mediu = $indicatori['grad_mediu'];
 $femei = $indicatori['femei'];
 $barbati = $indicatori['barbati'];
+$cazuri_sociale = $indicatori['cazuri_sociale'] ?? 0;
 $membri_activi = $indicatori['membri_activi'];
 $membri_suspendati = $indicatori['membri_suspendati'];
 $membri_arhiva = $indicatori['membri_arhiva'];

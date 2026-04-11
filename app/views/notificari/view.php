@@ -45,7 +45,28 @@
                         <?php endif; ?>
                     </dd>
                 </div>
+                <div>
+                    <dt class="font-medium text-slate-500 dark:text-gray-400">Notificare pentru</dt>
+                    <dd class="text-slate-900 dark:text-white">
+                        <?php if (($notif['target_scope'] ?? 'all') === 'user'): ?>
+                            <?php
+                            $targetLabel = trim((string)($notif['target_nume_complet'] ?? ''));
+                            if ($targetLabel === '') {
+                                $targetLabel = trim((string)($notif['target_username'] ?? ''));
+                            }
+                            echo htmlspecialchars($targetLabel !== '' ? $targetLabel : ('Utilizator #' . (int)($notif['target_user_id'] ?? 0)));
+                            ?>
+                        <?php else: ?>
+                            Toti utilizatorii
+                        <?php endif; ?>
+                    </dd>
+                </div>
             </dl>
+            <?php if (!empty($notif['highlighted_by_comment'])): ?>
+            <div class="mb-4 p-3 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100" role="status" aria-live="polite">
+                <strong>Notificare evidentiata:</strong> aceasta notificare are comentarii distribuite catre utilizatori.
+            </div>
+            <?php endif; ?>
             <div class="border-t border-slate-200 dark:border-gray-600 pt-4 mb-4">
                 <h2 class="sr-only">Conținut</h2>
                 <div class="prose dark:prose-invert max-w-none whitespace-pre-wrap text-slate-800 dark:text-gray-200"><?php echo nl2br(htmlspecialchars($notif['continut'])); ?></div>
@@ -100,6 +121,53 @@
                 </form>
                 <?php endif; ?>
             </div>
+
+            <section class="mt-6 pt-6 border-t border-slate-200 dark:border-gray-600" aria-labelledby="notificare-comentarii-heading">
+                <h2 id="notificare-comentarii-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Comentarii</h2>
+                <form method="post" action="/notificari/view" class="space-y-3 mb-5" aria-label="Adauga comentariu la notificare">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
+                    <input type="hidden" name="adauga_comentariu" value="1">
+                    <div>
+                        <label for="comentariu-notificare" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Comentariu <span class="text-red-600" aria-hidden="true">*</span></label>
+                        <textarea id="comentariu-notificare" name="comentariu" rows="3" required
+                                  class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-white dark:bg-gray-700"
+                                  aria-required="true"></textarea>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="hidden" name="notifica_toti" value="0">
+                        <input type="checkbox"
+                               id="notifica-utilizatorii-platformei"
+                               name="notifica_toti"
+                               value="1"
+                               class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
+                        <label for="notifica-utilizatorii-platformei" class="text-sm font-medium text-slate-800 dark:text-gray-200">Notifica utilizatorii platformei</label>
+                    </div>
+                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
+                        <i data-lucide="message-square-plus" class="w-4 h-4 mr-2" aria-hidden="true"></i>
+                        Adauga comentariu
+                    </button>
+                </form>
+
+                <div class="space-y-3" aria-live="polite">
+                    <?php if (empty($comentarii)): ?>
+                    <p class="text-sm text-slate-600 dark:text-gray-400">Nu exista comentarii pentru aceasta notificare.</p>
+                    <?php else: ?>
+                    <?php foreach ($comentarii as $c): ?>
+                    <article class="rounded-lg border border-slate-200 dark:border-gray-600 p-3 bg-slate-50 dark:bg-gray-700/40">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white"><?php echo htmlspecialchars((string)($c['utilizator_nume'] ?? 'Utilizator')); ?></p>
+                            <p class="text-xs text-slate-500 dark:text-gray-400"><?php echo htmlspecialchars(date(DATETIME_FORMAT, strtotime((string)($c['created_at'] ?? 'now')))); ?></p>
+                        </div>
+                        <p class="text-sm text-slate-800 dark:text-gray-200 whitespace-pre-wrap"><?php echo htmlspecialchars((string)($c['comentariu'] ?? '')); ?></p>
+                        <?php if (!empty($c['notifica_toti'])): ?>
+                        <p class="mt-2 text-xs text-amber-700 dark:text-amber-300 font-medium">Comentariu notificat catre toti utilizatorii platformei.</p>
+                        <?php endif; ?>
+                    </article>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </section>
         </div>
     </div>
 </main>

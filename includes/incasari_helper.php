@@ -47,7 +47,10 @@ function incasari_ensure_tables($pdo) {
 /** Verifică dacă membru a achitat cotizația pentru anul dat (inclusiv scutit). */
 function incasari_cotizatie_achitata_an($pdo, $membru_id, $anul) {
     require_once __DIR__ . '/cotizatii_helper.php';
-    if (cotizatii_membru_este_scutit($pdo, $membru_id)) return true;
+    $scutire = cotizatii_membru_este_scutit($pdo, $membru_id);
+    if (!empty($scutire)) {
+        return true;
+    }
     $anul = (int) $anul;
     $stmt = $pdo->prepare("SELECT 1 FROM incasari WHERE membru_id = ? AND tip = 'cotizatie' AND anul = ? LIMIT 1");
     $stmt->execute([(int)$membru_id, $anul]);

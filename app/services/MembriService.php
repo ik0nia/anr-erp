@@ -30,6 +30,7 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
     $actualizare_cnp_ci_filter = !empty($filters['actualizare_cnp_ci']);
     $cotizatie_neachitata_filter = !empty($filters['cotizatie_neachitata']);
     $fara_contact_filter = !empty($filters['fara_contact']);
+    $cazuri_sociale_filter = !empty($filters['cazuri_sociale']);
 
     // Validare per_page
     if (!in_array($per_page, [10, 25, 50])) {
@@ -89,6 +90,10 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
 
     if ($fara_contact_filter) {
         $where_parts[] = "status_dosar = 'Activ' AND (telefonnev IS NULL OR telefonnev = '') AND (email IS NULL OR email = '')";
+    }
+
+    if ($cazuri_sociale_filter) {
+        $where_parts[] = "caz_social = 1";
     }
 
     // ID-uri membri scutiti de cotizatie (needed before WHERE for cotizatie_neachitata filter)
@@ -256,6 +261,13 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         $membri_fara_contact_count = (int) $stmt->fetch()['n'];
     } catch (PDOException $e) {}
 
+    // Numar cazuri sociale
+    $membri_cazuri_sociale_count = 0;
+    try {
+        $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE caz_social = 1");
+        $membri_cazuri_sociale_count = (int)$stmt->fetch()['n'];
+    } catch (PDOException $e) {}
+
     // Incarcare membri
     $membri = [];
     try {
@@ -297,6 +309,7 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
         'membri_arhiva_count' => $membri_arhiva_count,
         'membri_cotizatie_neachitata_count' => $membri_cotizatie_neachitata_count,
         'membri_fara_contact_count' => $membri_fara_contact_count,
+        'membri_cazuri_sociale_count' => $membri_cazuri_sociale_count,
         'membri_scutiti_cotizatie_ids' => $membri_scutiti_cotizatie_ids,
         'membri_cotizatie_achitata_an_curent' => $membri_cotizatie_achitata_an_curent,
         'valori_cotizatie_an_curent' => $valori_cotizatie_an_curent,
@@ -321,6 +334,7 @@ function membri_lista_all(PDO $pdo, array $get_params): array {
     $actualizare_cnp_ci_filter = !empty($get_params['actualizare_cnp_ci']);
     $cotizatie_neachitata_filter = !empty($get_params['cotizatie_neachitata']);
     $fara_contact_filter = !empty($get_params['fara_contact']);
+    $cazuri_sociale_filter = !empty($get_params['cazuri_sociale']);
 
     // Filtre avansate
     $sex_filter = $get_params['sex'] ?? '';
@@ -361,6 +375,9 @@ function membri_lista_all(PDO $pdo, array $get_params): array {
     }
     if ($fara_contact_filter) {
         $where_parts[] = "status_dosar = 'Activ' AND (telefonnev IS NULL OR telefonnev = '') AND (email IS NULL OR email = '')";
+    }
+    if ($cazuri_sociale_filter) {
+        $where_parts[] = "caz_social = 1";
     }
 
     if ($cotizatie_neachitata_filter) {
@@ -476,6 +493,10 @@ function membri_ensure_biblioteca_online_columns(PDO $pdo): void {
         $stmt = $pdo->query("SHOW COLUMNS FROM membri LIKE 'biblioteca_online_parola'");
         if (!$stmt->fetch()) {
             $pdo->exec("ALTER TABLE membri ADD COLUMN biblioteca_online_parola VARCHAR(255) DEFAULT NULL");
+        }
+        $stmt = $pdo->query("SHOW COLUMNS FROM membri LIKE 'caz_social'");
+        if (!$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE membri ADD COLUMN caz_social TINYINT(1) NOT NULL DEFAULT 0");
         }
     } catch (PDOException $e) {
         // Silently ignore — columns may already exist
@@ -781,7 +802,9 @@ function membri_cotizatie_info(PDO $pdo, int $membru_id, ?array $membru = null):
     $valoare_cotizatie_an = 0;
     $an_cotizatie = (int)date('Y');
 
+    $scutire_setata = null;
     try {
+        $scutire_setata = cotizatii_get_scutire_membru($pdo, $membru_id);
         $scutire_cotizatie = cotizatii_membru_este_scutit($pdo, $membru_id);
     } catch (Exception $e) {}
 
@@ -796,6 +819,7 @@ function membri_cotizatie_info(PDO $pdo, int $membru_id, ?array $membru = null):
 
     return [
         'scutire_cotizatie' => $scutire_cotizatie,
+        'scutire_setata' => $scutire_setata,
         'cotizatie_achitata_an_curent' => $cotizatie_achitata_an_curent,
         'valoare_cotizatie_an' => $valoare_cotizatie_an,
         'an_cotizatie' => $an_cotizatie,
@@ -845,7 +869,7 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
             'ciseria','cinumar','cielib','cidataelib','cidataexp','gdpr','codpost','tipmediuur',
             'domloc','judet_domiciliu','domstr','domnr','dombl','domsc','domet','domap','sex',
             'hgrad','hmotiv','diagnostic','hdur','insotitor','cnp','cenr','cedata','ceexp','primaria','notamembru',
-            'biblioteca_online_username','biblioteca_online_parola','newsletter_opt_in'];
+            'biblioteca_online_username','biblioteca_online_parola','newsletter_opt_in','caz_social'];
         foreach ($all_fields as $f) {
             if (!array_key_exists($f, $post_data)) {
                 $post_data[$f] = $membru_existent_data[$f] ?? '';
@@ -983,6 +1007,11 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
     $biblioteca_online_username = trim($post_data['biblioteca_online_username'] ?? '') ?: null;
     $biblioteca_online_parola = trim($post_data['biblioteca_online_parola'] ?? '') ?: null;
     $newsletter_opt_in = !empty($post_data['newsletter_opt_in']) ? 1 : 0;
+    $caz_social = !empty($post_data['caz_social']) ? 1 : 0;
+    $tip_scutire_cotizatie = trim((string)($post_data['tip_scutire_cotizatie'] ?? ''));
+    $data_scutire_de_la = trim((string)($post_data['data_scutire_de_la'] ?? '')) ?: null;
+    $data_scutire_pana_la = trim((string)($post_data['data_scutire_pana_la'] ?? '')) ?: null;
+    $motiv_scutire = trim((string)($post_data['motiv_scutire'] ?? ''));
 
     try {
         if ($is_update) {
@@ -1005,7 +1034,7 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 cielib = ?, cidataelib = ?, cidataexp = ?, gdpr = ?, codpost = ?, tipmediuur = ?, domloc = ?, judet_domiciliu = ?, domstr = ?,
                 domnr = ?, dombl = ?, domsc = ?, domet = ?, domap = ?, sex = ?, hgrad = ?, hmotiv = ?, diagnostic = ?,
                 hdur = ?, insotitor = ?, cnp = ?, cenr = ?, cedata = ?, ceexp = ?, primaria = ?, notamembru = ?,
-                biblioteca_online_username = ?, biblioteca_online_parola = ?, newsletter_opt_in = ?
+                biblioteca_online_username = ?, biblioteca_online_parola = ?, newsletter_opt_in = ?, caz_social = ?
                 WHERE id = ?';
 
             $params = [
@@ -1014,7 +1043,7 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 $cielib, $cidataelib, $cidataexp, $gdpr, $codpost, $tipmediuur, $domloc, $judet_domiciliu, $domstr,
                 $domnr, $dombl, $domsc, $domet, $domap, $sex, $hgrad, $hmotiv, $diagnostic,
                 $hdur, $insotitor, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru,
-                $biblioteca_online_username, $biblioteca_online_parola, $newsletter_opt_in, $membru_id
+                $biblioteca_online_username, $biblioteca_online_parola, $newsletter_opt_in, $caz_social, $membru_id
             ];
 
             $stmt = $pdo->prepare($sql);
@@ -1038,6 +1067,9 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 }
                 if (($membru_vechi['domloc'] ?? '') !== ($domloc ?? '')) {
                     $modificari[] = log_format_modificare('Locatie', $membru_vechi['domloc'] ?? '', $domloc ?? '');
+                }
+                if ((int)($membru_vechi['caz_social'] ?? 0) !== (int)$caz_social) {
+                    $modificari[] = log_format_modificare('Caz social', !empty($membru_vechi['caz_social']) ? 'Da' : 'Nu', $caz_social ? 'Da' : 'Nu');
                 }
             }
 
@@ -1084,6 +1116,41 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 log_activitate($pdo, "membri: Actualizat membru ({$nume_complet})", null, $membru_id);
             }
 
+            if ($card_submitted === 'observatii') {
+                try {
+                    $scutire_veche = cotizatii_get_scutire_membru($pdo, $membru_id);
+                    cotizatii_set_scutire_membru(
+                        $pdo,
+                        $membru_id,
+                        $tip_scutire_cotizatie,
+                        $data_scutire_de_la,
+                        $data_scutire_pana_la,
+                        $motiv_scutire
+                    );
+                    $scutire_noua = cotizatii_get_scutire_membru($pdo, $membru_id);
+
+                    $formatScutire = function (?array $scutire): string {
+                        if (empty($scutire)) return 'Nu';
+                        $tip = trim((string)($scutire['tip_scutire'] ?? ''));
+                        if ($tip === 'permanent') return 'Da - permanent';
+                        if ($tip === 'temporar') {
+                            $deLa = trim((string)($scutire['data_scutire_de_la'] ?? ''));
+                            $panaLa = trim((string)($scutire['data_scutire_pana_la'] ?? ''));
+                            return 'Da - temporar (' . ($deLa !== '' ? $deLa : '—') . ' - ' . ($panaLa !== '' ? $panaLa : '—') . ')';
+                        }
+                        return !empty($scutire['scutire_permanenta']) ? 'Da - permanent' : 'Nu';
+                    };
+
+                    $scutire_veche_lbl = $formatScutire(is_array($scutire_veche) ? $scutire_veche : null);
+                    $scutire_noua_lbl = $formatScutire(is_array($scutire_noua) ? $scutire_noua : null);
+                    if ($scutire_veche_lbl !== $scutire_noua_lbl) {
+                        log_activitate($pdo, log_format_modificare('Scutire cotizatie', $scutire_veche_lbl, $scutire_noua_lbl), null, $membru_id);
+                    }
+                } catch (Throwable $e) {
+                    error_log('MembriService: eroare sincronizare scutire cotizatie profil membru: ' . $e->getMessage());
+                }
+            }
+
             // Returnam modificarile si numele complet pentru logging extern (registru_interactiuni_v2)
             $GLOBALS['_membri_save_modificari'] = $modificari;
             $GLOBALS['_membri_save_nume_complet'] = $nume_complet;
@@ -1101,8 +1168,8 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 cielib, cidataelib, cidataexp, gdpr, codpost, tipmediuur, domloc, judet_domiciliu, domstr,
                 domnr, dombl, domsc, domet, domap, sex, hgrad, hmotiv, diagnostic,
                 hdur, insotitor, cnp, cenr, cedata, ceexp, primaria, notamembru,
-                biblioteca_online_username, biblioteca_online_parola, newsletter_opt_in
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                biblioteca_online_username, biblioteca_online_parola, newsletter_opt_in, caz_social
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
             $params = [
                 $dosarnr, $dosardata, $status_dosar, $nume, $prenume, $telefonnev, $telefonapartinator,
@@ -1110,7 +1177,7 @@ function membri_save(PDO $pdo, array $post_data, array $files, bool $is_update):
                 $cielib, $cidataelib, $cidataexp, $gdpr, $codpost, $tipmediuur, $domloc, $judet_domiciliu, $domstr,
                 $domnr, $dombl, $domsc, $domet, $domap, $sex, $hgrad, $hmotiv, $diagnostic,
                 $hdur, $insotitor, $cnp, $cenr, $cedata, $ceexp, $primaria, $notamembru,
-                $biblioteca_online_username, $biblioteca_online_parola, $newsletter_opt_in
+                $biblioteca_online_username, $biblioteca_online_parola, $newsletter_opt_in, $caz_social
             ];
 
             $stmt = $pdo->prepare($sql);

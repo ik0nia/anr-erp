@@ -4,8 +4,54 @@
  */
 
 function cotizatii_ensure_tables($pdo) {
-    // No-op: schema is managed by install/schema/migration.php
-    return;
+    // Ensure incremental compatibility for existing installations.
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS cotizatii_scutiri (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            membru_id INT NOT NULL,
+            tip_scutire ENUM('nu', 'temporar', 'permanent') NOT NULL DEFAULT 'temporar',
+            data_scutire_de_la DATE DEFAULT NULL,
+            data_scutire_pana_la DATE DEFAULT NULL,
+            scutire_permanenta TINYINT(1) NOT NULL DEFAULT 0,
+            motiv TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_membru_id (membru_id),
+            INDEX idx_tip_scutire (tip_scutire),
+            INDEX idx_interval_scutire (data_scutire_de_la, data_scutire_pana_la)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $cols = $pdo->query("SHOW COLUMNS FROM cotizatii_scutiri")->fetchAll(PDO::FETCH_ASSOC);
+        $existingCols = [];
+        foreach ($cols as $c) {
+            if (!empty($c['Field'])) {
+                $existingCols[(string)$c['Field']] = true;
+            }
+        }
+        if (!isset($existingCols['tip_scutire'])) {
+            $pdo->exec("ALTER TABLE cotizatii_scutiri ADD COLUMN tip_scutire ENUM('nu', 'temporar', 'permanent') NOT NULL DEFAULT 'temporar' AFTER membru_id");
+            $pdo->exec("UPDATE cotizatii_scutiri SET tip_scutire = CASE WHEN scutire_permanenta = 1 THEN 'permanent' ELSE 'temporar' END");
+        }
+        if (!isset($existingCols['data_scutire_de_la'])) {
+            $pdo->exec("ALTER TABLE cotizatii_scutiri ADD COLUMN data_scutire_de_la DATE DEFAULT NULL AFTER tip_scutire");
+            $pdo->exec("UPDATE cotizatii_scutiri SET data_scutire_de_la = CURDATE() WHERE data_scutire_de_la IS NULL");
+        }
+
+        $idxRows = $pdo->query("SHOW INDEX FROM cotizatii_scutiri")->fetchAll(PDO::FETCH_ASSOC);
+        $idxNames = [];
+        foreach ($idxRows as $idx) {
+            if (!empty($idx['Key_name'])) {
+                $idxNames[(string)$idx['Key_name']] = true;
+            }
+        }
+        if (!isset($idxNames['idx_tip_scutire'])) {
+            $pdo->exec("ALTER TABLE cotizatii_scutiri ADD INDEX idx_tip_scutire (tip_scutire)");
+        }
+        if (!isset($idxNames['idx_interval_scutire'])) {
+            $pdo->exec("ALTER TABLE cotizatii_scutiri ADD INDEX idx_interval_scutire (data_scutire_de_la, data_scutire_pana_la)");
+        }
+    } catch (PDOException $e) {
+        // Keep non-blocking behavior for legacy installs.
+    }
 }
 
 /**
@@ -63,7 +109,7 @@ function cotizatii_get_anuala($pdo, $id) {
 function cotizatii_lista_scutiri($pdo) {
     cotizatii_ensure_tables($pdo);
     $stmt = $pdo->query("
-        SELECT s.id, s.membru_id, s.data_scutire_pana_la, s.scutire_permanenta, s.motiv, s.created_at,
+        SELECT s.id, s.membru_id, s.tip_scutire, s.data_scutire_de_la, s.data_scutire_pana_la, s.scutire_permanenta, s.motiv, s.created_at,
                m.nume, m.prenume
         FROM cotizatii_scutiri s
         LEFT JOIN membri m ON m.id = s.membru_id
@@ -79,11 +125,22 @@ function cotizatii_lista_scutiri($pdo) {
 function cotizatii_membru_este_scutit($pdo, $membru_id) {
     cotizatii_ensure_tables($pdo);
     $stmt = $pdo->prepare("
-        SELECT id, membru_id, data_scutire_pana_la, scutire_permanenta, motiv
+        SELECT id, membru_id, tip_scutire, data_scutire_de_la, data_scutire_pana_la, scutire_permanenta, motiv
         FROM cotizatii_scutiri
         WHERE membru_id = ?
-        AND (scutire_permanenta = 1 OR data_scutire_pana_la IS NULL OR data_scutire_pana_la >= CURDATE())
-        ORDER BY scutire_permanenta DESC, data_scutire_pana_la DESC
+        AND (
+            (tip_scutire = 'permanent')
+            OR (
+                tip_scutire = 'temporar'
+                AND (data_scutire_de_la IS NULL OR data_scutire_de_la <= CURDATE())
+                AND (data_scutire_pana_la IS NULL OR data_scutire_pana_la >= CURDATE())
+            )
+            OR (
+                tip_scutire IS NULL
+                AND (scutire_permanenta = 1 OR data_scutire_pana_la IS NULL OR data_scutire_pana_la >= CURDATE())
+            )
+        )
+        ORDER BY (tip_scutire = 'permanent') DESC, scutire_permanenta DESC, data_scutire_pana_la DESC
         LIMIT 1
     ");
     $stmt->execute([(int) $membru_id]);
@@ -98,15 +155,26 @@ function cotizatii_membri_scutiti_ids($pdo) {
     cotizatii_ensure_tables($pdo);
     $stmt = $pdo->query("
         SELECT DISTINCT membru_id FROM cotizatii_scutiri
-        WHERE scutire_permanenta = 1 OR data_scutire_pana_la IS NULL OR data_scutire_pana_la >= CURDATE()
+        WHERE
+            tip_scutire = 'permanent'
+            OR (
+                tip_scutire = 'temporar'
+                AND (data_scutire_de_la IS NULL OR data_scutire_de_la <= CURDATE())
+                AND (data_scutire_pana_la IS NULL OR data_scutire_pana_la >= CURDATE())
+            )
+            OR (
+                tip_scutire IS NULL
+                AND (scutire_permanenta = 1 OR data_scutire_pana_la IS NULL OR data_scutire_pana_la >= CURDATE())
+            )
     ");
     if (!$stmt) return [];
     return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'membru_id');
 }
 
 function cotizatii_get_scutire($pdo, $id) {
+    cotizatii_ensure_tables($pdo);
     $stmt = $pdo->prepare("
-        SELECT s.id, s.membru_id, s.data_scutire_pana_la, s.scutire_permanenta, s.motiv,
+        SELECT s.id, s.membru_id, s.tip_scutire, s.data_scutire_de_la, s.data_scutire_pana_la, s.scutire_permanenta, s.motiv,
                m.nume, m.prenume
         FROM cotizatii_scutiri s
         LEFT JOIN membri m ON m.id = s.membru_id
@@ -116,27 +184,78 @@ function cotizatii_get_scutire($pdo, $id) {
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
 }
 
-function cotizatii_adauga_scutire($pdo, $membru_id, $data_pana_la, $scutire_permanenta, $motiv) {
+function cotizatii_adauga_scutire($pdo, $membru_id, $tip_scutire, $data_de_la, $data_pana_la, $scutire_permanenta, $motiv) {
     cotizatii_ensure_tables($pdo);
     $membru_id = (int) $membru_id;
     if ($membru_id <= 0) return false;
-    $scutire_permanenta = $scutire_permanenta ? 1 : 0;
-    $data_pana_la = $scutire_permanenta ? null : ($data_pana_la ?: null);
+    $tip_scutire = trim((string)$tip_scutire);
+    if (!in_array($tip_scutire, ['temporar', 'permanent'], true)) {
+        $tip_scutire = $scutire_permanenta ? 'permanent' : 'temporar';
+    }
+    $scutire_permanenta = ($tip_scutire === 'permanent' || $scutire_permanenta) ? 1 : 0;
+    $data_de_la = $tip_scutire === 'temporar' ? ($data_de_la ?: date('Y-m-d')) : null;
+    $data_pana_la = $tip_scutire === 'temporar' ? ($data_pana_la ?: null) : null;
     $motiv = trim($motiv) ?: null;
-    $stmt = $pdo->prepare("INSERT INTO cotizatii_scutiri (membru_id, data_scutire_pana_la, scutire_permanenta, motiv) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$membru_id, $data_pana_la, $scutire_permanenta, $motiv]);
+    $stmt = $pdo->prepare("INSERT INTO cotizatii_scutiri (membru_id, tip_scutire, data_scutire_de_la, data_scutire_pana_la, scutire_permanenta, motiv) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$membru_id, $tip_scutire, $data_de_la, $data_pana_la, $scutire_permanenta, $motiv]);
     return (int) $pdo->lastInsertId();
 }
 
-function cotizatii_actualizeaza_scutire($pdo, $id, $data_pana_la, $scutire_permanenta, $motiv) {
+function cotizatii_actualizeaza_scutire($pdo, $id, $tip_scutire, $data_de_la, $data_pana_la, $scutire_permanenta, $motiv) {
+    cotizatii_ensure_tables($pdo);
     $id = (int) $id;
     if ($id <= 0) return false;
-    $scutire_permanenta = $scutire_permanenta ? 1 : 0;
-    $data_pana_la = $scutire_permanenta ? null : ($data_pana_la ?: null);
+    $tip_scutire = trim((string)$tip_scutire);
+    if (!in_array($tip_scutire, ['temporar', 'permanent'], true)) {
+        $tip_scutire = $scutire_permanenta ? 'permanent' : 'temporar';
+    }
+    $scutire_permanenta = ($tip_scutire === 'permanent' || $scutire_permanenta) ? 1 : 0;
+    $data_de_la = $tip_scutire === 'temporar' ? ($data_de_la ?: date('Y-m-d')) : null;
+    $data_pana_la = $tip_scutire === 'temporar' ? ($data_pana_la ?: null) : null;
     $motiv = trim($motiv) ?: null;
-    $stmt = $pdo->prepare("UPDATE cotizatii_scutiri SET data_scutire_pana_la=?, scutire_permanenta=?, motiv=? WHERE id=?");
-    $stmt->execute([$data_pana_la, $scutire_permanenta, $motiv, $id]);
+    $stmt = $pdo->prepare("UPDATE cotizatii_scutiri SET tip_scutire=?, data_scutire_de_la=?, data_scutire_pana_la=?, scutire_permanenta=?, motiv=? WHERE id=?");
+    $stmt->execute([$tip_scutire, $data_de_la, $data_pana_la, $scutire_permanenta, $motiv, $id]);
     return $stmt->rowCount() >= 0;
+}
+
+function cotizatii_get_scutire_membru($pdo, $membru_id) {
+    cotizatii_ensure_tables($pdo);
+    $stmt = $pdo->prepare("
+        SELECT id, membru_id, tip_scutire, data_scutire_de_la, data_scutire_pana_la, scutire_permanenta, motiv
+        FROM cotizatii_scutiri
+        WHERE membru_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+    ");
+    $stmt->execute([(int)$membru_id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+function cotizatii_set_scutire_membru($pdo, $membru_id, $tip_scutire, $data_de_la, $data_pana_la, $motiv) {
+    cotizatii_ensure_tables($pdo);
+    $membru_id = (int)$membru_id;
+    if ($membru_id <= 0) return false;
+    $tip_scutire = trim((string)$tip_scutire);
+    if ($tip_scutire === 'nu' || $tip_scutire === '') {
+        $stmt = $pdo->prepare("DELETE FROM cotizatii_scutiri WHERE membru_id = ?");
+        $stmt->execute([$membru_id]);
+        return true;
+    }
+    $is_permanent = $tip_scutire === 'permanent';
+    if (!in_array($tip_scutire, ['temporar', 'permanent'], true)) {
+        $tip_scutire = 'temporar';
+    }
+    $data_de_la = $tip_scutire === 'temporar' ? ($data_de_la ?: date('Y-m-d')) : null;
+    $data_pana_la = $tip_scutire === 'temporar' ? ($data_pana_la ?: null) : null;
+    if ($tip_scutire === 'temporar' && $data_de_la && $data_pana_la && $data_de_la > $data_pana_la) {
+        [$data_de_la, $data_pana_la] = [$data_pana_la, $data_de_la];
+    }
+    $motiv = trim((string)$motiv) ?: null;
+    $existing = cotizatii_get_scutire_membru($pdo, $membru_id);
+    if ($existing) {
+        return cotizatii_actualizeaza_scutire($pdo, (int)$existing['id'], $tip_scutire, $data_de_la, $data_pana_la, $is_permanent, (string)$motiv);
+    }
+    return cotizatii_adauga_scutire($pdo, $membru_id, $tip_scutire, $data_de_la, $data_pana_la, $is_permanent, (string)$motiv) !== false;
 }
 
 function cotizatii_sterge_scutire($pdo, $id) {
