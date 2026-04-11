@@ -9,6 +9,18 @@ require_once APP_ROOT . '/includes/registratura_helper.php';
 require_once APP_ROOT . '/includes/log_helper.php';
 
 /**
+ * Normalizează explicit flag-ul "creare task" din formular/API.
+ * Acceptă doar valori pozitive explicite.
+ */
+function registratura_task_flag_enabled($value): int {
+    if (is_bool($value)) {
+        return $value ? 1 : 0;
+    }
+    $normalized = strtolower(trim((string)$value));
+    return in_array($normalized, ['1', 'on', 'true', 'yes', 'da'], true) ? 1 : 0;
+}
+
+/**
  * Lista inregistrari cu paginare.
  *
  * @return array ['inregistrari'=>[], 'total'=>int, 'total_pages'=>int]
@@ -55,7 +67,7 @@ function registratura_create(PDO $pdo, array $data, string $utilizator = 'Sistem
     $provine_din = trim($data['provine_din'] ?? '') ?: null;
     $continut_document = trim($data['continut_document'] ?? '') ?: null;
     $destinatar_document = trim($data['destinatar_document'] ?? '') ?: null;
-    $task_deschis = isset($data['task_deschis']) ? 1 : 0;
+    $task_deschis = registratura_task_flag_enabled($data['task_deschis'] ?? 0);
 
     try {
         // Retry în caz de conflict pe nr_intern (UNIQUE constraint)
@@ -119,7 +131,7 @@ function registratura_update(PDO $pdo, int $id, array $data, string $utilizator 
     $provine_din = trim($data['provine_din'] ?? '') ?: null;
     $continut_document = trim($data['continut_document'] ?? '') ?: null;
     $destinatar_document = trim($data['destinatar_document'] ?? '') ?: null;
-    $task_deschis = isset($data['task_deschis']) ? 1 : 0;
+    $task_deschis = registratura_task_flag_enabled($data['task_deschis'] ?? 0);
 
     try {
         $data_ora = $data_str . ' ' . date('H:i:s', strtotime($r['data_ora']));

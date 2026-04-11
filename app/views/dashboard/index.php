@@ -164,7 +164,7 @@
                             </button>
                         </div>
                     </form>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                    <div class="space-y-2 max-h-[28rem] overflow-y-auto">
                         <?php if (empty($librarie_lista)): ?>
                         <p class="text-sm text-slate-600 dark:text-gray-400"><?php echo $librarie_cautare !== '' ? 'Nu s-au gasit documente.' : 'Niciun document incarcat. <a href="/librarie-documente" class="text-amber-600 dark:text-amber-400 hover:underline">Librarie documente</a>'; ?></p>
                         <?php else: ?>
@@ -176,7 +176,7 @@
                             </div>
                             <span class="flex items-center gap-2 flex-shrink-0">
                                 <a href="util/descarca-librarie-document.php?id=<?php echo (int)$ld['id']; ?>&amp;print=1" target="_blank" rel="noopener noreferrer"
-                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-slate-500 transition"
+                                   class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded-lg focus:ring-2 focus:ring-orange-500 transition"
                                    aria-label="Print <?php echo htmlspecialchars($ld['nume_document']); ?>">
                                     <i data-lucide="printer" class="w-4 h-4" aria-hidden="true"></i>
                                     <span>Print</span>

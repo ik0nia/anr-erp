@@ -458,5 +458,6 @@
     }
 })();
 </script>
+<script src="/js/alert-auto-dismiss.js?v=1"></script>
 </body>
 </html>

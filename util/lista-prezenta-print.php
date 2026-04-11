@@ -38,8 +38,12 @@ $coloane = json_decode($lista['coloane_selectate'] ?? '[]', true) ?: ['nr_crt','
         @media print {
             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; margin: 0; }
             .no-print { display: none !important; }
-            thead { display: table-header-group; }
-            tr { page-break-inside: avoid; }
+            table { page-break-inside: auto; break-inside: auto; }
+            thead { display: table-header-group !important; }
+            tbody { display: table-row-group; }
+            tfoot { display: table-footer-group; }
+            tr { page-break-inside: avoid; break-inside: avoid; }
+            th, td { page-break-inside: avoid; break-inside: avoid; }
         }
         body { font-family: Arial, sans-serif; max-width: 210mm; margin: 0 auto; padding: 12mm; font-size: 11pt; color: #111; }
         .centrat { text-align: center; margin: 8px 0; }

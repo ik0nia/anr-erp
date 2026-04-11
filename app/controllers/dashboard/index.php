@@ -136,6 +136,9 @@ ensure_registru_v2_tables($pdo);
 librarie_documente_ensure_tables($pdo);
 $librarie_cautare = trim($_GET['cautare_librarie'] ?? '');
 $librarie_lista = librarie_documente_lista($pdo, $librarie_cautare);
+if ($librarie_cautare === '' && count($librarie_lista) > 7) {
+    $librarie_lista = array_slice($librarie_lista, 0, 7);
+}
 $subiecte_interactiuni_v2 = get_subiecte_interactiuni_v2($pdo);
 $interactiuni_v2_azi = dashboard_load_interactiuni_azi($pdo);
 

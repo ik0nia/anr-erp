@@ -38,6 +38,10 @@ function legitimatie_membru_actiuni(): array {
     ];
 }
 
+function membri_legitimatii_tipuri_actiune(): array {
+    return legitimatie_membru_actiuni();
+}
+
 function membri_legitimatii_tip_normalizat(string $tip): string {
     $tipuri = legitimatie_membru_actiuni();
     return isset($tipuri[$tip]) ? $tip : 'legitimatie_membru_nou';
@@ -166,4 +170,26 @@ function membri_legitimatii_statistici_interval(PDO $pdo, string $data_de_la, st
     } catch (PDOException $e) {}
 
     return $stats;
+}
+
+/**
+ * Alias backward-compatible pentru raport borderou legitimatii.
+ */
+function membri_legitimatii_borderou(PDO $pdo, string $data_de_la, string $data_pana_la): array {
+    $rows = membri_legitimatii_raport_interval($pdo, $data_de_la, $data_pana_la);
+    foreach ($rows as &$row) {
+        if (!isset($row['utilizator']) || $row['utilizator'] === '') {
+            $row['utilizator'] = (string)($row['created_by'] ?? 'Sistem');
+        }
+    }
+    unset($row);
+
+    return $rows;
+}
+
+/**
+ * Alias backward-compatible pentru statistici interval.
+ */
+function membri_legitimatii_statistici(PDO $pdo, string $data_de_la, string $data_pana_la): array {
+    return membri_legitimatii_statistici_interval($pdo, $data_de_la, $data_pana_la);
 }

@@ -50,7 +50,7 @@
                                 <td class="px-4 py-3 text-right" style="overflow: visible; position: relative;">
                                     <span class="inline-flex items-center gap-2 justify-end">
                                         <a href="util/print-librarie-document.php?id=<?php echo (int)$d['id']; ?>" target="_blank" rel="noopener noreferrer"
-                                           class="inline-flex items-center px-2 py-1 text-sm text-slate-700 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 focus:ring-2 focus:ring-amber-500 rounded"
+                                           class="inline-flex items-center px-2 py-1 text-sm bg-orange-500 hover:bg-orange-600 text-white focus:ring-2 focus:ring-orange-500 rounded"
                                            aria-label="Tipărește <?php echo htmlspecialchars($d['nume_document']); ?>">
                                             <i data-lucide="printer" class="w-4 h-4 mr-1" aria-hidden="true"></i> Print
                                         </a>
