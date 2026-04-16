@@ -14,6 +14,8 @@ require_once APP_ROOT . '/includes/membri_legitimatii_helper.php';
 $eroare = '';
 $succes = '';
 $membru_id = (int)($_GET['id'] ?? 0);
+$utilizator_curent = (string)($_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? $_SESSION['username'] ?? 'Sistem');
+$utilizator_id_curent = (int)($_SESSION['utilizator_id'] ?? $_SESSION['user_id'] ?? 0);
 
 if ($membru_id <= 0) {
     header('Location: /membri');
@@ -26,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_atasament'])) 
     csrf_require_valid();
     $tip_atasament = $_POST['tip_atasament'] ?? 'certificat_handicap';
     $nota_atasament = trim($_POST['nota_atasament'] ?? '');
-    $uploaded_by = $_SESSION['utilizator'] ?? 'Sistem';
+    $uploaded_by = $utilizator_curent;
 
     if (isset($_FILES['fisier_atasament']) && $_FILES['fisier_atasament']['error'] === UPLOAD_ERR_OK) {
         $result = membri_atasament_adauga($pdo, $membru_id, $tip_atasament, $_FILES['fisier_atasament'], $nota_atasament, $uploaded_by);
@@ -108,8 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_membru']
                 $nume_complet = $GLOBALS['_membri_save_nume_complet'] ?? '';
                 $notite = !empty($modificari) ? implode("; ", $modificari) : 'Actualizare date profil';
 
-                $utilizator = $_SESSION['utilizator'] ?? 'Sistem';
-                $utilizator_id = $_SESSION['utilizator_id'] ?? null;
+                $utilizator = $utilizator_curent;
+                $utilizator_id = $utilizator_id_curent > 0 ? $utilizator_id_curent : null;
 
                 // Obtinem telefonul membrului pentru referinta
                 $stmt_tel = $pdo->prepare("SELECT telefonnev FROM membri WHERE id = ?");
@@ -148,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_legitimatie_
     // Acceptam atat naming-ul vechi, cat si pe cel nou din formular.
     $data_actiune = trim((string)($_POST['data_actiune'] ?? ($_POST['legitimatie_data'] ?? '')));
     $tip_actiune = trim((string)($_POST['tip_actiune'] ?? ($_POST['legitimatie_actiune'] ?? '')));
-    $utilizator_actiune = (string)($_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? 'Sistem');
+    $utilizator_actiune = $utilizator_curent;
 
     $save_legitimatie = membri_legitimatie_adauga($pdo, $membru_id, $data_actiune, $tip_actiune, $utilizator_actiune);
     if ($save_legitimatie['success']) {
