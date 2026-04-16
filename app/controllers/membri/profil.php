@@ -145,8 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizeaza_membru']
 // --- POST: Salvare legitimație membru ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_legitimatie_membru'])) {
     csrf_require_valid();
-    $data_actiune = trim((string)($_POST['data_actiune'] ?? ''));
-    $tip_actiune = trim((string)($_POST['tip_actiune'] ?? ''));
+    // Acceptam atat naming-ul vechi, cat si pe cel nou din formular.
+    $data_actiune = trim((string)($_POST['data_actiune'] ?? ($_POST['legitimatie_data'] ?? '')));
+    $tip_actiune = trim((string)($_POST['tip_actiune'] ?? ($_POST['legitimatie_actiune'] ?? '')));
     $utilizator_actiune = (string)($_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? 'Sistem');
 
     $save_legitimatie = membri_legitimatie_adauga($pdo, $membru_id, $data_actiune, $tip_actiune, $utilizator_actiune);
