@@ -276,7 +276,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
 
             <!-- Card 1: Date Personale -->
-            <section class="lg:order-1 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-7 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
@@ -381,7 +381,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
             </section>
 
             <!-- Card 2: Date Contact -->
-            <section class="lg:order-2 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-8 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="phone" class="w-5 h-5" aria-hidden="true"></i>
@@ -465,7 +465,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
             </section>
 
             <!-- Card 3: Domiciliu -->
-            <section class="lg:order-3 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-9 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
@@ -943,7 +943,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
             </section>
 
             <!-- Card 6: Dosar -->
-            <section class="lg:order-7 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-1 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="folder" class="w-5 h-5" aria-hidden="true"></i>
@@ -1010,7 +1010,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
             </section>
 
             <!-- Card 6b: Legitimatie membru -->
-            <section class="lg:order-8 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-2 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="badge-check" class="w-5 h-5" aria-hidden="true"></i>
@@ -1067,7 +1067,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
             </section>
 
             <!-- Card 7: Observatii -->
-            <section class="lg:order-10 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-11 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="file-text" class="w-5 h-5" aria-hidden="true"></i>
@@ -1171,7 +1171,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
             </section>
 
             <!-- Card: Acces Biblioteca Online -->
-            <section class="lg:order-9 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-10 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="book-open" class="w-5 h-5" aria-hidden="true"></i>
@@ -1220,7 +1220,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
             </section>
 
             <!-- Card 8: Atasamente Documente -->
-            <section class="lg:order-11 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
+            <section class="lg:order-3 h-full flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700">
                 <div class="flex justify-between items-center p-4 border-b border-slate-200 dark:border-gray-700">
                     <h3 class="text-md font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <i data-lucide="paperclip" class="w-5 h-5" aria-hidden="true"></i>
