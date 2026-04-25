@@ -93,7 +93,9 @@
                         <select id="a4_preset" name="a4_preset" aria-describedby="a4-preset-help"
                                 class="w-full sm:w-[28rem] rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
                             <option value="custom" <?php echo $a4_preset_input === 'custom' ? 'selected' : ''; ?>>Personalizat (manual)</option>
+                            <option value="a4_2x5" <?php echo $a4_preset_input === 'a4_2x5' ? 'selected' : ''; ?>>Plicuri foarte mari - 2 coloane x 5 randuri</option>
                             <option value="a4_2x7" <?php echo $a4_preset_input === 'a4_2x7' ? 'selected' : ''; ?>>Plicuri mari - 2 coloane x 7 randuri</option>
+                            <option value="a4_3x7" <?php echo $a4_preset_input === 'a4_3x7' ? 'selected' : ''; ?>>Plicuri medii - 3 coloane x 7 randuri</option>
                             <option value="a4_3x8" <?php echo $a4_preset_input === 'a4_3x8' ? 'selected' : ''; ?>>Plicuri standard - 3 coloane x 8 randuri</option>
                             <option value="a4_3x10" <?php echo $a4_preset_input === 'a4_3x10' ? 'selected' : ''; ?>>Etichete compacte - 3 coloane x 10 randuri</option>
                             <option value="a4_4x10" <?php echo $a4_preset_input === 'a4_4x10' ? 'selected' : ''; ?>>Etichete mici - 4 coloane x 10 randuri</option>
@@ -227,7 +229,9 @@
         }
 
         var presetMap = {
+            a4_2x5: { top: 12, bottom: 12, left: 12, right: 12, cols: 2, rows: 5 },
             a4_2x7: { top: 10, bottom: 10, left: 10, right: 10, cols: 2, rows: 7 },
+            a4_3x7: { top: 10, bottom: 10, left: 8, right: 8, cols: 3, rows: 7 },
             a4_3x8: { top: 8, bottom: 8, left: 7, right: 7, cols: 3, rows: 8 },
             a4_3x10: { top: 6, bottom: 6, left: 6, right: 6, cols: 3, rows: 10 },
             a4_4x10: { top: 6, bottom: 6, left: 5, right: 5, cols: 4, rows: 10 }
