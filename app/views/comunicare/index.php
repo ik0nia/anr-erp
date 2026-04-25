@@ -88,6 +88,20 @@
                         Margini pagina in mm (sus/jos/stanga/dreapta), numar coloane/randuri.
                         Fiecare eticheta A4 pastreaza automat o margine interna neprintabila de 1.5 mm pe toate laturile.
                     </p>
+                    <div class="mb-4">
+                        <label for="a4_preset" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Format frecvent A4</label>
+                        <select id="a4_preset" name="a4_preset" aria-describedby="a4-preset-help"
+                                class="w-full sm:w-[28rem] rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                            <option value="custom" <?php echo $a4_preset_input === 'custom' ? 'selected' : ''; ?>>Personalizat (manual)</option>
+                            <option value="a4_2x7" <?php echo $a4_preset_input === 'a4_2x7' ? 'selected' : ''; ?>>Plicuri mari - 2 coloane x 7 randuri</option>
+                            <option value="a4_3x8" <?php echo $a4_preset_input === 'a4_3x8' ? 'selected' : ''; ?>>Plicuri standard - 3 coloane x 8 randuri</option>
+                            <option value="a4_3x10" <?php echo $a4_preset_input === 'a4_3x10' ? 'selected' : ''; ?>>Etichete compacte - 3 coloane x 10 randuri</option>
+                            <option value="a4_4x10" <?php echo $a4_preset_input === 'a4_4x10' ? 'selected' : ''; ?>>Etichete mici - 4 coloane x 10 randuri</option>
+                        </select>
+                        <p id="a4-preset-help" class="mt-1 text-xs text-slate-600 dark:text-gray-400">
+                            Preseturile completeaza automat marginile si grila, apoi pot fi ajustate manual.
+                        </p>
+                    </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
@@ -200,9 +214,46 @@
         var tipSelect = document.getElementById('tip_etichete');
         var rolaConfig = document.getElementById('config-etichete-rola');
         var a4Config = document.getElementById('config-etichete-a4');
+        var presetSelect = document.getElementById('a4_preset');
+        var a4Top = document.getElementById('a4_margin_top_mm');
+        var a4Bottom = document.getElementById('a4_margin_bottom_mm');
+        var a4Left = document.getElementById('a4_margin_left_mm');
+        var a4Right = document.getElementById('a4_margin_right_mm');
+        var a4Cols = document.getElementById('a4_cols');
+        var a4Rows = document.getElementById('a4_rows');
         if (!tipSelect || !rolaConfig || !a4Config) {
             if (typeof lucide !== 'undefined') lucide.createIcons();
             return;
+        }
+
+        var presetMap = {
+            a4_2x7: { top: 10, bottom: 10, left: 10, right: 10, cols: 2, rows: 7 },
+            a4_3x8: { top: 8, bottom: 8, left: 7, right: 7, cols: 3, rows: 8 },
+            a4_3x10: { top: 6, bottom: 6, left: 6, right: 6, cols: 3, rows: 10 },
+            a4_4x10: { top: 6, bottom: 6, left: 5, right: 5, cols: 4, rows: 10 }
+        };
+
+        function applyPresetIfAvailable() {
+            if (!presetSelect || !a4Top || !a4Bottom || !a4Left || !a4Right || !a4Cols || !a4Rows) {
+                return;
+            }
+            var selectedPreset = presetSelect.value;
+            if (!presetMap[selectedPreset]) {
+                return;
+            }
+            var preset = presetMap[selectedPreset];
+            a4Top.value = preset.top;
+            a4Bottom.value = preset.bottom;
+            a4Left.value = preset.left;
+            a4Right.value = preset.right;
+            a4Cols.value = preset.cols;
+            a4Rows.value = preset.rows;
+        }
+
+        function markPresetAsCustom() {
+            if (presetSelect && presetSelect.value !== 'custom') {
+                presetSelect.value = 'custom';
+            }
         }
 
         function updateTipEticheteUI() {
@@ -213,7 +264,17 @@
             a4Config.setAttribute('aria-hidden', !isA4 ? 'true' : 'false');
         }
 
+        if (presetSelect) {
+            presetSelect.addEventListener('change', applyPresetIfAvailable);
+        }
+        [a4Top, a4Bottom, a4Left, a4Right, a4Cols, a4Rows].forEach(function (el) {
+            if (el) {
+                el.addEventListener('input', markPresetAsCustom);
+            }
+        });
+
         tipSelect.addEventListener('change', updateTipEticheteUI);
+        applyPresetIfAvailable();
         updateTipEticheteUI();
     })();
     if (typeof lucide !== 'undefined') lucide.createIcons();
