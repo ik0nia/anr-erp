@@ -187,14 +187,17 @@ function comunicare_count_membri(PDO $pdo, array $filters): int {
 
 /**
  * Genereaza PDF cu etichete pentru fiecare membru.
- * Fiecare pagina = o eticheta cu dimensiunea specificata.
+ * - Rola: fiecare pagina este o eticheta cu dimensiunea specificata.
+ * - A4: etichetele sunt asezate intr-o grila (coloane x randuri), cu margini de pagina configurabile.
  *
- * @param array $membri     Lista de membri
- * @param float $latime_mm  Latimea etichetei in mm
- * @param float $inaltime_mm Inaltimea etichetei in mm
+ * @param array $membri      Lista de membri
+ * @param float $latime_mm   Latimea etichetei in mm (utilizat pentru rola)
+ * @param float $inaltime_mm Inaltimea etichetei in mm (utilizat pentru rola)
+ * @param array $options     Optiuni: tip, a4_margin_top_mm, a4_margin_bottom_mm, a4_margin_left_mm,
+ *                           a4_margin_right_mm, a4_cols, a4_rows
  * @return array ['success'=>bool, 'path'=>string|null, 'filename'=>string|null, 'error'=>string|null]
  */
-function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, float $inaltime_mm): array {
+function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, float $inaltime_mm, array $options = []): array {
     if (empty($membri)) {
         return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Nu sunt membri pentru generare etichete.'];
     }
@@ -205,11 +208,7 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
     }
     require_once $classFile;
 
-    // Validare dimensiuni
-    if ($latime_mm < 30) $latime_mm = 30;
-    if ($latime_mm > 210) $latime_mm = 210;
-    if ($inaltime_mm < 15) $inaltime_mm = 15;
-    if ($inaltime_mm > 297) $inaltime_mm = 297;
+    $tip = (($options['tip'] ?? 'rola') === 'a4') ? 'a4' : 'rola';
 
     $output_dir = APP_ROOT . '/uploads/comunicare/';
     if (!is_dir($output_dir)) {
@@ -223,62 +222,138 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
         $pdf = new \FPDF();
         $pdf->SetAutoPageBreak(false);
 
-        // Calcul font size proportional cu eticheta
-        $font_size_nume = min(12, max(7, $inaltime_mm / 5));
-        $font_size_adresa = min(10, max(6, $inaltime_mm / 6));
-        $margin = 3; // mm
+        $encode_text = static function (string $text): string {
+            $encoded = iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $text);
+            return ($encoded !== false) ? $encoded : '';
+        };
 
-        $pdf->SetMargins($margin, $margin, $margin);
-        $orientation = ($latime_mm > $inaltime_mm) ? 'L' : 'P';
+        $draw_label = static function (\FPDF $pdf_instance, array $membru, float $x, float $y, float $label_width, float $label_height, float $inner_margin, callable $encode_text_cb): void {
+            $inner_x = $x + $inner_margin;
+            $inner_y = $y + $inner_margin;
+            $inner_width = max(10.0, $label_width - (2 * $inner_margin));
+            $inner_height = max(10.0, $label_height - (2 * $inner_margin));
 
-        foreach ($membri as $membru) {
-            $pdf->AddPage($orientation, [$latime_mm, $inaltime_mm]);
+            $font_size_nume = min(12, max(7, $inner_height / 5));
+            $font_size_adresa = min(10, max(6, $inner_height / 6));
+            $font_size_data = min(7, max(5, $inner_height / 10));
 
-            // Nume Prenume
-            $pdf->SetFont('Arial', 'B', $font_size_nume);
+            $line_height_nume = max(3.0, $font_size_nume * 0.45);
+            $line_height_adresa = max(2.6, $font_size_adresa * 0.45);
+            $line_height_data = max(2.2, $font_size_data * 0.45);
+
             $nume_complet = trim(($membru['nume'] ?? '') . ' ' . ($membru['prenume'] ?? ''));
-            $pdf->SetXY($margin, $margin);
-            $pdf->Cell($latime_mm - 2 * $margin, $font_size_nume * 0.5, iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $nume_complet), 0, 1);
-
-            // Adresa: str, nr, bl, sc, et, ap
-            $pdf->SetFont('Arial', '', $font_size_adresa);
-            $linie_h = $font_size_adresa * 0.45;
-            $w = $latime_mm - 2 * $margin;
+            if ($nume_complet === '') {
+                $nume_complet = 'Membru';
+            }
 
             $adresa_parts = [];
             if (!empty($membru['domstr'])) $adresa_parts[] = 'str. ' . $membru['domstr'];
-            if (!empty($membru['domnr']))  $adresa_parts[] = 'nr. ' . $membru['domnr'];
-            if (!empty($membru['dombl']))  $adresa_parts[] = 'bl. ' . $membru['dombl'];
-            if (!empty($membru['domsc']))  $adresa_parts[] = 'sc. ' . $membru['domsc'];
-            if (!empty($membru['domet']))  $adresa_parts[] = 'et. ' . $membru['domet'];
-            if (!empty($membru['domap']))  $adresa_parts[] = 'ap. ' . $membru['domap'];
+            if (!empty($membru['domnr'])) $adresa_parts[] = 'nr. ' . $membru['domnr'];
+            if (!empty($membru['dombl'])) $adresa_parts[] = 'bl. ' . $membru['dombl'];
+            if (!empty($membru['domsc'])) $adresa_parts[] = 'sc. ' . $membru['domsc'];
+            if (!empty($membru['domet'])) $adresa_parts[] = 'et. ' . $membru['domet'];
+            if (!empty($membru['domap'])) $adresa_parts[] = 'ap. ' . $membru['domap'];
             $adresa_linia1 = implode(', ', $adresa_parts);
 
-            if ($adresa_linia1 !== '') {
-                $pdf->Cell($w, $linie_h, iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $adresa_linia1), 0, 1);
-            }
-
-            // Cod postal + Localitate
             $loc_parts = [];
             if (!empty($membru['codpost'])) $loc_parts[] = $membru['codpost'];
-            if (!empty($membru['domloc']))  $loc_parts[] = $membru['domloc'];
-            $linia2 = implode(' ', $loc_parts);
-            if ($linia2 !== '') {
-                $pdf->Cell($w, $linie_h, iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $linia2), 0, 1);
-            }
+            if (!empty($membru['domloc'])) $loc_parts[] = $membru['domloc'];
+            $adresa_linia2 = implode(' ', $loc_parts);
 
-            // Judet
+            $adresa_linia3 = '';
             if (!empty($membru['judet_domiciliu'])) {
-                $pdf->Cell($w, $linie_h, iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', 'jud. ' . $membru['judet_domiciliu']), 0, 1);
+                $adresa_linia3 = 'jud. ' . $membru['judet_domiciliu'];
             }
 
-            // Data tiparirii - dreapta jos, scris mic
-            $font_size_data = min(7, max(5, $inaltime_mm / 9));
+            $cursor_y = $inner_y;
+            $bottom_limit = $inner_y + $inner_height - $line_height_data - 0.4;
+
+            $pdf_instance->SetFont('Arial', 'B', $font_size_nume);
+            if (($cursor_y + $line_height_nume) <= $bottom_limit) {
+                $pdf_instance->SetXY($inner_x, $cursor_y);
+                $pdf_instance->Cell($inner_width, $line_height_nume, $encode_text_cb($nume_complet), 0, 1);
+                $cursor_y += $line_height_nume;
+            }
+
+            $pdf_instance->SetFont('Arial', '', $font_size_adresa);
+            foreach ([$adresa_linia1, $adresa_linia2, $adresa_linia3] as $linie) {
+                if ($linie === '') {
+                    continue;
+                }
+                if (($cursor_y + $line_height_adresa) > $bottom_limit) {
+                    break;
+                }
+                $pdf_instance->SetXY($inner_x, $cursor_y);
+                $pdf_instance->Cell($inner_width, $line_height_adresa, $encode_text_cb($linie), 0, 1);
+                $cursor_y += $line_height_adresa;
+            }
+
             $data_tiparire = 'Data tiparirii: ' . date('d/m/Y');
-            $pdf->SetFont('Arial', '', $font_size_data);
-            $text_width = $pdf->GetStringWidth(iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $data_tiparire));
-            $pdf->SetXY($latime_mm - $margin - $text_width, $inaltime_mm - $margin - ($font_size_data * 0.4));
-            $pdf->Cell($text_width, $font_size_data * 0.4, iconv('UTF-8', 'windows-1252//TRANSLIT//IGNORE', $data_tiparire), 0, 0, 'R');
+            $pdf_instance->SetFont('Arial', '', $font_size_data);
+            $data_text = $encode_text_cb($data_tiparire);
+            $text_width = min($inner_width, $pdf_instance->GetStringWidth($data_text));
+            $data_y = $inner_y + $inner_height - $line_height_data;
+            $data_x = $inner_x + max(0.0, $inner_width - $text_width);
+            $pdf_instance->SetXY($data_x, $data_y);
+            $pdf_instance->Cell($text_width, $line_height_data, $data_text, 0, 0, 'R');
+        };
+
+        if ($tip === 'a4') {
+            $margin_top = (float)($options['a4_margin_top_mm'] ?? 10);
+            $margin_bottom = (float)($options['a4_margin_bottom_mm'] ?? 10);
+            $margin_left = (float)($options['a4_margin_left_mm'] ?? 8);
+            $margin_right = (float)($options['a4_margin_right_mm'] ?? 8);
+            $cols = (int)($options['a4_cols'] ?? 3);
+            $rows = (int)($options['a4_rows'] ?? 8);
+
+            $margin_top = max(0.0, min(40.0, $margin_top));
+            $margin_bottom = max(0.0, min(40.0, $margin_bottom));
+            $margin_left = max(0.0, min(40.0, $margin_left));
+            $margin_right = max(0.0, min(40.0, $margin_right));
+            $cols = max(1, min(10, $cols));
+            $rows = max(1, min(20, $rows));
+
+            $page_width = 210.0;
+            $page_height = 297.0;
+            $printable_width = $page_width - $margin_left - $margin_right;
+            $printable_height = $page_height - $margin_top - $margin_bottom;
+
+            if ($printable_width <= 0 || $printable_height <= 0) {
+                return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Marginile A4 sunt prea mari pentru o pagina A4.'];
+            }
+
+            $label_width = $printable_width / $cols;
+            $label_height = $printable_height / $rows;
+            if ($label_width < 15 || $label_height < 10) {
+                return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Configuratia A4 genereaza etichete prea mici. Reduceti numarul de randuri/coloane sau marginile.'];
+            }
+
+            $labels_per_page = $rows * $cols;
+            foreach (array_values($membri) as $index => $membru) {
+                if ($index % $labels_per_page === 0) {
+                    $pdf->AddPage('P', 'A4');
+                }
+
+                $position_on_page = $index % $labels_per_page;
+                $row_idx = intdiv($position_on_page, $cols);
+                $col_idx = $position_on_page % $cols;
+
+                $label_x = $margin_left + ($col_idx * $label_width);
+                $label_y = $margin_top + ($row_idx * $label_height);
+
+                // Zona interna neprintabila ceruta: 1.5mm pe fiecare latura a etichetei.
+                $draw_label($pdf, $membru, $label_x, $label_y, $label_width, $label_height, 1.5, $encode_text);
+            }
+        } else {
+            // Validare dimensiuni pentru etichete pe rola.
+            $latime_mm = max(30, min(210, $latime_mm));
+            $inaltime_mm = max(15, min(297, $inaltime_mm));
+
+            $orientation = ($latime_mm > $inaltime_mm) ? 'L' : 'P';
+            foreach ($membri as $membru) {
+                $pdf->AddPage($orientation, [$latime_mm, $inaltime_mm]);
+                $draw_label($pdf, $membru, 0.0, 0.0, $latime_mm, $inaltime_mm, 3.0, $encode_text);
+            }
         }
 
         $pdf->Output('F', $output_path);

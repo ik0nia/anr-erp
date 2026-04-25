@@ -52,18 +52,74 @@
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="genereaza_etichete" value="1">
 
-                <!-- Dimensiuni eticheta -->
                 <fieldset class="border border-slate-200 dark:border-gray-700 rounded-lg p-4">
-                    <legend class="text-sm font-medium text-slate-700 dark:text-gray-300 px-2">Dimensiuni Eticheta (mm)</legend>
+                    <legend class="text-sm font-medium text-slate-700 dark:text-gray-300 px-2">Tip etichete</legend>
+                    <div>
+                        <label for="tip_etichete" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Alege formatul de printare</label>
+                        <select id="tip_etichete" name="tip_etichete" aria-controls="config-etichete-rola config-etichete-a4"
+                                class="w-full sm:w-80 rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                            <option value="rola" <?php echo $tip_etichete_selectat === 'rola' ? 'selected' : ''; ?>>Etichete rola (imprimanta termica)</option>
+                            <option value="a4" <?php echo $tip_etichete_selectat === 'a4' ? 'selected' : ''; ?>>Etichete A4 (coala adeziva)</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <!-- Dimensiuni eticheta rola -->
+                <fieldset id="config-etichete-rola" class="border border-slate-200 dark:border-gray-700 rounded-lg p-4 <?php echo $tip_etichete_selectat === 'rola' ? '' : 'hidden'; ?>">
+                    <legend class="text-sm font-medium text-slate-700 dark:text-gray-300 px-2">Configurare etichete rola (mm)</legend>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                         <div>
                             <label for="latime_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Latime (mm)</label>
-                            <input type="number" id="latime_mm" name="latime_mm" value="89" min="30" max="210" step="1"
+                            <input type="number" id="latime_mm" name="latime_mm" value="<?php echo htmlspecialchars((string)$latime_mm_input); ?>" min="30" max="210" step="1"
                                    class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
                         </div>
                         <div>
                             <label for="inaltime_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Inaltime (mm)</label>
-                            <input type="number" id="inaltime_mm" name="inaltime_mm" value="36" min="15" max="297" step="1"
+                            <input type="number" id="inaltime_mm" name="inaltime_mm" value="<?php echo htmlspecialchars((string)$inaltime_mm_input); ?>" min="15" max="297" step="1"
+                                   class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Configurare etichete A4 -->
+                <fieldset id="config-etichete-a4" class="border border-slate-200 dark:border-gray-700 rounded-lg p-4 <?php echo $tip_etichete_selectat === 'a4' ? '' : 'hidden'; ?>">
+                    <legend class="text-sm font-medium text-slate-700 dark:text-gray-300 px-2">Configurare etichete A4</legend>
+                    <p class="text-xs text-slate-600 dark:text-gray-400 mt-1 mb-4">
+                        Margini pagina in mm (sus/jos/stanga/dreapta), numar coloane/randuri.
+                        Fiecare eticheta A4 pastreaza automat o margine interna neprintabila de 1.5 mm pe toate laturile.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label for="a4_margin_top_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Margine sus (mm)</label>
+                            <input type="number" id="a4_margin_top_mm" name="a4_margin_top_mm" value="<?php echo htmlspecialchars((string)$a4_margin_top_mm_input); ?>" min="0" max="40" step="0.1"
+                                   class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="a4_margin_bottom_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Margine jos (mm)</label>
+                            <input type="number" id="a4_margin_bottom_mm" name="a4_margin_bottom_mm" value="<?php echo htmlspecialchars((string)$a4_margin_bottom_mm_input); ?>" min="0" max="40" step="0.1"
+                                   class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="a4_margin_left_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Margine stanga (mm)</label>
+                            <input type="number" id="a4_margin_left_mm" name="a4_margin_left_mm" value="<?php echo htmlspecialchars((string)$a4_margin_left_mm_input); ?>" min="0" max="40" step="0.1"
+                                   class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="a4_margin_right_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Margine dreapta (mm)</label>
+                            <input type="number" id="a4_margin_right_mm" name="a4_margin_right_mm" value="<?php echo htmlspecialchars((string)$a4_margin_right_mm_input); ?>" min="0" max="40" step="0.1"
+                                   class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label for="a4_cols" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Numar coloane</label>
+                            <input type="number" id="a4_cols" name="a4_cols" value="<?php echo (int)$a4_cols_input; ?>" min="1" max="10" step="1"
+                                   class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="a4_rows" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Numar randuri</label>
+                            <input type="number" id="a4_rows" name="a4_rows" value="<?php echo (int)$a4_rows_input; ?>" min="1" max="20" step="1"
                                    class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
                         </div>
                     </div>
@@ -140,6 +196,26 @@
     </div>
 </main>
 <script>
+    (function () {
+        var tipSelect = document.getElementById('tip_etichete');
+        var rolaConfig = document.getElementById('config-etichete-rola');
+        var a4Config = document.getElementById('config-etichete-a4');
+        if (!tipSelect || !rolaConfig || !a4Config) {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            return;
+        }
+
+        function updateTipEticheteUI() {
+            var isA4 = tipSelect.value === 'a4';
+            rolaConfig.classList.toggle('hidden', isA4);
+            a4Config.classList.toggle('hidden', !isA4);
+            rolaConfig.setAttribute('aria-hidden', isA4 ? 'true' : 'false');
+            a4Config.setAttribute('aria-hidden', !isA4 ? 'true' : 'false');
+        }
+
+        tipSelect.addEventListener('change', updateTipEticheteUI);
+        updateTipEticheteUI();
+    })();
     if (typeof lucide !== 'undefined') lucide.createIcons();
 </script>
 </body>

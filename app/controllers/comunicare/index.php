@@ -17,6 +17,15 @@ $tab = isset($_GET['tab']) && in_array($_GET['tab'], $valid_tabs) ? $_GET['tab']
 
 // Rezultat generare
 $rezultat_generare = null;
+$tip_etichete_selectat = (($_POST['tip_etichete'] ?? 'rola') === 'a4') ? 'a4' : 'rola';
+$latime_mm_input = isset($_POST['latime_mm']) ? (float)$_POST['latime_mm'] : 89.0;
+$inaltime_mm_input = isset($_POST['inaltime_mm']) ? (float)$_POST['inaltime_mm'] : 36.0;
+$a4_margin_top_mm_input = isset($_POST['a4_margin_top_mm']) ? (float)$_POST['a4_margin_top_mm'] : 10.0;
+$a4_margin_bottom_mm_input = isset($_POST['a4_margin_bottom_mm']) ? (float)$_POST['a4_margin_bottom_mm'] : 10.0;
+$a4_margin_left_mm_input = isset($_POST['a4_margin_left_mm']) ? (float)$_POST['a4_margin_left_mm'] : 8.0;
+$a4_margin_right_mm_input = isset($_POST['a4_margin_right_mm']) ? (float)$_POST['a4_margin_right_mm'] : 8.0;
+$a4_cols_input = isset($_POST['a4_cols']) ? (int)$_POST['a4_cols'] : 3;
+$a4_rows_input = isset($_POST['a4_rows']) ? (int)$_POST['a4_rows'] : 8;
 
 // --- POST actions ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -35,19 +44,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     if (isset($_POST['genereaza_etichete'])) {
-        $latime_mm  = (float)($_POST['latime_mm'] ?? 89);
-        $inaltime_mm = (float)($_POST['inaltime_mm'] ?? 36);
+        $tip_etichete = $tip_etichete_selectat;
+        $latime_mm  = $latime_mm_input;
+        $inaltime_mm = $inaltime_mm_input;
+        $etichete_options = [
+            'tip' => $tip_etichete,
+            'a4_margin_top_mm' => $a4_margin_top_mm_input,
+            'a4_margin_bottom_mm' => $a4_margin_bottom_mm_input,
+            'a4_margin_left_mm' => $a4_margin_left_mm_input,
+            'a4_margin_right_mm' => $a4_margin_right_mm_input,
+            'a4_cols' => $a4_cols_input,
+            'a4_rows' => $a4_rows_input,
+        ];
 
         $membri = comunicare_filtreaza_membri($pdo, $filters);
 
         if (empty($membri)) {
             $eroare = 'Nu au fost gasiti membri cu filtrele selectate.';
         } else {
-            $result = comunicare_genereaza_etichete_pdf($membri, $latime_mm, $inaltime_mm);
+            $result = comunicare_genereaza_etichete_pdf($membri, $latime_mm, $inaltime_mm, $etichete_options);
 
             if ($result['success']) {
                 comunicare_log_batch($pdo, $membri, 'etichete', $utilizator);
-                log_activitate($pdo, 'Comunicare: Generat ' . count($membri) . ' etichete', $utilizator);
+                log_activitate($pdo, 'Comunicare: Generat ' . count($membri) . ' etichete (' . strtoupper($tip_etichete) . ')', $utilizator);
                 $rezultat_generare = $result;
                 $succes = 'Au fost generate ' . count($membri) . ' etichete cu succes.';
             } else {
