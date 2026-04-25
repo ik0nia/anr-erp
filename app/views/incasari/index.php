@@ -33,8 +33,163 @@
     </header>
 
     <div class="p-6 overflow-y-auto flex-1">
+        <nav class="mb-4 flex flex-wrap gap-2 border-b border-slate-200 dark:border-gray-700" role="tablist" aria-label="Taburi modul încasări">
+            <a href="/incasari"
+               role="tab"
+               aria-selected="<?php echo $tab === 'lista' ? 'true' : 'false'; ?>"
+               class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab === 'lista' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
+                Lista încasări
+            </a>
+            <a href="/incasari?tab=import_csv"
+               role="tab"
+               aria-selected="<?php echo $tab === 'import_csv' ? 'true' : 'false'; ?>"
+               class="px-4 py-2 rounded-t-lg font-medium <?php echo $tab === 'import_csv' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-b-0 border-slate-200 dark:border-gray-700' : 'text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700'; ?>">
+                Import Încasări CSV
+            </a>
+        </nav>
+
+        <?php if ($tab === 'import_csv'): ?>
+            <?php if (!empty($import_eroare)): ?>
+                <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 rounded-lg" role="alert">
+                    <?php echo htmlspecialchars($import_eroare); ?>
+                </div>
+            <?php endif; ?>
+            <?php if (!empty($import_succes)): ?>
+                <div class="mb-4 p-4 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200 rounded-lg" role="status">
+                    <?php echo htmlspecialchars($import_succes); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($import_step === 'upload'): ?>
+                <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="inc-import-upload-heading">
+                    <h2 id="inc-import-upload-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+                        1. Încarcă fișierul CSV cu încasări istorice
+                    </h2>
+                    <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
+                        Import pentru încasări anterioare utilizării ERP-ului (mod plată: <strong>Chitanță veche</strong>).
+                    </p>
+                    <form method="post" action="/incasari?tab=import_csv" enctype="multipart/form-data" class="space-y-4">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="incasari_import_upload" value="1">
+                        <div>
+                            <label for="fisier_csv" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Fișier CSV</label>
+                            <input type="file" id="fisier_csv" name="fisier_csv" accept=".csv" required
+                                   class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                            <p class="text-xs text-slate-600 dark:text-gray-400 mt-1">Se acceptă CSV delimitat cu virgulă sau punct și virgulă, maxim 10 MB.</p>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
+                                Continuă la mapare
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            <?php elseif ($import_step === 'map' && $import_csv_data): ?>
+                <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="inc-import-map-heading">
+                    <h2 id="inc-import-map-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-3">
+                        2. Mapare coloane CSV
+                    </h2>
+                    <p class="text-sm text-slate-700 dark:text-gray-300 mb-2">
+                        <strong><?php echo count($import_csv_data['rows']); ?></strong> rânduri detectate. Maparea <strong>Nr. dosar</strong> este obligatorie.
+                    </p>
+                    <p class="text-sm text-slate-600 dark:text-gray-400 mb-4">
+                        Câmpuri relevante: Nr. dosar, Data încasării, Tip încasare (cotizație/donație), An cotizație (2025/2026), Valoare încasată.
+                    </p>
+
+                    <form method="post" action="/incasari?tab=import_csv" class="space-y-4">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="incasari_import_execute" value="1">
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label for="tip_implicit" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">Tip încasare implicit (opțional)</label>
+                                <select id="tip_implicit" name="tip_implicit"
+                                        class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                                    <option value="">Din coloana mapată</option>
+                                    <option value="cotizatie" <?php echo $tip_import_implicit === INCASARI_TIP_COTIZATIE ? 'selected' : ''; ?>>Cotizație</option>
+                                    <option value="donatie" <?php echo $tip_import_implicit === INCASARI_TIP_DONATIE ? 'selected' : ''; ?>>Donație</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="an_cotizatie_implicit" class="block text-sm font-medium text-slate-800 dark:text-gray-200 mb-1">An cotizație implicit</label>
+                                <select id="an_cotizatie_implicit" name="an_cotizatie_implicit"
+                                        class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                                    <option value="2025" <?php echo (int)$an_cotizatie_implicit === 2025 ? 'selected' : ''; ?>>2025</option>
+                                    <option value="2026" <?php echo (int)$an_cotizatie_implicit === 2026 ? 'selected' : ''; ?>>2026</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <label class="inline-flex items-center gap-2 text-sm text-slate-800 dark:text-gray-200">
+                                    <input type="hidden" name="skip_cotizatii_achitate" value="0">
+                                    <input type="checkbox" name="skip_cotizatii_achitate" value="1" <?php echo !empty($skip_cotizatii_achitate) ? 'checked' : ''; ?>
+                                           class="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700">
+                                    Sare cotizațiile deja achitate
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="max-h-80 overflow-y-auto border border-slate-200 dark:border-gray-600 rounded-lg p-3 space-y-2" aria-label="Mapare coloane CSV către câmpuri import încasări">
+                            <?php foreach ($import_csv_data['headers'] as $index => $header): ?>
+                                <?php
+                                $header_l = mb_strtolower((string)$header);
+                                $suggested = 'ignora';
+                                if (strpos($header_l, 'dosar') !== false) {
+                                    $suggested = 'dosarnr';
+                                } elseif (strpos($header_l, 'data') !== false) {
+                                    $suggested = 'data_incasare';
+                                } elseif (strpos($header_l, 'tip') !== false) {
+                                    $suggested = 'tip_incasare';
+                                } elseif (strpos($header_l, 'an') !== false && strpos($header_l, 'cot') !== false) {
+                                    $suggested = 'an_cotizatie';
+                                } elseif (strpos($header_l, 'suma') !== false || strpos($header_l, 'valoare') !== false) {
+                                    $suggested = 'suma';
+                                } elseif (strpos($header_l, 'observ') !== false) {
+                                    $suggested = 'observatii';
+                                } elseif (strpos($header_l, 'chit') !== false && strpos($header_l, 'veche') !== false) {
+                                    $suggested = 'nr_chitanta_veche';
+                                }
+                                ?>
+                                <div class="flex items-center gap-3">
+                                    <label class="flex-1 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($header); ?></label>
+                                    <select name="mapare_coloane[<?php echo (int)$index; ?>]"
+                                            class="flex-1 px-2 py-1 border border-slate-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                                        <option value="ignora">-- Ignoră --</option>
+                                        <?php foreach ($campuri_import_incasari as $db_field => $label): ?>
+                                            <option value="<?php echo htmlspecialchars($db_field); ?>" <?php echo $suggested === $db_field ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="flex justify-end gap-2">
+                            <a href="/incasari?tab=import_csv" class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700">
+                                Reia upload
+                            </a>
+                            <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500"
+                                    onclick="return confirm('Continuați cu importul încasărilor din CSV?');">
+                                Importă încasări
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            <?php else: ?>
+                <section class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 p-6" aria-labelledby="inc-import-done-heading">
+                    <h2 id="inc-import-done-heading" class="text-lg font-semibold text-slate-900 dark:text-white mb-3">Import finalizat</h2>
+                    <p class="text-sm text-slate-700 dark:text-gray-300 mb-4">
+                        Importul CSV pentru încasări istorice s-a încheiat. Pentru cotizații, înregistrările importate marchează cotizația ca achitată pentru anul selectat.
+                    </p>
+                    <a href="/incasari?tab=import_csv" class="inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg focus:ring-2 focus:ring-amber-500">
+                        Import nou
+                    </a>
+                </section>
+            <?php endif; ?>
+        <?php else: ?>
         <!-- Filtre -->
         <form method="get" action="/incasari" class="mb-4 flex flex-wrap gap-3 items-end">
+            <input type="hidden" name="tab" value="lista">
             <div>
                 <label for="q" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Caută</label>
                 <input type="text" id="q" name="q" value="<?php echo htmlspecialchars($cautare); ?>" placeholder="Nume, serie..."
@@ -226,6 +381,7 @@
             </div>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
         <?php endif; ?>
     </div>
 </main>
