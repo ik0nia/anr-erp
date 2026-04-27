@@ -711,7 +711,7 @@ if (dlgTask) {
 <?php require_once APP_ROOT . '/includes/incasari_dashboard_modal.php'; ?>
 
 <!-- Modal Task Nou -->
-<dialog id="modal-task-nou" class="p-0 rounded-lg shadow-xl max-w-lg w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-700 dark:bg-gray-800 backdrop:bg-black/30" aria-labelledby="modal-task-titlu" aria-modal="true">
+<dialog id="modal-task-nou" class="p-0 rounded-lg shadow-xl max-w-lg w-[calc(100%-2rem)] border border-slate-200 dark:border-gray-700 dark:bg-gray-800 backdrop:bg-black/50 backdrop:backdrop-blur-sm" aria-labelledby="modal-task-titlu" aria-modal="true">
     <div class="p-6">
         <div class="flex justify-between items-center mb-4">
             <h2 id="modal-task-titlu" class="text-lg font-bold text-slate-900 dark:text-white">Task Nou</h2>
