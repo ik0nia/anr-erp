@@ -97,6 +97,7 @@
                             <option value="a4_2x7" <?php echo $a4_preset_input === 'a4_2x7' ? 'selected' : ''; ?>>Plicuri mari - 2 coloane x 7 randuri</option>
                             <option value="a4_3x7" <?php echo $a4_preset_input === 'a4_3x7' ? 'selected' : ''; ?>>Plicuri medii - 3 coloane x 7 randuri</option>
                             <option value="a4_3x8" <?php echo $a4_preset_input === 'a4_3x8' ? 'selected' : ''; ?>>Plicuri standard - 3 coloane x 8 randuri</option>
+                            <option value="a4_3x8_exte" <?php echo $a4_preset_input === 'a4_3x8_exte' ? 'selected' : ''; ?>>Etichete 24/A4 3x8 Exte</option>
                             <option value="a4_3x10" <?php echo $a4_preset_input === 'a4_3x10' ? 'selected' : ''; ?>>Etichete compacte - 3 coloane x 10 randuri</option>
                             <option value="a4_4x10" <?php echo $a4_preset_input === 'a4_4x10' ? 'selected' : ''; ?>>Etichete mici - 4 coloane x 10 randuri</option>
                         </select>
@@ -233,6 +234,7 @@
             a4_2x7: { top: 10, bottom: 10, left: 10, right: 10, cols: 2, rows: 7 },
             a4_3x7: { top: 10, bottom: 10, left: 8, right: 8, cols: 3, rows: 7 },
             a4_3x8: { top: 8, bottom: 8, left: 7, right: 7, cols: 3, rows: 8 },
+            a4_3x8_exte: { top: 12.5, bottom: 12.5, left: 9, right: 7, cols: 3, rows: 8 },
             a4_3x10: { top: 6, bottom: 6, left: 6, right: 6, cols: 3, rows: 10 },
             a4_4x10: { top: 6, bottom: 6, left: 5, right: 5, cols: 4, rows: 10 }
         };
