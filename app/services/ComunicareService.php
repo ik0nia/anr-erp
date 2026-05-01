@@ -233,9 +233,10 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
             $inner_width = max(10.0, $label_width - (2 * $inner_margin));
             $inner_height = max(10.0, $label_height - (2 * $inner_margin));
 
-            $font_size_nume = min(12, max(7, $inner_height / 5));
-            $font_size_adresa = min(10, max(6, $inner_height / 6));
-            $font_size_data = min(7, max(5, $inner_height / 10));
+            // Cerinta business: fonturi fixe pentru etichete.
+            $font_size_nume = 12.0;
+            $font_size_adresa = 12.0;
+            $font_size_data = 8.0;
 
             $line_height_nume = max(3.0, $font_size_nume * 0.45);
             $line_height_adresa = max(2.6, $font_size_adresa * 0.45);
@@ -245,6 +246,7 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
             if ($nume_complet === '') {
                 $nume_complet = 'Membru';
             }
+            $nume_complet = mb_strtoupper($nume_complet, 'UTF-8');
 
             $adresa_parts = [];
             if (!empty($membru['domstr'])) $adresa_parts[] = 'str. ' . $membru['domstr'];
@@ -253,16 +255,16 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
             if (!empty($membru['domsc'])) $adresa_parts[] = 'sc. ' . $membru['domsc'];
             if (!empty($membru['domet'])) $adresa_parts[] = 'et. ' . $membru['domet'];
             if (!empty($membru['domap'])) $adresa_parts[] = 'ap. ' . $membru['domap'];
-            $adresa_linia1 = implode(', ', $adresa_parts);
+            $adresa_linia1 = mb_strtoupper(implode(', ', $adresa_parts), 'UTF-8');
 
             $loc_parts = [];
             if (!empty($membru['codpost'])) $loc_parts[] = $membru['codpost'];
             if (!empty($membru['domloc'])) $loc_parts[] = $membru['domloc'];
-            $adresa_linia2 = implode(' ', $loc_parts);
+            $adresa_linia2 = mb_strtoupper(implode(' ', $loc_parts), 'UTF-8');
 
             $adresa_linia3 = '';
             if (!empty($membru['judet_domiciliu'])) {
-                $adresa_linia3 = 'jud. ' . $membru['judet_domiciliu'];
+                $adresa_linia3 = mb_strtoupper('jud. ' . $membru['judet_domiciliu'], 'UTF-8');
             }
 
             $cursor_y = $inner_y;
@@ -291,11 +293,9 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
             $data_tiparire = 'Data tiparirii: ' . date('d/m/Y');
             $pdf_instance->SetFont('Arial', '', $font_size_data);
             $data_text = $encode_text_cb($data_tiparire);
-            $text_width = min($inner_width, $pdf_instance->GetStringWidth($data_text));
             $data_y = $inner_y + $inner_height - $line_height_data;
-            $data_x = $inner_x + max(0.0, $inner_width - $text_width);
-            $pdf_instance->SetXY($data_x, $data_y);
-            $pdf_instance->Cell($text_width, $line_height_data, $data_text, 0, 0, 'R');
+            $pdf_instance->SetXY($inner_x, $data_y);
+            $pdf_instance->Cell($inner_width, $line_height_data, $data_text, 0, 0, 'C');
         };
 
         if ($tip === 'a4') {
