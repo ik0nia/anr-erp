@@ -20,7 +20,7 @@ $rezultat_generare = null;
 $tip_etichete_selectat = (($_POST['tip_etichete'] ?? 'rola') === 'a4') ? 'a4' : 'rola';
 $latime_mm_input = isset($_POST['latime_mm']) ? (float)$_POST['latime_mm'] : 89.0;
 $inaltime_mm_input = isset($_POST['inaltime_mm']) ? (float)$_POST['inaltime_mm'] : 36.0;
-$valid_a4_presets = ['custom', 'a4_2x5', 'a4_2x7', 'a4_3x7', 'a4_3x8', 'a4_3x10', 'a4_4x10'];
+$valid_a4_presets = ['custom', 'a4_2x5', 'a4_2x7', 'a4_3x7', 'a4_3x8', 'a4_3x8_exte', 'a4_3x10', 'a4_4x10'];
 $a4_preset_input = (string)($_POST['a4_preset'] ?? 'custom');
 if (!in_array($a4_preset_input, $valid_a4_presets, true)) {
     $a4_preset_input = 'custom';
@@ -31,6 +31,8 @@ $a4_margin_left_mm_input = isset($_POST['a4_margin_left_mm']) ? (float)$_POST['a
 $a4_margin_right_mm_input = isset($_POST['a4_margin_right_mm']) ? (float)$_POST['a4_margin_right_mm'] : 8.0;
 $a4_cols_input = isset($_POST['a4_cols']) ? (int)$_POST['a4_cols'] : 3;
 $a4_rows_input = isset($_POST['a4_rows']) ? (int)$_POST['a4_rows'] : 8;
+$a4_label_width_mm_input = isset($_POST['a4_label_width_mm']) ? (float)$_POST['a4_label_width_mm'] : 64.0;
+$a4_label_height_mm_input = isset($_POST['a4_label_height_mm']) ? (float)$_POST['a4_label_height_mm'] : 33.0;
 
 // --- POST actions ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -53,12 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $latime_mm  = $latime_mm_input;
         $inaltime_mm = $inaltime_mm_input;
         $a4_presets = [
-            'a4_2x5' => ['top' => 12.0, 'bottom' => 12.0, 'left' => 12.0, 'right' => 12.0, 'cols' => 2, 'rows' => 5],
-            'a4_2x7' => ['top' => 10.0, 'bottom' => 10.0, 'left' => 10.0, 'right' => 10.0, 'cols' => 2, 'rows' => 7],
-            'a4_3x7' => ['top' => 10.0, 'bottom' => 10.0, 'left' => 8.0, 'right' => 8.0, 'cols' => 3, 'rows' => 7],
-            'a4_3x8' => ['top' => 8.0, 'bottom' => 8.0, 'left' => 7.0, 'right' => 7.0, 'cols' => 3, 'rows' => 8],
-            'a4_3x10' => ['top' => 6.0, 'bottom' => 6.0, 'left' => 6.0, 'right' => 6.0, 'cols' => 3, 'rows' => 10],
-            'a4_4x10' => ['top' => 6.0, 'bottom' => 6.0, 'left' => 5.0, 'right' => 5.0, 'cols' => 4, 'rows' => 10],
+            'a4_2x5' => ['top' => 12.0, 'bottom' => 12.0, 'left' => 12.0, 'right' => 12.0, 'cols' => 2, 'rows' => 5, 'label_width' => 93.0, 'label_height' => 54.6],
+            'a4_2x7' => ['top' => 10.0, 'bottom' => 10.0, 'left' => 10.0, 'right' => 10.0, 'cols' => 2, 'rows' => 7, 'label_width' => 95.0, 'label_height' => 39.57],
+            'a4_3x7' => ['top' => 10.0, 'bottom' => 10.0, 'left' => 8.0, 'right' => 8.0, 'cols' => 3, 'rows' => 7, 'label_width' => 64.67, 'label_height' => 39.57],
+            'a4_3x8' => ['top' => 8.0, 'bottom' => 8.0, 'left' => 7.0, 'right' => 7.0, 'cols' => 3, 'rows' => 8, 'label_width' => 65.33, 'label_height' => 35.13],
+            'a4_3x8_exte' => ['top' => 12.5, 'bottom' => 12.5, 'left' => 9.0, 'right' => 7.0, 'cols' => 3, 'rows' => 8, 'label_width' => 64.67, 'label_height' => 34.0],
+            'a4_3x10' => ['top' => 6.0, 'bottom' => 6.0, 'left' => 6.0, 'right' => 6.0, 'cols' => 3, 'rows' => 10, 'label_width' => 66.0, 'label_height' => 28.5],
+            'a4_4x10' => ['top' => 6.0, 'bottom' => 6.0, 'left' => 5.0, 'right' => 5.0, 'cols' => 4, 'rows' => 10, 'label_width' => 50.0, 'label_height' => 28.5],
         ];
         if ($tip_etichete === 'a4' && isset($a4_presets[$a4_preset_input])) {
             $preset = $a4_presets[$a4_preset_input];
@@ -68,6 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $a4_margin_right_mm_input = $preset['right'];
             $a4_cols_input = $preset['cols'];
             $a4_rows_input = $preset['rows'];
+            $a4_label_width_mm_input = $preset['label_width'];
+            $a4_label_height_mm_input = $preset['label_height'];
         }
         $etichete_options = [
             'tip' => $tip_etichete,
@@ -78,6 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'a4_margin_right_mm' => $a4_margin_right_mm_input,
             'a4_cols' => $a4_cols_input,
             'a4_rows' => $a4_rows_input,
+            'a4_label_width_mm' => $a4_label_width_mm_input,
+            'a4_label_height_mm' => $a4_label_height_mm_input,
         ];
 
         $membri = comunicare_filtreaza_membri($pdo, $filters);

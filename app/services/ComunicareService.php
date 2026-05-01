@@ -235,12 +235,13 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
 
             // Cerinta business: fonturi fixe pentru etichete.
             $font_size_nume = 12.0;
-            $font_size_adresa = 12.0;
+            $font_size_adresa = 10.0;
             $font_size_data = 8.0;
 
             $line_height_nume = max(3.0, $font_size_nume * 0.45);
             $line_height_adresa = max(2.6, $font_size_adresa * 0.45);
             $line_height_data = max(2.2, $font_size_data * 0.45);
+            $line_gap = 0.4;
 
             $nume_complet = trim(($membru['nume'] ?? '') . ' ' . ($membru['prenume'] ?? ''));
             if ($nume_complet === '') {
@@ -270,11 +271,62 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
             $cursor_y = $inner_y;
             $bottom_limit = $inner_y + $inner_height - $line_height_data - 0.4;
 
+            $wrap_lines = static function (\FPDF $pdf_wrap, string $text, float $max_width, callable $encode_cb): array {
+                $text = trim($text);
+                if ($text === '') {
+                    return [];
+                }
+
+                $words = preg_split('/\s+/u', $text) ?: [];
+                $lines = [];
+                $current = '';
+
+                foreach ($words as $word) {
+                    $candidate = $current === '' ? $word : ($current . ' ' . $word);
+                    if ($pdf_wrap->GetStringWidth($encode_cb($candidate)) <= $max_width) {
+                        $current = $candidate;
+                        continue;
+                    }
+
+                    if ($current !== '') {
+                        $lines[] = $current;
+                    }
+
+                    if ($pdf_wrap->GetStringWidth($encode_cb($word)) <= $max_width) {
+                        $current = $word;
+                        continue;
+                    }
+
+                    $chunk = '';
+                    $length = mb_strlen($word, 'UTF-8');
+                    for ($i = 0; $i < $length; $i++) {
+                        $char = mb_substr($word, $i, 1, 'UTF-8');
+                        $candidate_chunk = $chunk . $char;
+                        if ($pdf_wrap->GetStringWidth($encode_cb($candidate_chunk)) <= $max_width || $chunk === '') {
+                            $chunk = $candidate_chunk;
+                        } else {
+                            $lines[] = $chunk;
+                            $chunk = $char;
+                        }
+                    }
+                    $current = $chunk;
+                }
+
+                if ($current !== '') {
+                    $lines[] = $current;
+                }
+
+                return $lines;
+            };
+
             $pdf_instance->SetFont('Arial', 'B', $font_size_nume);
-            if (($cursor_y + $line_height_nume) <= $bottom_limit) {
+            foreach ($wrap_lines($pdf_instance, $nume_complet, $inner_width, $encode_text_cb) as $line) {
+                if (($cursor_y + $line_height_nume) > $bottom_limit) {
+                    break;
+                }
                 $pdf_instance->SetXY($inner_x, $cursor_y);
-                $pdf_instance->Cell($inner_width, $line_height_nume, $encode_text_cb($nume_complet), 0, 1);
-                $cursor_y += $line_height_nume;
+                $pdf_instance->Cell($inner_width, $line_height_nume, $encode_text_cb($line), 0, 1);
+                $cursor_y += ($line_height_nume + $line_gap);
             }
 
             $pdf_instance->SetFont('Arial', '', $font_size_adresa);
@@ -282,12 +334,14 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
                 if ($linie === '') {
                     continue;
                 }
-                if (($cursor_y + $line_height_adresa) > $bottom_limit) {
-                    break;
+                foreach ($wrap_lines($pdf_instance, $linie, $inner_width, $encode_text_cb) as $line) {
+                    if (($cursor_y + $line_height_adresa) > $bottom_limit) {
+                        break 2;
+                    }
+                    $pdf_instance->SetXY($inner_x, $cursor_y);
+                    $pdf_instance->Cell($inner_width, $line_height_adresa, $encode_text_cb($line), 0, 1);
+                    $cursor_y += ($line_height_adresa + $line_gap);
                 }
-                $pdf_instance->SetXY($inner_x, $cursor_y);
-                $pdf_instance->Cell($inner_width, $line_height_adresa, $encode_text_cb($linie), 0, 1);
-                $cursor_y += $line_height_adresa;
             }
 
             $data_tiparire = 'Data tiparirii: ' . date('d/m/Y');
@@ -305,6 +359,8 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
             $margin_right = (float)($options['a4_margin_right_mm'] ?? 8);
             $cols = (int)($options['a4_cols'] ?? 3);
             $rows = (int)($options['a4_rows'] ?? 8);
+            $label_width_input = (float)($options['a4_label_width_mm'] ?? 0);
+            $label_height_input = (float)($options['a4_label_height_mm'] ?? 0);
 
             $margin_top = max(0.0, min(40.0, $margin_top));
             $margin_bottom = max(0.0, min(40.0, $margin_bottom));
@@ -315,15 +371,30 @@ function comunicare_genereaza_etichete_pdf(array $membri, float $latime_mm, floa
 
             $page_width = 210.0;
             $page_height = 297.0;
-            $printable_width = $page_width - $margin_left - $margin_right;
-            $printable_height = $page_height - $margin_top - $margin_bottom;
+            if ($label_width_input > 0 && $label_height_input > 0) {
+                $label_width = $label_width_input;
+                $label_height = $label_height_input;
+                $table_width = $label_width * $cols;
+                $table_height = $label_height * $rows;
 
-            if ($printable_width <= 0 || $printable_height <= 0) {
-                return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Marginile A4 sunt prea mari pentru o pagina A4.'];
+                if ($table_width > $page_width || $table_height > $page_height) {
+                    return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Dimensiunea etichetei si grila depasesc dimensiunea unei coli A4.'];
+                }
+
+                // Tabel etichete centrat orizontal/vertical pe coala A4.
+                $margin_left = ($page_width - $table_width) / 2.0;
+                $margin_top = ($page_height - $table_height) / 2.0;
+            } else {
+                $printable_width = $page_width - $margin_left - $margin_right;
+                $printable_height = $page_height - $margin_top - $margin_bottom;
+
+                if ($printable_width <= 0 || $printable_height <= 0) {
+                    return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Marginile A4 sunt prea mari pentru o pagina A4.'];
+                }
+
+                $label_width = $printable_width / $cols;
+                $label_height = $printable_height / $rows;
             }
-
-            $label_width = $printable_width / $cols;
-            $label_height = $printable_height / $rows;
             if ($label_width < 15 || $label_height < 10) {
                 return ['success' => false, 'path' => null, 'filename' => null, 'error' => 'Configuratia A4 genereaza etichete prea mici. Reduceti numarul de randuri/coloane sau marginile.'];
             }
