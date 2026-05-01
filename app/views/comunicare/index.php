@@ -85,7 +85,8 @@
                 <fieldset id="config-etichete-a4" class="border border-slate-200 dark:border-gray-700 rounded-lg p-4 <?php echo $tip_etichete_selectat === 'a4' ? '' : 'hidden'; ?>">
                     <legend class="text-sm font-medium text-slate-700 dark:text-gray-300 px-2">Configurare etichete A4</legend>
                     <p class="text-xs text-slate-600 dark:text-gray-400 mt-1 mb-4">
-                        Margini pagina in mm (sus/jos/stanga/dreapta), numar coloane/randuri.
+                        Setati dimensiunea unei etichete (latime/inaltime, mm), apoi numarul de coloane si randuri.
+                        Tabelul de etichete este centrat automat pe coala A4, orizontal si vertical.
                         Fiecare eticheta A4 pastreaza automat o margine interna neprintabila de 1.5 mm pe toate laturile.
                     </p>
                     <div class="mb-4">
@@ -107,6 +108,16 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label for="a4_label_width_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Latime eticheta (mm)</label>
+                            <input type="number" id="a4_label_width_mm" name="a4_label_width_mm" value="<?php echo htmlspecialchars((string)$a4_label_width_mm_input); ?>" min="15" max="210" step="0.1"
+                                   class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                        </div>
+                        <div>
+                            <label for="a4_label_height_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Inaltime eticheta (mm)</label>
+                            <input type="number" id="a4_label_height_mm" name="a4_label_height_mm" value="<?php echo htmlspecialchars((string)$a4_label_height_mm_input); ?>" min="10" max="297" step="0.1"
+                                   class="w-full rounded-lg border-slate-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:ring-amber-500 focus:border-amber-500 text-sm p-2">
+                        </div>
                         <div>
                             <label for="a4_margin_top_mm" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Margine sus (mm)</label>
                             <input type="number" id="a4_margin_top_mm" name="a4_margin_top_mm" value="<?php echo htmlspecialchars((string)$a4_margin_top_mm_input); ?>" min="0" max="40" step="0.1"
@@ -230,17 +241,20 @@
         }
 
         var presetMap = {
-            a4_2x5: { top: 12, bottom: 12, left: 12, right: 12, cols: 2, rows: 5 },
-            a4_2x7: { top: 10, bottom: 10, left: 10, right: 10, cols: 2, rows: 7 },
-            a4_3x7: { top: 10, bottom: 10, left: 8, right: 8, cols: 3, rows: 7 },
-            a4_3x8: { top: 8, bottom: 8, left: 7, right: 7, cols: 3, rows: 8 },
-            a4_3x8_exte: { top: 12.5, bottom: 12.5, left: 9, right: 7, cols: 3, rows: 8 },
-            a4_3x10: { top: 6, bottom: 6, left: 6, right: 6, cols: 3, rows: 10 },
-            a4_4x10: { top: 6, bottom: 6, left: 5, right: 5, cols: 4, rows: 10 }
+            a4_2x5: { top: 12, bottom: 12, left: 12, right: 12, cols: 2, rows: 5, labelWidth: 93, labelHeight: 54.6 },
+            a4_2x7: { top: 10, bottom: 10, left: 10, right: 10, cols: 2, rows: 7, labelWidth: 95, labelHeight: 39.57 },
+            a4_3x7: { top: 10, bottom: 10, left: 8, right: 8, cols: 3, rows: 7, labelWidth: 64.67, labelHeight: 39.57 },
+            a4_3x8: { top: 8, bottom: 8, left: 7, right: 7, cols: 3, rows: 8, labelWidth: 65.33, labelHeight: 35.13 },
+            a4_3x8_exte: { top: 12.5, bottom: 12.5, left: 9, right: 7, cols: 3, rows: 8, labelWidth: 64.67, labelHeight: 34 },
+            a4_3x10: { top: 6, bottom: 6, left: 6, right: 6, cols: 3, rows: 10, labelWidth: 66, labelHeight: 28.5 },
+            a4_4x10: { top: 6, bottom: 6, left: 5, right: 5, cols: 4, rows: 10, labelWidth: 50, labelHeight: 28.5 }
         };
 
+        var a4LabelWidth = document.getElementById('a4_label_width_mm');
+        var a4LabelHeight = document.getElementById('a4_label_height_mm');
+
         function applyPresetIfAvailable() {
-            if (!presetSelect || !a4Top || !a4Bottom || !a4Left || !a4Right || !a4Cols || !a4Rows) {
+            if (!presetSelect || !a4Top || !a4Bottom || !a4Left || !a4Right || !a4Cols || !a4Rows || !a4LabelWidth || !a4LabelHeight) {
                 return;
             }
             var selectedPreset = presetSelect.value;
@@ -254,6 +268,8 @@
             a4Right.value = preset.right;
             a4Cols.value = preset.cols;
             a4Rows.value = preset.rows;
+            a4LabelWidth.value = preset.labelWidth;
+            a4LabelHeight.value = preset.labelHeight;
         }
 
         function markPresetAsCustom() {
@@ -273,7 +289,7 @@
         if (presetSelect) {
             presetSelect.addEventListener('change', applyPresetIfAvailable);
         }
-        [a4Top, a4Bottom, a4Left, a4Right, a4Cols, a4Rows].forEach(function (el) {
+        [a4Top, a4Bottom, a4Left, a4Right, a4Cols, a4Rows, a4LabelWidth, a4LabelHeight].forEach(function (el) {
             if (el) {
                 el.addEventListener('input', markPresetAsCustom);
             }
