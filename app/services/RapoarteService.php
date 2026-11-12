@@ -450,3 +450,73 @@ function rapoarte_borderou_legitimatii(PDO $pdo, string $data_de_la, string $dat
         'statistici' => $stat,
     ];
 }
+
+/**
+ * Raport: liste de prezenta la activitati, cu numarul de persoane din fiecare lista.
+ *
+ * Numara toate persoanele inscrise in lista: membri, contacte si participanti
+ * adaugati manual (toate randurile din liste_prezenta_membri).
+ *
+ * @return array ['ani_disponibili'=>int[], 'an_selectat'=>int, 'nr_liste'=>int, 'total_persoane'=>int, 'liste'=>array]
+ */
+function rapoarte_liste_prezenta(PDO $pdo, int $an_selectat): array {
+    $an_curent = (int)date('Y');
+    $rezultat = [
+        'ani_disponibili' => [$an_curent],
+        'an_selectat' => $an_selectat > 0 ? $an_selectat : $an_curent,
+        'nr_liste' => 0,
+        'total_persoane' => 0,
+        'liste' => [],
+    ];
+
+    try {
+        $ani_disponibili = [];
+        $stmt_ani = $pdo->query("SELECT DISTINCT YEAR(data_lista) AS an FROM liste_prezenta WHERE data_lista IS NOT NULL ORDER BY an DESC");
+        foreach ($stmt_ani->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $an = (int)($row['an'] ?? 0);
+            if ($an > 0) {
+                $ani_disponibili[] = $an;
+            }
+        }
+        if (!in_array($an_curent, $ani_disponibili, true)) {
+            $ani_disponibili[] = $an_curent;
+        }
+        rsort($ani_disponibili);
+        if (!in_array($rezultat['an_selectat'], $ani_disponibili, true)) {
+            $rezultat['an_selectat'] = $ani_disponibili[0] ?? $an_curent;
+        }
+        $rezultat['ani_disponibili'] = $ani_disponibili;
+
+        $stmt = $pdo->prepare("
+            SELECT l.id, l.data_lista, l.tip_titlu, l.detalii_activitate, l.created_by,
+                   (SELECT COUNT(*) FROM liste_prezenta_membri lm WHERE lm.lista_id = l.id) AS nr_persoane
+            FROM liste_prezenta l
+            WHERE YEAR(l.data_lista) = ?
+            ORDER BY l.data_lista DESC, l.id DESC
+        ");
+        $stmt->execute([$rezultat['an_selectat']]);
+
+        $total_persoane = 0;
+        $liste = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $nr = (int)($row['nr_persoane'] ?? 0);
+            $total_persoane += $nr;
+            $liste[] = [
+                'id' => (int)$row['id'],
+                'data_lista' => (string)($row['data_lista'] ?? ''),
+                'tip_titlu' => (string)($row['tip_titlu'] ?? ''),
+                'detalii_activitate' => (string)($row['detalii_activitate'] ?? ''),
+                'created_by' => (string)($row['created_by'] ?? ''),
+                'nr_persoane' => $nr,
+            ];
+        }
+
+        $rezultat['liste'] = $liste;
+        $rezultat['nr_liste'] = count($liste);
+        $rezultat['total_persoane'] = $total_persoane;
+    } catch (PDOException $e) {
+        return $rezultat;
+    }
+
+    return $rezultat;
+}

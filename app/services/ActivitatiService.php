@@ -371,7 +371,9 @@ function activitati_utilizatori(PDO $pdo): array {
  */
 function activitati_liste_prezenta(PDO $pdo, int $limit = 20): array {
     try {
-        $stmt = $pdo->prepare("SELECT l.id, l.tip_titlu, l.detalii_activitate, l.data_lista, l.activitate_id, l.created_by FROM liste_prezenta l ORDER BY l.data_lista DESC, l.updated_at DESC LIMIT " . (int)$limit);
+        $stmt = $pdo->prepare("SELECT l.id, l.tip_titlu, l.detalii_activitate, l.data_lista, l.activitate_id, l.created_by,
+                (SELECT COUNT(*) FROM liste_prezenta_membri lm WHERE lm.lista_id = l.id) AS nr_persoane
+            FROM liste_prezenta l ORDER BY l.data_lista DESC, l.updated_at DESC LIMIT " . (int)$limit);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {

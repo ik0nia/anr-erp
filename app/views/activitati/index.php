@@ -334,6 +334,7 @@
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">ID</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Data</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200" style="text-align:left !important;">Listă</th>
+                                    <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Persoane</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Utilizator</th>
                                     <th scope="col" class="text-left py-2 text-slate-800 dark:text-gray-200">Acțiuni</th>
                                 </tr>
@@ -348,6 +349,7 @@
                                             <?php echo htmlspecialchars($lp['tip_titlu'] . ($lp['detalii_activitate'] ? ': ' . mb_substr($lp['detalii_activitate'], 0, 30) : '')); ?>
                                         </a>
                                     </td>
+                                    <td class="py-2 font-semibold text-slate-900 dark:text-white"><?php echo (int)($lp['nr_persoane'] ?? 0); ?></td>
                                     <td class="py-2 text-slate-600 dark:text-gray-400"><?php echo htmlspecialchars($lp['created_by'] ?? '-'); ?></td>
                                     <td class="py-2 flex gap-1 items-center">
                                         <a href="/liste-prezenta/edit?id=<?php echo $lp['id']; ?>" class="px-2 py-1 rounded bg-slate-200 dark:bg-gray-600 hover:bg-slate-300 dark:hover:bg-gray-500 text-slate-900 dark:text-white text-xs font-medium" aria-label="Modifică lista">Modifică</a>

@@ -16,6 +16,7 @@ if (isset($_GET['tab'])) {
     elseif ($_GET['tab'] === 'interactiuni') $tab_rapoarte = 'interactiuni';
     elseif ($_GET['tab'] === 'statistici') $tab_rapoarte = 'statistici';
     elseif ($_GET['tab'] === 'socializare') $tab_rapoarte = 'socializare';
+    elseif ($_GET['tab'] === 'liste-prezenta') $tab_rapoarte = 'liste-prezenta';
     elseif ($_GET['tab'] === 'borderou-legitimatii') $tab_rapoarte = 'borderou-legitimatii';
 }
 
@@ -27,6 +28,9 @@ $statistici_localitati = null;
 $an_socializare_selectat = (int)($_GET['an'] ?? date('Y'));
 $raport_socializare = null;
 $ani_socializare_disponibili = [(int)date('Y')];
+$an_liste_prezenta_selectat = (int)($_GET['an'] ?? date('Y'));
+$raport_liste_prezenta = null;
+$ani_liste_prezenta_disponibili = [(int)date('Y')];
 $borderou_legitimatii = null;
 $borderou_legitimatii_data_de_la = date('Y-01-01');
 $borderou_legitimatii_data_pana_la = date('Y-m-d');
@@ -68,6 +72,19 @@ if ($tab_rapoarte === 'socializare') {
     $raport_socializare = rapoarte_socializare($pdo, $an_socializare_selectat);
     $an_socializare_selectat = (int)($raport_socializare['an_selectat'] ?? $an_socializare_selectat);
     $ani_socializare_disponibili = $raport_socializare['ani_disponibili'] ?? $ani_socializare_disponibili;
+}
+
+if ($tab_rapoarte === 'liste-prezenta') {
+    if ($an_liste_prezenta_selectat < 2000 || $an_liste_prezenta_selectat > 2100) {
+        $an_liste_prezenta_selectat = (int)date('Y');
+    }
+    $raport_liste_prezenta = rapoarte_liste_prezenta($pdo, $an_liste_prezenta_selectat);
+    $an_liste_prezenta_selectat = (int)($raport_liste_prezenta['an_selectat'] ?? $an_liste_prezenta_selectat);
+    $ani_liste_prezenta_disponibili = $raport_liste_prezenta['ani_disponibili'] ?? $ani_liste_prezenta_disponibili;
+    log_activitate(
+        $pdo,
+        'rapoarte: vizualizare Liste de prezenta la activitati, anul ' . $an_liste_prezenta_selectat
+    );
 }
 
 if ($tab_rapoarte === 'borderou-legitimatii') {
