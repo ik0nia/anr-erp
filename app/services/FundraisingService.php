@@ -543,6 +543,18 @@ function fundraising_f230_get_template_map(PDO $pdo): array
 
     $raw = (string)(fundraising_setare_get($pdo, FUNDRAISING_SETARE_TEMPLATE_MAPPING) ?? '');
     if (trim($raw) === '') {
+        // Fara mapare salvata: daca formularul activ are o mapare recomandata livrata
+        // cu platforma, o aplicam automat, ca generarea sa functioneze imediat.
+        $recomandata = fundraising_f230_aplica_mapare_recomandata($pdo, $template_rel, $template_sha256);
+        if (!empty($recomandata)) {
+            return [
+                'mapped' => true,
+                'items_by_tag' => $recomandata,
+                'missing_tags' => [],
+                'template_sha256' => $template_sha256,
+                'sursa' => 'recomandata',
+            ];
+        }
         return ['mapped' => false, 'items_by_tag' => [], 'missing_tags' => fundraising_f230_required_map_tags()];
     }
     $decoded = json_decode($raw, true);
@@ -586,6 +598,17 @@ function fundraising_f230_get_template_map(PDO $pdo): array
                 ];
             }
             $validated = $rebound;
+        }
+
+        $recomandata = fundraising_f230_aplica_mapare_recomandata($pdo, $template_rel, $template_sha256);
+        if (!empty($recomandata)) {
+            return [
+                'mapped' => true,
+                'items_by_tag' => $recomandata,
+                'missing_tags' => [],
+                'template_sha256' => $template_sha256,
+                'sursa' => 'recomandata',
+            ];
         }
 
         return [
@@ -2211,4 +2234,74 @@ function fundraising_f230_export_csv(PDO $pdo): void
 
     fclose($out);
     exit;
+}
+
+/**
+ * Mapari recomandate livrate cu platforma, pentru template-urile cunoscute.
+ *
+ * Cheia este SHA-256 al fisierului PDF. Coordonatele sunt calculate din casetele
+ * formularului (campurile AcroForm ale PDF-ului) si verificate vizual, astfel incat
+ * dupa inlocuirea formularului sa nu fie nevoie de mapare manuala.
+ */
+function fundraising_f230_mapari_recomandate(): array
+{
+    return [
+        // Formular 230 pentru anul 2026 - Asociatia Nevazatorilor Bihor (D230_ERP2026.pdf)
+        '530b516bb89e0b6139daafdf360cfc6f50be14e7004e50b191b9a33c96b183b5' => [
+        '230nume' => ['tag' => '230nume', 'page' => 1, 'x_pct' => 13.7752, 'y_pct' => 17.6783, 'w_pct' => 29.7893, 'h_pct' => 1.6524, 'font_pt' => 10.00],
+        '230in' => ['tag' => '230in', 'page' => 1, 'x_pct' => 49.3725, 'y_pct' => 17.7424, 'w_pct' => 3.6275, 'h_pct' => 1.5303, 'font_pt' => 9.00],
+        '230prenume' => ['tag' => '230prenume', 'page' => 1, 'x_pct' => 13.7145, 'y_pct' => 20.3980, 'w_pct' => 39.5593, 'h_pct' => 1.5586, 'font_pt' => 10.00],
+        '230CNP' => ['tag' => '230CNP', 'page' => 1, 'x_pct' => 55.1373, 'y_pct' => 18.6818, 'w_pct' => 36.7647, 'h_pct' => 1.7121, 'font_pt' => 10.00],
+        '230loc' => ['tag' => '230loc', 'page' => 1, 'x_pct' => 14.3022, 'y_pct' => 28.2384, 'w_pct' => 22.5848, 'h_pct' => 1.6515, 'font_pt' => 10.00],
+        '230jud' => ['tag' => '230jud', 'page' => 1, 'x_pct' => 43.0642, 'y_pct' => 25.5804, 'w_pct' => 10.0286, 'h_pct' => 1.8182, 'font_pt' => 10.00],
+        '230cp' => ['tag' => '230cp', 'page' => 1, 'x_pct' => 44.5490, 'y_pct' => 28.3939, 'w_pct' => 8.4510, 'h_pct' => 1.4545, 'font_pt' => 10.00],
+        '230str' => ['tag' => '230str', 'page' => 1, 'x_pct' => 13.6538, 'y_pct' => 22.9770, 'w_pct' => 29.0610, 'h_pct' => 1.7462, 'font_pt' => 10.00],
+        '230nr' => ['tag' => '230nr', 'page' => 1, 'x_pct' => 48.3333, 'y_pct' => 23.0455, 'w_pct' => 4.6667, 'h_pct' => 1.5303, 'font_pt' => 9.00],
+        '230bl' => ['tag' => '230bl', 'page' => 1, 'x_pct' => 10.9838, 'y_pct' => 25.5562, 'w_pct' => 5.0910, 'h_pct' => 1.7929, 'font_pt' => 9.00],
+        '230sc' => ['tag' => '230sc', 'page' => 1, 'x_pct' => 20.2096, 'y_pct' => 25.4497, 'w_pct' => 3.1373, 'h_pct' => 1.8788, 'font_pt' => 9.00],
+        '230et' => ['tag' => '230et', 'page' => 1, 'x_pct' => 26.4704, 'y_pct' => 25.4122, 'w_pct' => 3.0588, 'h_pct' => 1.9394, 'font_pt' => 9.00],
+        '230ap' => ['tag' => '230ap', 'page' => 1, 'x_pct' => 32.2979, 'y_pct' => 25.3566, 'w_pct' => 2.9284, 'h_pct' => 1.9337, 'font_pt' => 9.00],
+        '230tel' => ['tag' => '230tel', 'page' => 1, 'x_pct' => 59.7784, 'y_pct' => 24.7799, 'w_pct' => 28.4038, 'h_pct' => 1.7461, 'font_pt' => 10.00],
+        '230email' => ['tag' => '230email', 'page' => 1, 'x_pct' => 59.6993, 'y_pct' => 21.4519, 'w_pct' => 32.0458, 'h_pct' => 1.8000, 'font_pt' => 10.00],
+        '230semnatura' => ['tag' => '230semnatura', 'page' => 1, 'x_pct' => 25.5882, 'y_pct' => 80.8838, 'w_pct' => 20.3333, 'h_pct' => 2.5253, 'font_pt' => 10.00],
+        '230gdpr' => ['tag' => '230gdpr', 'page' => 1, 'x_pct' => 9.8039, 'y_pct' => 93.9394, 'w_pct' => 19.6078, 'h_pct' => 1.2626, 'font_pt' => 7.00],
+        ],
+    ];
+}
+
+/**
+ * Maparea recomandata pentru un template, daca exista.
+ */
+function fundraising_f230_mapare_recomandata(string $template_sha256): array
+{
+    $sha = strtolower(trim($template_sha256));
+    $toate = fundraising_f230_mapari_recomandate();
+    return isset($toate[$sha]) && is_array($toate[$sha]) ? $toate[$sha] : [];
+}
+
+/**
+ * Salveaza maparea recomandata pentru template-ul activ. Returneaza itemii aplicati.
+ */
+function fundraising_f230_aplica_mapare_recomandata(PDO $pdo, string $template_rel, string $template_sha256): array
+{
+    $items = fundraising_f230_mapare_recomandata($template_sha256);
+    if (empty($items)) {
+        return [];
+    }
+    $payload = [
+        'template_sha256' => strtolower(trim($template_sha256)),
+        'template_rel' => $template_rel,
+        'mapped_at' => date('c'),
+        'items' => array_values($items),
+    ];
+    try {
+        fundraising_setare_set(
+            $pdo,
+            FUNDRAISING_SETARE_TEMPLATE_MAPPING,
+            (string)json_encode($payload, JSON_UNESCAPED_UNICODE)
+        );
+    } catch (Throwable $e) {
+        // Continuam cu maparea in memorie chiar daca salvarea esueaza.
+    }
+    return $items;
 }

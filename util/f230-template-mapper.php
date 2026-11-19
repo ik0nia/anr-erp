@@ -29,7 +29,23 @@ try {
     $eroare = 'Nu s-a putut inițializa schema Fundraising. Verifică baza de date și drepturile utilizatorului SQL.';
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_mapare_template_f230'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aplica_mapare_recomandata_f230'])) {
+    try {
+        csrf_require_valid();
+        $tmpl_rel = fundraising_f230_resolve_template_rel($pdo);
+        $tmpl_abs = $tmpl_rel !== '' ? fundraising_f230_abs_path($tmpl_rel) : '';
+        $tmpl_sha = $tmpl_abs !== '' ? fundraising_f230_template_sha256($tmpl_abs) : '';
+        $aplicate = $tmpl_sha !== '' ? fundraising_f230_aplica_mapare_recomandata($pdo, $tmpl_rel, $tmpl_sha) : [];
+        if (!empty($aplicate)) {
+            $succes = 'Maparea recomandată pentru formularul activ a fost aplicată. Verifică pozițiile în previzualizare.';
+        } else {
+            $eroare = 'Pentru formularul activ nu există o mapare recomandată livrată cu platforma. Mapează manual câmpurile.';
+        }
+    } catch (Throwable $e) {
+        error_log('f230-template-mapper mapare recomandata error: ' . $e->getMessage());
+        $eroare = 'Maparea recomandată nu a putut fi aplicată. Reîncearcă.';
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salveaza_mapare_template_f230'])) {
     try {
         csrf_require_valid();
         $res = fundraising_f230_save_template_map($pdo, $_POST);
@@ -96,6 +112,24 @@ if (!$template_exists) {
                 <div class="mb-4 p-3 rounded-lg border-l-4 border-emerald-600 bg-emerald-50 text-emerald-800" role="status">
                     <?php echo htmlspecialchars($succes); ?>
                 </div>
+            <?php endif; ?>
+
+            <?php
+            $sha_activ = (string)($setari_modul['template_sha256'] ?? '');
+            $are_mapare_recomandata = $sha_activ !== '' && !empty(fundraising_f230_mapare_recomandata($sha_activ));
+            ?>
+            <?php if ($are_mapare_recomandata): ?>
+            <form method="post" class="mb-4 p-3 rounded-lg border border-indigo-200 bg-indigo-50">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="aplica_mapare_recomandata_f230" value="1">
+                <p class="text-sm text-slate-700 mb-2">
+                    Pentru formularul PDF activ există o mapare recomandată, calculată din casetele formularului.
+                    O poți aplica dintr-un singur clic, apoi o poți ajusta manual oricând.
+                </p>
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+                    Aplică maparea recomandată
+                </button>
+            </form>
             <?php endif; ?>
 
             <form method="post" class="space-y-4" id="mapper-form-f230">

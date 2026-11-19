@@ -1,0 +1,13 @@
+# Fisierele binare nu trebuie convertite la checkout (CRLF ar corupe PDF-urile).
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.xlsx binary
+*.docx binary
+*.zip binary
