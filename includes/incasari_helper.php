@@ -40,8 +40,45 @@ function incasari_contacte_has_column($pdo, $column) {
 }
 
 function incasari_ensure_tables($pdo) {
-    // No-op: schema is managed by install/schema/migration.php
-    return;
+    incasari_ensure_coloana_mandat_numerar($pdo);
+}
+
+/**
+ * Adauga, daca lipseste, coloana care spune daca un mandat postal a fost
+ * incasat in numerar (bifa din fereastra de incasare). Fara bifa, banii au
+ * intrat prin banca si nu apar in evidenta incasarilor in numerar.
+ */
+function incasari_ensure_coloana_mandat_numerar($pdo) {
+    static $verificat = false;
+    if ($verificat) {
+        return;
+    }
+    $verificat = true;
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM incasari LIKE 'mandat_incasat_numerar'");
+        if ($stmt && !$stmt->fetch(PDO::FETCH_ASSOC)) {
+            $pdo->exec("ALTER TABLE incasari ADD COLUMN mandat_incasat_numerar TINYINT(1) NOT NULL DEFAULT 0 AFTER mod_plata");
+            // Mandatele postale inregistrate pana acum au primit chitanta ERP, deci banii
+            // au trecut prin casa: le marcam ca incasate in numerar, ca sa ramana in evidenta.
+            $pdo->exec("UPDATE incasari SET mandat_incasat_numerar = 1 WHERE mod_plata = 'mandat_postal' AND seria_chitanta IS NOT NULL AND seria_chitanta <> ''");
+        }
+    } catch (PDOException $e) {
+        // Instalarile vechi raman functionale chiar daca alterarea esueaza.
+    }
+}
+
+/**
+ * Spune daca o incasare intra in evidenta incasarilor in numerar (registrul de incasari).
+ * Numerarul cu chitanta ERP intra intotdeauna; mandatul postal doar cand a fost incasat in numerar.
+ */
+function incasari_este_in_numerar($mod_plata, $mandat_incasat_numerar = 0) {
+    if ($mod_plata === INCASARI_MOD_NUMERAR) {
+        return true;
+    }
+    if ($mod_plata === INCASARI_MOD_MANDAT_POSTAL) {
+        return !empty($mandat_incasat_numerar);
+    }
+    return false;
 }
 
 /**
@@ -222,8 +259,9 @@ function incasari_tip_serie_pentru_tip($tip) {
  * membru_id poate fi null când contact_id este setat (donație de la donator extern).
  * Returnează id încasare sau false.
  */
-function incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data_incasare, $created_by, $observatii = null, $contact_id = null, $reprezentand = null) {
+function incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data_incasare, $created_by, $observatii = null, $contact_id = null, $reprezentand = null, $mandat_incasat_numerar = 0) {
     incasari_ensure_tables($pdo);
+    $mandat_incasat_numerar = ($mod_plata === INCASARI_MOD_MANDAT_POSTAL && !empty($mandat_incasat_numerar)) ? 1 : 0;
     $membru_id = $membru_id !== null && $membru_id !== '' ? (int)$membru_id : null;
     $contact_id = $contact_id !== null && $contact_id !== '' ? (int)$contact_id : null;
     $suma = (float)str_replace(',', '.', $suma);
@@ -231,11 +269,10 @@ function incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data
     $reprezentand = trim((string)$reprezentand) ?: null;
     $seria = null;
     $nr_chitanta = null;
-    // Generate receipt series/number only for methods that emit Chitanta ERP:
-    // - Chitanta ERP (numerar)
-    // - Mandat postal (cerinta business curenta)
-    $metode_cu_chitanta = [INCASARI_MOD_NUMERAR, INCASARI_MOD_MANDAT_POSTAL];
-    if (in_array($mod_plata, $metode_cu_chitanta)) {
+    // Chitanta ERP se emite doar cand banii intra in casa: numerar, respectiv
+    // mandat postal incasat in numerar. Mandatul incasat prin banca nu consuma
+    // numar de chitanta, doar inregistreaza plata.
+    if (incasari_este_in_numerar($mod_plata, $mandat_incasat_numerar)) {
         $tip_serie = incasari_tip_serie_pentru_tip($tip);
         $next = incasari_urmatorul_nr_serie($pdo, $tip_serie);
         if (empty($next['nr'])) {
@@ -244,8 +281,8 @@ function incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data
         $seria = $next['serie'];
         $nr_chitanta = $next['nr'];
     }
-    $stmt = $pdo->prepare("INSERT INTO incasari (membru_id, contact_id, tip, anul, suma, mod_plata, data_incasare, seria_chitanta, nr_chitanta, reprezentand, observatii, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$membru_id, $contact_id, $tip, $anul, $suma, $mod_plata, $data_incasare, $seria, $nr_chitanta, $reprezentand, $observatii ?: null, $created_by ?: null]);
+    $stmt = $pdo->prepare("INSERT INTO incasari (membru_id, contact_id, tip, anul, suma, mod_plata, mandat_incasat_numerar, data_incasare, seria_chitanta, nr_chitanta, reprezentand, observatii, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$membru_id, $contact_id, $tip, $anul, $suma, $mod_plata, $mandat_incasat_numerar, $data_incasare, $seria, $nr_chitanta, $reprezentand, $observatii ?: null, $created_by ?: null]);
     return (int)$pdo->lastInsertId();
 }
 
@@ -286,10 +323,31 @@ function incasari_lista_membru($pdo, $membru_id, $limit = 100) {
 }
 
 /** Listă ID-uri membri care au achitat cotizația pentru anul dat (pentru afișare „Cotizație achitată”). */
+/**
+ * ID-urile membrilor care nu mai datoreaza nimic pentru anul dat: au achitat integral,
+ * sunt scutiti, nu au cotizatie definita in Setari sau nu au status dosar Activ.
+ * O plata partiala nu achita anul.
+ */
 function incasari_membri_cotizatie_achitata_an($pdo, $anul) {
-    $stmt = $pdo->prepare("SELECT DISTINCT membru_id FROM incasari WHERE tip = 'cotizatie' AND anul = ?");
-    $stmt->execute([(int)$anul]);
-    return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'membru_id');
+    require_once __DIR__ . '/cotizatii_helper.php';
+    $anul = (int)$anul;
+    $out = [];
+    try {
+        $stmt = $pdo->query("SELECT id, hgrad, insotitor, status_dosar FROM membri");
+        if (!$stmt) {
+            return [];
+        }
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $membru) {
+            $situatie = cotizatii_situatie_membru($pdo, (int)$membru['id'], $membru);
+            $rand = $situatie['ani'][$anul] ?? null;
+            if ($rand === null || in_array($rand['status'], ['achitat', 'scutit', 'nedefinit'], true)) {
+                $out[] = (int)$membru['id'];
+            }
+        }
+    } catch (PDOException $e) {
+        return [];
+    }
+    return $out;
 }
 
 /** Membri care au achitat cotizația pentru anul dat. */

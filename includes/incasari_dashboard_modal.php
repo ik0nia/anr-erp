@@ -34,6 +34,15 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
                         <button type="button" role="radio" aria-checked="false" class="inc-dash-mod-btn px-3 py-2 rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800" data-mod="mandat_postal">Mandat postal</button>
                     </div>
                     <input type="hidden" name="mod_plata" id="inc-dash-mod" value="">
+                    <div id="inc-dash-wrap-mandat" class="hidden mt-3 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3">
+                        <label for="inc-dash-mandat-numerar" class="flex items-start gap-2 text-sm text-slate-800 dark:text-gray-200">
+                            <input type="checkbox" id="inc-dash-mandat-numerar" name="mandat_numerar" value="1" class="mt-1 h-4 w-4 rounded border-slate-400 dark:border-gray-500">
+                            <span>
+                                <span class="font-medium">Încasare numerar</span>
+                                <span class="block text-xs text-slate-700 dark:text-gray-300">Bifat: banii au intrat în casă, se emite chitanță ERP și încasarea apare în evidența încasărilor în numerar. Nebifat: mandatul a fost încasat în contul bancar, fără chitanță.</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
                 <div>
                     <label for="inc-dash-data" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Data încasării</label>
@@ -127,6 +136,10 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
             b.setAttribute('aria-checked', 'false');
         });
         form.reset();
+        var wrapMandatReset = document.getElementById('inc-dash-wrap-mandat');
+        var bifaMandatReset = document.getElementById('inc-dash-mandat-numerar');
+        if (wrapMandatReset) wrapMandatReset.classList.add('hidden');
+        if (bifaMandatReset) bifaMandatReset.checked = false;
         document.getElementById('inc-dash-data').value = defaultData;
         reprezentandInput.value = 'Donație';
         if (localitateInput) localitateInput.value = '';
@@ -235,6 +248,15 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
             this.classList.add('border-amber-500', 'bg-amber-200', 'dark:bg-amber-400', 'text-slate-900');
             this.classList.remove('border-slate-300', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-700');
             this.setAttribute('aria-checked', 'true');
+            var wrapMandatDash = document.getElementById('inc-dash-wrap-mandat');
+            var bifaMandatDash = document.getElementById('inc-dash-mandat-numerar');
+            if (wrapMandatDash && bifaMandatDash) {
+                var esteMandatDash = m === 'mandat_postal';
+                wrapMandatDash.classList.toggle('hidden', !esteMandatDash);
+                if (!esteMandatDash) {
+                    bifaMandatDash.checked = false;
+                }
+            }
             actualizeazaObligatoriuDateDonator();
         });
     });

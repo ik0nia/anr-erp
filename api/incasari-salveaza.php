@@ -22,6 +22,9 @@ $data_incasare = trim($_POST['data_incasare'] ?? date('Y-m-d'));
 $suma = (float)str_replace(',', '.', $_POST['suma'] ?? 0);
 $observatii = trim($_POST['observatii'] ?? '') ?: null;
 $reprezentand = trim($_POST['reprezentand'] ?? '') ?: null;
+// Mandat postal: bifa spune daca banii au fost incasati in numerar (intra in casa)
+// sau au venit prin banca (se inregistreaza plata, fara chitanta ERP).
+$mandat_numerar = !empty($_POST['mandat_numerar']) ? 1 : 0;
 
 $tipuri = [INCASARI_TIP_COTIZATIE, INCASARI_TIP_DONATIE, INCASARI_TIP_TAXA_PARTICIPARE, INCASARI_TIP_ALTE];
 $moduri = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CHITANTA_VECHE, INCASARI_MOD_CARD_POS, INCASARI_MOD_CARD_ONLINE, INCASARI_MOD_TRANSFER, INCASARI_MOD_MANDAT_POSTAL];
@@ -88,7 +91,7 @@ if ($tip === INCASARI_TIP_COTIZATIE) {
 
 $utilizator = $_SESSION['utilizator'] ?? $_SESSION['nume_complet'] ?? 'Utilizator';
 incasari_ensure_tables($pdo);
-$id = incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data_incasare, $utilizator, $observatii, null, $reprezentand);
+$id = incasari_adauga($pdo, $membru_id, $tip, $anul, $suma, $mod_plata, $data_incasare, $utilizator, $observatii, null, $reprezentand, $mandat_numerar);
 if (!$id) {
     echo json_encode(['ok' => false, 'eroare' => 'Eroare la salvare.']);
     exit;

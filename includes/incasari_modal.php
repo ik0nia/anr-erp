@@ -48,6 +48,16 @@
                 <input type="hidden" name="mod_plata" id="incasari-mod" value="">
             </div>
 
+            <div id="incasari-wrap-mandat" class="hidden rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-3">
+                <label for="incasari-mandat-numerar" class="flex items-start gap-2 text-sm text-slate-800 dark:text-gray-200">
+                    <input type="checkbox" id="incasari-mandat-numerar" name="mandat_numerar" value="1" class="mt-1 h-4 w-4 rounded border-slate-400 dark:border-gray-500">
+                    <span>
+                        <span class="font-medium">Încasare numerar</span>
+                        <span class="block text-xs text-slate-700 dark:text-gray-300">Bifat: banii au intrat în casă, se emite chitanță ERP și încasarea apare în evidența încasărilor în numerar. Nebifat: mandatul a fost încasat în contul bancar, fără chitanță, se înregistrează doar plata.</span>
+                    </span>
+                </label>
+            </div>
+
             <div>
                 <label for="incasari-data" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Data încasării</label>
                 <input type="date" id="incasari-data" name="data_incasare" value="<?php echo date('Y-m-d'); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
@@ -88,6 +98,8 @@
     var mid = document.getElementById('incasari-membru-id');
     var valCot = document.getElementById('incasari-valoare-cot');
     var cotAchitata = document.getElementById('incasari-cot-achitata');
+    var wrapMandat = document.getElementById('incasari-wrap-mandat');
+    var checkMandatNumerar = document.getElementById('incasari-mandat-numerar');
     var wrapAn = document.getElementById('incasari-wrap-an');
     var selectAn = document.getElementById('incasari-an-select');
     var infoAn = document.getElementById('incasari-an-info');
@@ -190,8 +202,17 @@
 
     function modEmiteChitanta() {
         if (modInput.value === 'numerar') return true;
-        if (modInput.value === 'mandat_postal') return true;
+        // Mandatul postal emite chitanta doar daca a fost incasat in numerar.
+        if (modInput.value === 'mandat_postal') return checkMandatNumerar.checked;
         return false;
+    }
+
+    function arataBifaMandat() {
+        var esteMandat = modInput.value === 'mandat_postal';
+        wrapMandat.classList.toggle('hidden', !esteMandat);
+        if (!esteMandat) {
+            checkMandatNumerar.checked = false;
+        }
     }
 
     function actualizeazaActiuni() {
@@ -229,6 +250,8 @@
         wrapSuma.classList.add('hidden');
         inputSuma.value = '';
         inputSuma.readOnly = false;
+        wrapMandat.classList.add('hidden');
+        checkMandatNumerar.checked = false;
         wrapAn.classList.add('hidden');
         selectAn.value = '';
         infoAn.textContent = '';
@@ -372,10 +395,15 @@
                 // La POS si la transfer bancar valoarea implicita este „Alta plata”.
                 selectAn.value = '';
             }
+            arataBifaMandat();
             arataCampAn();
             actualizeazaDupaAn();
             actualizeazaActiuni();
         });
+    });
+
+    checkMandatNumerar.addEventListener('change', function(){
+        actualizeazaActiuni();
     });
 
     selectAn.addEventListener('change', function(){

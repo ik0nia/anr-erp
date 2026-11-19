@@ -121,14 +121,18 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
     } catch (PDOException $e) {}
 
     if ($cotizatie_neachitata_filter) {
+        // Membri cu cel putin un an de cotizatie datorat, nu doar anul curent.
         $where_parts[] = "status_dosar = 'Activ'";
-        $excluded_ids = array_unique(array_merge($membri_scutiti_cotizatie_ids, $membri_cotizatie_achitata_an_curent));
-        if (!empty($excluded_ids)) {
-            $placeholders = implode(',', array_fill(0, count($excluded_ids), '?'));
-            $where_parts[] = "id NOT IN ($placeholders)";
-            foreach ($excluded_ids as $eid) {
-                $params[] = (int)$eid;
+        $ids_restante = [];
+        try { $ids_restante = cotizatii_membri_cu_restante($pdo); } catch (Throwable $e) {}
+        if (!empty($ids_restante)) {
+            $placeholders = implode(',', array_fill(0, count($ids_restante), '?'));
+            $where_parts[] = "id IN ($placeholders)";
+            foreach ($ids_restante as $rid) {
+                $params[] = (int)$rid;
             }
+        } else {
+            $where_parts[] = '1 = 0';
         }
     }
 
@@ -243,16 +247,8 @@ function membri_list(PDO $pdo, array $filters, int $page, int $per_page): array 
     // Numar cotizatie neachitata
     $membri_cotizatie_neachitata_count = 0;
     try {
-        $excluded_ids = array_unique(array_merge($membri_scutiti_cotizatie_ids, $membri_cotizatie_achitata_an_curent));
-        if (!empty($excluded_ids)) {
-            $placeholders = implode(',', array_fill(0, count($excluded_ids), '?'));
-            $stmt = $pdo->prepare("SELECT COUNT(*) as n FROM membri WHERE status_dosar = 'Activ' AND id NOT IN ($placeholders)");
-            $stmt->execute(array_map('intval', $excluded_ids));
-        } else {
-            $stmt = $pdo->query("SELECT COUNT(*) as n FROM membri WHERE status_dosar = 'Activ'");
-        }
-        $membri_cotizatie_neachitata_count = (int) $stmt->fetch()['n'];
-    } catch (PDOException $e) {}
+        $membri_cotizatie_neachitata_count = count(cotizatii_membri_cu_restante($pdo));
+    } catch (Throwable $e) {}
 
     // Numar fara contact
     $membri_fara_contact_count = 0;
@@ -382,18 +378,17 @@ function membri_lista_all(PDO $pdo, array $get_params): array {
 
     if ($cotizatie_neachitata_filter) {
         $where_parts[] = "status_dosar = 'Activ'";
-        $membri_scutiti = [];
-        try { $membri_scutiti = cotizatii_membri_scutiti_ids($pdo); } catch (PDOException $e) {}
-        $membri_achitata = [];
+        $ids_restante = [];
         try {
             cotizatii_ensure_tables($pdo);
-            $membri_achitata = incasari_membri_cotizatie_achitata_an($pdo, (int)date('Y'));
-        } catch (PDOException $e) {}
-        $excluded_ids = array_unique(array_merge($membri_scutiti, $membri_achitata));
-        if (!empty($excluded_ids)) {
-            $placeholders = implode(',', array_fill(0, count($excluded_ids), '?'));
-            $where_parts[] = "id NOT IN ($placeholders)";
-            foreach ($excluded_ids as $eid) $params[] = (int)$eid;
+            $ids_restante = cotizatii_membri_cu_restante($pdo);
+        } catch (Throwable $e) {}
+        if (!empty($ids_restante)) {
+            $placeholders = implode(',', array_fill(0, count($ids_restante), '?'));
+            $where_parts[] = "id IN ($placeholders)";
+            foreach ($ids_restante as $rid) $params[] = (int)$rid;
+        } else {
+            $where_parts[] = '1 = 0';
         }
     }
 

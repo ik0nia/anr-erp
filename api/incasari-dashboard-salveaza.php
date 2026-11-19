@@ -23,6 +23,8 @@ csrf_require_valid();
 $tip_form = isset($_POST['tip_form']) ? $_POST['tip_form'] : ''; // 'donatie' | 'cotizatie'
 $mod_plata = $_POST['mod_plata'] ?? '';
 $data_incasare = trim($_POST['data_incasare'] ?? date('Y-m-d'));
+// Mandat postal: bifa spune daca banii au fost incasati in numerar sau prin banca.
+$mandat_numerar = !empty($_POST['mandat_numerar']) ? 1 : 0;
 $reprezentand = trim($_POST['reprezentand'] ?? '') ?: null;
 
 $moduri = [INCASARI_MOD_NUMERAR, INCASARI_MOD_CHITANTA_VECHE, INCASARI_MOD_CARD_POS, INCASARI_MOD_CARD_ONLINE, INCASARI_MOD_TRANSFER, INCASARI_MOD_MANDAT_POSTAL];
@@ -80,7 +82,7 @@ if ($tip_form === 'donatie') {
         exit;
     }
 
-    $id = incasari_adauga($pdo, null, INCASARI_TIP_DONATIE, null, $suma, $mod_plata, $data_incasare, $utilizator, null, $contact_id, $reprezentand);
+    $id = incasari_adauga($pdo, null, INCASARI_TIP_DONATIE, null, $suma, $mod_plata, $data_incasare, $utilizator, null, $contact_id, $reprezentand, $mandat_numerar);
     if (!$id) {
         echo json_encode(['ok' => false, 'eroare' => 'Eroare la salvare încasare.']);
         exit;
@@ -137,7 +139,7 @@ if ($tip_form === 'donatie') {
             exit;
         }
         $reprezentand = incasari_reprezentand_cotizatie($anul, $mod_plata);
-        $id = incasari_adauga($pdo, $membru_id, INCASARI_TIP_COTIZATIE, $anul, $suma, $mod_plata, $data_incasare, $utilizator, null, null, $reprezentand);
+        $id = incasari_adauga($pdo, $membru_id, INCASARI_TIP_COTIZATIE, $anul, $suma, $mod_plata, $data_incasare, $utilizator, null, null, $reprezentand, $mandat_numerar);
     } else {
         if ($anul !== null) {
             echo json_encode(['ok' => false, 'eroare' => 'Ați selectat un an de cotizație, dar tipul încasării nu este cotizație.']);
@@ -148,7 +150,7 @@ if ($tip_form === 'donatie') {
             exit;
         }
         $reprezentand = $reprezentand ?: 'Donație';
-        $id = incasari_adauga($pdo, $membru_id, INCASARI_TIP_DONATIE, null, $suma, $mod_plata, $data_incasare, $utilizator, null, null, $reprezentand);
+        $id = incasari_adauga($pdo, $membru_id, INCASARI_TIP_DONATIE, null, $suma, $mod_plata, $data_incasare, $utilizator, null, null, $reprezentand, $mandat_numerar);
     }
 
     if (!$id) {

@@ -33,10 +33,10 @@ $params = [];
 // Borderou Chitante: includem doar documentele "Chitanta ERP":
 // - numerar
 // - mandat postal
-$where[] = '(i.mod_plata = ? OR (i.mod_plata = ? AND i.tip = ?))';
+// Aceeași regulă ca în tabul „Încasări numerar”: mandatele încasate prin bancă nu apar.
+$where[] = '(i.mod_plata = ? OR (i.mod_plata = ? AND i.mandat_incasat_numerar = 1))';
 $params[] = INCASARI_MOD_NUMERAR;
 $params[] = INCASARI_MOD_MANDAT_POSTAL;
-$params[] = INCASARI_TIP_COTIZATIE;
 if ($tip_filtru !== '' && in_array($tip_filtru, [INCASARI_TIP_COTIZATIE, INCASARI_TIP_DONATIE, INCASARI_TIP_TAXA_PARTICIPARE, INCASARI_TIP_ALTE], true)) {
     $where[] = 'i.tip = ?';
     $params[] = $tip_filtru;

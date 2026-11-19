@@ -73,23 +73,20 @@ function comunicare_filtreaza_membri(PDO $pdo, array $filters): array {
 
     // Cotizatie neachitata
     if (!empty($filters['cotizatie_neachitata'])) {
-        $an_curent = (int)date('Y');
-        $membri_scutiti = [];
-        $membri_achitati = [];
-        try {
-            $membri_scutiti = cotizatii_membri_scutiti_ids($pdo);
-        } catch (PDOException $e) {}
+        // Membri cu cel putin un an de cotizatie datorat, nu doar anul curent.
+        $ids_restante = [];
         try {
             cotizatii_ensure_tables($pdo);
-            $membri_achitati = incasari_membri_cotizatie_achitata_an($pdo, $an_curent);
-        } catch (PDOException $e) {}
-        $excluded = array_unique(array_merge($membri_scutiti, $membri_achitati));
-        if (!empty($excluded)) {
-            $placeholders = implode(',', array_fill(0, count($excluded), '?'));
-            $where_parts[] = "id NOT IN ($placeholders)";
-            foreach ($excluded as $eid) {
-                $params[] = (int)$eid;
+            $ids_restante = cotizatii_membri_cu_restante($pdo);
+        } catch (Throwable $e) {}
+        if (!empty($ids_restante)) {
+            $placeholders = implode(',', array_fill(0, count($ids_restante), '?'));
+            $where_parts[] = "id IN ($placeholders)";
+            foreach ($ids_restante as $rid) {
+                $params[] = (int)$rid;
             }
+        } else {
+            $where_parts[] = '1 = 0';
         }
     }
 
@@ -156,20 +153,19 @@ function comunicare_count_membri(PDO $pdo, array $filters): int {
     }
 
     if (!empty($filters['cotizatie_neachitata'])) {
-        $an_curent = (int)date('Y');
-        $excluded = [];
+        $ids_restante = [];
         try {
-            $membri_scutiti = cotizatii_membri_scutiti_ids($pdo);
             cotizatii_ensure_tables($pdo);
-            $membri_achitati = incasari_membri_cotizatie_achitata_an($pdo, $an_curent);
-            $excluded = array_unique(array_merge($membri_scutiti, $membri_achitati));
-        } catch (PDOException $e) {}
-        if (!empty($excluded)) {
-            $placeholders = implode(',', array_fill(0, count($excluded), '?'));
-            $where_parts[] = "id NOT IN ($placeholders)";
-            foreach ($excluded as $eid) {
-                $params[] = (int)$eid;
+            $ids_restante = cotizatii_membri_cu_restante($pdo);
+        } catch (Throwable $e) {}
+        if (!empty($ids_restante)) {
+            $placeholders = implode(',', array_fill(0, count($ids_restante), '?'));
+            $where_parts[] = "id IN ($placeholders)";
+            foreach ($ids_restante as $rid) {
+                $params[] = (int)$rid;
             }
+        } else {
+            $where_parts[] = '1 = 0';
         }
     }
 

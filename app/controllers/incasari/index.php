@@ -225,8 +225,9 @@ try {
         $where = [];
         $params = [];
 
-        // Borderou încasări numerar + mandat poștal (metode care emit chitanță ERP în fluxul curent)
-        $where[] = '(i.mod_plata = ? OR i.mod_plata = ?)';
+        // Evidența încasărilor în numerar: chitanță ERP și mandat poștal încasat în numerar.
+        // Mandatele încasate în contul bancar nu intră aici, pentru că banii nu au trecut prin casă.
+        $where[] = '(i.mod_plata = ? OR (i.mod_plata = ? AND i.mandat_incasat_numerar = 1))';
         $params[] = INCASARI_MOD_NUMERAR;
         $params[] = INCASARI_MOD_MANDAT_POSTAL;
 

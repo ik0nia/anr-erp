@@ -625,6 +625,32 @@ function cotizatii_mesaj_restanta(array $rand_an) {
 }
 
 /**
+ * ID-urile membrilor care au cel putin un an de cotizatie datorat pana in anul curent.
+ *
+ * Foloseste aceeasi logica cu avertizarile din profilul membrului: anii achitati
+ * integral, anii cu scutire si anii fara cotizatie definita in Setari nu conteaza,
+ * iar membrii fara status dosar Activ nu datoreaza nimic.
+ */
+function cotizatii_membri_cu_restante($pdo) {
+    $out = [];
+    try {
+        $stmt = $pdo->query("SELECT id, hgrad, insotitor, status_dosar FROM membri WHERE status_dosar = 'Activ' OR status_dosar IS NULL OR status_dosar = ''");
+        if (!$stmt) {
+            return [];
+        }
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $membru) {
+            $situatie = cotizatii_situatie_membru($pdo, (int)$membru['id'], $membru);
+            if (!empty($situatie['restante'])) {
+                $out[] = (int)$membru['id'];
+            }
+        }
+    } catch (PDOException $e) {
+        return [];
+    }
+    return $out;
+}
+
+/**
  * Anii datorati de membru, pregatiti pentru dropdown-ul din fereastra de incasare.
  * Returneaza o lista cu an, valoare datorata si rest de plata, crescator (cel mai vechi primul).
  */
