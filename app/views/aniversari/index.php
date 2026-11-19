@@ -92,7 +92,7 @@
         </div>
 
         <section class="mb-8" aria-labelledby="titlu-membri">
-            <h2 id="titlu-membri" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari membri – <?php echo date('d.m.Y', strtotime($data_selectata)); ?> (<?php echo count($aniversari_membri); ?>)</h2>
+            <h2 id="titlu-membri" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari membri – <?php echo date('d/m/Y', strtotime($data_selectata)); ?> (<?php echo count($aniversari_membri); ?>)</h2>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-label="Aniversari membri">
@@ -128,7 +128,7 @@
                                 <td class="px-4 py-3">
                                     <a href="/membru-profil?id=<?php echo (int)$m['id']; ?>" class="font-medium text-amber-600 dark:text-amber-400 hover:underline"><?php echo htmlspecialchars(trim($m['nume'] . ' ' . $m['prenume'])); ?></a>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo $m['datanastere'] ? date('d.m.Y', strtotime($m['datanastere'])) : '-'; ?></td>
+                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo $m['datanastere'] ? date('d/m/Y', strtotime($m['datanastere'])) : '-'; ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo aniversari_calculeaza_varsta($m['datanastere']); ?></td>
                                 <td class="px-4 py-3 text-sm">
                                     <?php
@@ -195,7 +195,7 @@
         </section>
 
         <section class="mb-6" aria-labelledby="titlu-contacte">
-            <h2 id="titlu-contacte" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari contacte – <?php echo date('d.m.Y', strtotime($data_selectata)); ?></h2>
+            <h2 id="titlu-contacte" class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Aniversari contacte – <?php echo date('d/m/Y', strtotime($data_selectata)); ?></h2>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow border border-slate-200 dark:border-gray-700 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700" role="table" aria-label="Aniversari contacte">
@@ -231,7 +231,7 @@
                                 <td class="px-4 py-3">
                                     <a href="/contacte/edit?id=<?php echo (int)$c['id']; ?>" class="font-medium text-amber-600 dark:text-amber-400 hover:underline"><?php echo htmlspecialchars(trim(($c['nume'] ?? '') . ' ' . ($c['prenume'] ?? ''))); ?></a>
                                 </td>
-                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo $c['data_nasterii'] ? date('d.m.Y', strtotime($c['data_nasterii'])) : '-'; ?></td>
+                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo $c['data_nasterii'] ? date('d/m/Y', strtotime($c['data_nasterii'])) : '-'; ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo aniversari_calculeaza_varsta($c['data_nasterii']); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($localitate); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($tel_primar_c ?: ($tel_personal_c ?: '-')); ?></td>

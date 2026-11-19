@@ -288,7 +288,7 @@
                                 <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                                     <?php foreach ($incasari as $inc): ?>
                                     <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50" id="row-inc-<?php echo (int)$inc['id']; ?>">
-                                        <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap"><?php echo date('d.m.Y', strtotime($inc['data_incasare'])); ?></td>
+                                        <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap"><?php echo date('d/m/Y', strtotime($inc['data_incasare'])); ?></td>
                                         <td class="px-4 py-3">
                                             <?php
                                             $tip_colors = [
@@ -502,7 +502,7 @@
                                 <tbody class="divide-y divide-slate-200 dark:divide-gray-700">
                                     <?php foreach ($incasari_toate as $inc): ?>
                                     <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50" id="row-inc-<?php echo (int)$inc['id']; ?>">
-                                        <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap"><?php echo date('d.m.Y', strtotime($inc['data_incasare'])); ?></td>
+                                        <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap"><?php echo date('d/m/Y', strtotime($inc['data_incasare'])); ?></td>
                                         <td class="px-4 py-3">
                                             <?php
                                             $tip_colors = [

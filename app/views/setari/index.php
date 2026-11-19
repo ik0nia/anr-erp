@@ -232,7 +232,7 @@
                         <?php else: ?>
                         <?php foreach ($lista_donatii_incasate as $don):
                             $nume_don = trim(($don['nume'] ?? '') . ' ' . ($don['prenume'] ?? ''));
-                            $data_fmt = !empty($don['data_incasare']) ? date('d.m.Y', strtotime($don['data_incasare'])) : '—';
+                            $data_fmt = !empty($don['data_incasare']) ? date('d/m/Y', strtotime($don['data_incasare'])) : '—';
                             $seria = $don['seria_chitanta'] ?? '—';
                             $nr = $don['nr_chitanta'] ?? '—';
                         ?>
@@ -601,8 +601,8 @@
                                     Permanent
                                 <?php else: ?>
                                     <?php
-                                    $deLa = !empty($s['data_scutire_de_la']) ? date('d.m.Y', strtotime((string)$s['data_scutire_de_la'])) : '—';
-                                    $panaLa = !empty($s['data_scutire_pana_la']) ? date('d.m.Y', strtotime((string)$s['data_scutire_pana_la'])) : '—';
+                                    $deLa = !empty($s['data_scutire_de_la']) ? date('d/m/Y', strtotime((string)$s['data_scutire_de_la'])) : '—';
+                                    $panaLa = !empty($s['data_scutire_pana_la']) ? date('d/m/Y', strtotime((string)$s['data_scutire_pana_la'])) : '—';
                                     echo htmlspecialchars($deLa . ' - ' . $panaLa);
                                     ?>
                                 <?php endif; ?>

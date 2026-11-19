@@ -73,22 +73,22 @@ try {
     while ($membru = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $row = [
             $membru['dosarnr'] ?? '',
-            $membru['dosardata'] ? date('d.m.Y', strtotime($membru['dosardata'])) : '',
+            $membru['dosardata'] ? date('d/m/Y', strtotime($membru['dosardata'])) : '',
             $membru['status_dosar'] ?? 'Activ',
             $membru['nume'] ?? '',
             $membru['prenume'] ?? '',
             $membru['telefonnev'] ?? '',
             $membru['telefonapartinator'] ?? '',
             $membru['email'] ?? '',
-            $membru['datanastere'] ? date('d.m.Y', strtotime($membru['datanastere'])) : '',
+            $membru['datanastere'] ? date('d/m/Y', strtotime($membru['datanastere'])) : '',
             $membru['locnastere'] ?? '',
             $membru['judnastere'] ?? '',
             $membru['cnp'] ?? '',
             $membru['ciseria'] ?? '',
             $membru['cinumar'] ?? '',
             $membru['cielib'] ?? '',
-            $membru['cidataelib'] ? date('d.m.Y', strtotime($membru['cidataelib'])) : '',
-            $membru['cidataexp'] ? date('d.m.Y', strtotime($membru['cidataexp'])) : '',
+            $membru['cidataelib'] ? date('d/m/Y', strtotime($membru['cidataelib'])) : '',
+            $membru['cidataexp'] ? date('d/m/Y', strtotime($membru['cidataexp'])) : '',
             $membru['sex'] ?? '',
             $membru['gdpr'] ? 'Da' : 'Nu',
             $membru['codpost'] ?? '',
@@ -106,8 +106,8 @@ try {
             $membru['hmotiv'] ?? '',
             $membru['hdur'] ?? '',
             $membru['cenr'] ?? '',
-            $membru['cedata'] ? date('d.m.Y', strtotime($membru['cedata'])) : '',
-            $membru['ceexp'] ? date('d.m.Y', strtotime($membru['ceexp'])) : '',
+            $membru['cedata'] ? date('d/m/Y', strtotime($membru['cedata'])) : '',
+            $membru['ceexp'] ? date('d/m/Y', strtotime($membru['ceexp'])) : '',
             $membru['notamembru'] ?? ''
         ];
 

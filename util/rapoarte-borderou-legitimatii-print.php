@@ -33,7 +33,7 @@ $antet_css = documente_antet_print_css();
 log_activitate(
     $pdo,
     'Rapoarte: print Borderou legitimatii membru interval ' .
-    date('d.m.Y', strtotime($data_de_la)) . ' - ' . date('d.m.Y', strtotime($data_pana_la))
+    date('d/m/Y', strtotime($data_de_la)) . ' - ' . date('d/m/Y', strtotime($data_pana_la))
 );
 ?>
 <!DOCTYPE html>
@@ -106,7 +106,7 @@ log_activitate(
     <?php echo $antet_html; ?>
 
     <p class="title"><strong>Borderou legitimatii de membru</strong></p>
-    <p class="sub">Interval: <?php echo htmlspecialchars(date('d.m.Y', strtotime($data_de_la))); ?> - <?php echo htmlspecialchars(date('d.m.Y', strtotime($data_pana_la))); ?></p>
+    <p class="sub">Interval: <?php echo htmlspecialchars(date('d/m/Y', strtotime($data_de_la))); ?> - <?php echo htmlspecialchars(date('d/m/Y', strtotime($data_pana_la))); ?></p>
 
     <div class="stats">
         <div class="stat"><div class="k">Total legitimații</div><div class="v"><?php echo (int)$stats['total']; ?></div></div>
@@ -133,7 +133,7 @@ log_activitate(
             <?php foreach ($rows as $idx => $row): ?>
             <tr>
                 <td class="num"><?php echo (int)($idx + 1); ?></td>
-                <td><?php echo htmlspecialchars((string)($row['data_actiune_display'] ?? date('d.m.Y', strtotime((string)$row['data_actiune'])))); ?></td>
+                <td><?php echo htmlspecialchars((string)($row['data_actiune_display'] ?? date('d/m/Y', strtotime((string)$row['data_actiune'])))); ?></td>
                 <td><?php echo htmlspecialchars((string)($row['membru_nume'] ?? '-')); ?></td>
                 <td><?php echo htmlspecialchars((string)(($row['dosarnr'] ?? '') !== '' ? $row['dosarnr'] : '-')); ?></td>
                 <td>

@@ -148,7 +148,7 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
             </div>
             <?php endif; ?>
             <h1>CHITANȚA</h1>
-            <div class="seria-nr">Seria: <?php echo htmlspecialchars($seria); ?> &nbsp;&nbsp; Nr. <?php echo htmlspecialchars($nr); ?> &nbsp;&nbsp; Data: <?php echo date('d.m.Y', strtotime($inc['data_incasare'])); ?></div>
+            <div class="seria-nr">Seria: <?php echo htmlspecialchars($seria); ?> &nbsp;&nbsp; Nr. <?php echo htmlspecialchars($nr); ?> &nbsp;&nbsp; Data: <?php echo date('d/m/Y', strtotime($inc['data_incasare'])); ?></div>
             <div class="spacer"></div>
             <div class="text-incasare"><?php echo htmlspecialchars($text_chitanta); ?></div>
             <div class="footer">

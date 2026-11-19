@@ -96,7 +96,7 @@ if ($template === 'standard' && ($date_asoc_esc !== '' || $logo_img !== '')) {
     $one .= '</tr></table>';
 }
 $one .= '<div style="text-align:center; font-size:15px; font-weight:bold; margin-top:2mm;">CHITANȚA</div>';
-$data_chitanta = date('d.m.Y', strtotime($inc['data_incasare']));
+$data_chitanta = date('d/m/Y', strtotime($inc['data_incasare']));
 $one .= '<div style="text-align:center; font-weight:bold; font-size:11px; margin-bottom:0;">Seria: ' . htmlspecialchars($seria) . ' &nbsp;&nbsp; Nr. ' . htmlspecialchars($nr) . ' &nbsp;&nbsp; Data: ' . htmlspecialchars($data_chitanta) . '</div>';
 $one .= $template === 'minimal' ? '<br>' : '<br><br>';
 $one .= '<div style="font-size:11px; line-height:1.4;">' . $text_chitanta . '</div>';

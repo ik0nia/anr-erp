@@ -257,7 +257,7 @@
                                 <td class="px-4 py-3 text-sm text-slate-900 dark:text-white"><?php echo htmlspecialchars($nl['subiect']); ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo (int)$nl['nr_recipienti']; ?></td>
                                 <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo htmlspecialchars($nl['categoria_contacte']); ?></td>
-                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo $nl['data_trimiterii'] ? date('d.m.Y H:i', strtotime($nl['data_trimiterii'])) : '-'; ?></td>
+                                <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300"><?php echo $nl['data_trimiterii'] ? date('d/m/Y H:i', strtotime($nl['data_trimiterii'])) : '-'; ?></td>
                                 <td class="px-4 py-3">
                                     <a href="/newsletter-view?id=<?php echo (int)$nl['id']; ?>" class="text-amber-600 dark:text-amber-400 hover:underline" aria-label="Vizualizează newsletter <?php echo htmlspecialchars($nl['subiect']); ?>">Vizualizează</a>
                                 </td>

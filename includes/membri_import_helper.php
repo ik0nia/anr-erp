@@ -138,7 +138,7 @@ function membri_import_available_fields(PDO $pdo): array {
  * @return string|null
  */
 function membri_import_parse_date(string $value): ?string {
-    return parse_date_to_ymd($value, ['d.m.Y', 'Y-m-d', 'd/m/Y', 'm/d/Y']);
+    return parse_date_flexibil($value, ['m/d/Y']);
 }
 
 /**

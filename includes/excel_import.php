@@ -223,7 +223,7 @@ function importa_membri($pdo, $rows, $mapare, $skip_duplicates = true) {
                     $data[$db_field] = (strtolower($value) === 'da' || $value === '1' || strtolower($value) === 'yes') ? 1 : 0;
                 } elseif (in_array($db_field, ['dosardata', 'datanastere', 'cidataelib', 'cidataexp', 'cedata', 'ceexp'])) {
                     // Procesare date
-                    $data[$db_field] = !empty($value) ? parse_date_to_ymd($value, ['d.m.Y', 'Y-m-d', 'd/m/Y']) : null;
+                    $data[$db_field] = !empty($value) ? parse_date_flexibil($value) : null;
                 } elseif ($db_field === 'cinumar') {
                     // Număr C.I.: doar cifre, max 7 caractere
                     $num = preg_replace('/\D/', '', $value);

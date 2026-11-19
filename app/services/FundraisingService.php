@@ -376,7 +376,7 @@ function fundraising_f230_get_settings(PDO $pdo): array
     if ($template_uploaded_at_raw !== '') {
         try {
             $dt = new DateTimeImmutable($template_uploaded_at_raw);
-            $template_uploaded_at_display = $dt->format('d.m.Y H:i:s');
+            $template_uploaded_at_display = $dt->format('d/m/Y H:i:s');
         } catch (Throwable $e) {
             $template_uploaded_at_display = '';
         }

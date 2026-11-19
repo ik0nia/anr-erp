@@ -28,6 +28,7 @@
     <script src="/js/mobile-navigation.js"></script>
     <script src="/js/accessibility-enhancements.js?v=2"></script>
     <script src="/js/form-ux-enhancements.js?v=3"></script>
+    <script src="/js/date-input-ro.js?v=1"></script>
     <style>
         /* Mobile optimizations */
         @media (max-width: 1023px) {

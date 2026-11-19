@@ -104,7 +104,7 @@ if ($email_notificare !== '' && filter_var($email_notificare, FILTER_VALIDATE_EM
         . "Tip: {$tip}\n"
         . "Suma: {$suma} RON\n"
         . "Document/chitanta: " . ($seria ? ($seria . ' nr. ' . $nr_chitanta) : 'fara serie') . "\n"
-        . "Data/ora stergere: " . date('d.m.Y H:i:s');
+        . "Data/ora stergere: " . date('d/m/Y H:i:s');
     sendAutomatedEmail($pdo, $email_notificare, $subiect, $mesaj);
 }
 

@@ -1042,7 +1042,7 @@ function docx_inlocuieste_taguri_ramase_cu_spatiu($docx_path) {
  * Caractere invalide pentru fișier (\ / : * ? " < > |) sunt înlocuite cu _.
  */
 function nume_fisier_document_generat($membru, $nume_template, $ext = 'docx') {
-    $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd.m.Y';
+    $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd/m/Y';
     $nume = trim($membru['nume'] ?? '');
     $prenume = trim($membru['prenume'] ?? '');
     $nume_doc = trim($nume_template ?? 'Document');
@@ -1179,7 +1179,7 @@ function genereaza_document_docx($template_path, $membru, $output_filename = nul
     }
 
     $include_data_generare = !empty($opts['include_data_generare']);
-    $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd.m.Y';
+    $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd/m/Y';
     $nrRegistratura = trim((string)($opts['nrregistratura'] ?? ''));
 
     $valori = membru_la_valori_tag($membru);
@@ -2084,7 +2084,7 @@ function documente_genereaza_pdf_din_template_pdf($template_pdf_path, array $mem
         @mkdir(UPLOAD_GENERATE_DIR, 0755, true);
     }
 
-    $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd.m.Y';
+    $formatDate = defined('DATE_FORMAT') ? DATE_FORMAT : 'd/m/Y';
     $tagValues = membru_la_valori_tag($membru);
     $tagValues['datagenerare'] = !empty($opts['include_data_generare']) ? date($formatDate) : ' ';
     $tagValues['nrregistratura'] = trim((string)($opts['nrregistratura'] ?? '')) ?: ' ';

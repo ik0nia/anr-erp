@@ -161,7 +161,7 @@ if (empty($selected_cols)) {
 <?php echo documente_antet_render($pdo); ?>
 <div class="print-header">
     <h1><?php echo htmlspecialchars(defined('PLATFORM_NAME') ? PLATFORM_NAME : 'ERP'); ?> - Lista Membri</h1>
-    <p>Data: <?php echo date('d.m.Y H:i'); ?> | Total: <?php echo count($all_members); ?> membri</p>
+    <p>Data: <?php echo date('d/m/Y H:i'); ?> | Total: <?php echo count($all_members); ?> membri</p>
 </div>
 
 <table>
@@ -191,7 +191,7 @@ if (empty($selected_cols)) {
                 <?php
                 $val = $m[$col] ?? '';
                 if ($col === 'datanastere' && $val) {
-                    echo date('d.m.Y', strtotime($val));
+                    echo date('d/m/Y', strtotime($val));
                 } else {
                     echo htmlspecialchars($val);
                 }

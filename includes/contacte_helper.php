@@ -105,7 +105,7 @@ function importa_contacte(PDO $pdo, array $headers, array $rows, array $mapare) 
                 $val = trim((string)$row[$excel_idx]);
             }
             if ($db_field === 'data_nasterii' && !empty($val)) {
-                $data[$db_field] = parse_date_to_ymd($val, ['d.m.Y', 'Y-m-d', 'd/m/Y']);
+                $data[$db_field] = parse_date_flexibil($val);
             } elseif ($db_field === 'tip_contact') {
                 $data[$db_field] = in_array($val, $tipuri_valide) ? $val : 'alte contacte';
             } else {

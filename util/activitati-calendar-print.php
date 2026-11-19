@@ -135,7 +135,7 @@ function activitati_calendar_print_h(string $v): string
     <div class="content-wrap">
         <?php echo documente_antet_render($pdo); ?>
         <p class="title">Calendar activitati</p>
-        <p class="sub">Data tipăririi: <?php echo activitati_calendar_print_h(date('d.m.Y H:i')); ?></p>
+        <p class="sub">Data tipăririi: <?php echo activitati_calendar_print_h(date('d/m/Y H:i')); ?></p>
 
         <?php if (!empty($activitati)): ?>
             <ul class="list" aria-label="Calendar activități programate pe viitor">

@@ -5,9 +5,9 @@
  */
 
 if (!defined('DATE_FORMAT')) {
-    define('DATE_FORMAT', 'd.m.Y');
+    define('DATE_FORMAT', 'd/m/Y');
     define('TIME_FORMAT', 'H:i');
-    define('DATETIME_FORMAT', 'd.m.Y H:i');
+    define('DATETIME_FORMAT', 'd/m/Y H:i');
 }
 
 /**

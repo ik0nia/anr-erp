@@ -325,7 +325,7 @@ function render_formular_profil_membru($membru, $eroare = '', $istoric_modificar
                                             if ($dt) {
                                                 $ts = strtotime($dt);
                                                 if ($ts) {
-                                                    $dt_out = date('d.m.Y H:i', $ts);
+                                                    $dt_out = date('d/m/Y H:i', $ts);
                                                 }
                                             }
                                             echo htmlspecialchars($dt_out);

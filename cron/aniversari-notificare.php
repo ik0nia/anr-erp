@@ -72,8 +72,8 @@ try {
 } catch (PDOException $e) {}
 
 $total = count($membri) + count($contacte);
-$titlu = 'Aniversări ' . date('d.m.Y');
-$continut = "Azi (" . date('d.m.Y') . ") își serbează ziua de naștere " . $total . " persoane.\n\n";
+$titlu = 'Aniversări ' . date('d/m/Y');
+$continut = "Azi (" . date('d/m/Y') . ") își serbează ziua de naștere " . $total . " persoane.\n\n";
 
 if (!empty($membri)) {
     $continut .= "Membri:\n";

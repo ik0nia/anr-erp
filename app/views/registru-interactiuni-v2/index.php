@@ -90,8 +90,8 @@
                                 data-info="<?php echo htmlspecialchars($r['informatii_suplimentare'] ?? ''); ?>"
                                 data-utilizator="<?php echo htmlspecialchars($r['utilizator'] ?? ''); ?>"
                                 data-task-id="<?php echo (int)($r['task_id'] ?? 0); ?>"
-                                data-data="<?php echo date('d.m.Y H:i', strtotime($r['data_ora'])); ?>">
-                                <td class="px-3 py-2 text-xs text-slate-700 dark:text-gray-300"><?php echo date('d.m.Y H:i', strtotime($r['data_ora'])); ?></td>
+                                data-data="<?php echo date('d/m/Y H:i', strtotime($r['data_ora'])); ?>">
+                                <td class="px-3 py-2 text-xs text-slate-700 dark:text-gray-300"><?php echo date('d/m/Y H:i', strtotime($r['data_ora'])); ?></td>
                                 <td class="px-3 py-2">
                                     <?php
                                     $tip_class = 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200';

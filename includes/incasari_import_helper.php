@@ -120,7 +120,7 @@ function incasari_import_normalize_tip(string $value, ?string $fallback = null):
  * @return string|null
  */
 function incasari_import_parse_date(string $value): ?string {
-    return parse_date_to_ymd($value, ['Y-m-d', 'd.m.Y', 'd/m/Y', 'm/d/Y']);
+    return parse_date_flexibil($value, ['m/d/Y']);
 }
 
 /**

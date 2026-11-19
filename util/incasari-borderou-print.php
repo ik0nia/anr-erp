@@ -114,7 +114,7 @@ if ($serie_filtru !== '') {
     $serie_selectata = 'Toate';
 }
 
-$titlu_borderou = 'Borderou Chitante ERP, Seria ' . $serie_selectata . ', Perioada ' . date('d.m.Y', strtotime($data_de_la)) . ' - ' . date('d.m.Y', strtotime($data_pana_la));
+$titlu_borderou = 'Borderou Chitante ERP, Seria ' . $serie_selectata . ', Perioada ' . date('d/m/Y', strtotime($data_de_la)) . ' - ' . date('d/m/Y', strtotime($data_pana_la));
 ?>
 <!DOCTYPE html>
 <html lang="ro">
@@ -218,7 +218,7 @@ $titlu_borderou = 'Borderou Chitante ERP, Seria ' . $serie_selectata . ', Perioa
             <?php else: ?>
                 <?php foreach ($incasari as $inc): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars(date('d.m.Y', strtotime((string)$inc['data_incasare']))); ?></td>
+                        <td><?php echo htmlspecialchars(date('d/m/Y', strtotime((string)$inc['data_incasare']))); ?></td>
                         <td><?php echo htmlspecialchars($tipuri_afisare[$inc['tip']] ?? (string)$inc['tip']); ?></td>
                         <td><?php echo htmlspecialchars(trim((string)($inc['nume'] ?? '') . ' ' . (string)($inc['prenume'] ?? '')) ?: '-'); ?></td>
                         <td class="num"><?php echo htmlspecialchars(number_format((float)$inc['suma'], 2, ',', '.')); ?> RON</td>

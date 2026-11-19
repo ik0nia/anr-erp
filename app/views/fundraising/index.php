@@ -114,7 +114,7 @@
                                         <td class="px-4 py-3 text-sm text-slate-900 dark:text-gray-100"><?php echo htmlspecialchars((string)$f['telefon']); ?></td>
                                         <td class="px-4 py-3 text-sm text-slate-900 dark:text-gray-100"><?php echo htmlspecialchars((string)$f['email']); ?></td>
                                         <td class="px-4 py-3 text-sm text-slate-900 dark:text-gray-100"><?php echo htmlspecialchars((string)$f['sursa']); ?></td>
-                                        <td class="px-4 py-3 text-sm text-slate-900 dark:text-gray-100"><?php echo htmlspecialchars(date('d.m.Y H:i', strtotime((string)$f['created_at']))); ?></td>
+                                        <td class="px-4 py-3 text-sm text-slate-900 dark:text-gray-100"><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime((string)$f['created_at']))); ?></td>
                                         <td class="px-4 py-3 text-sm">
                                             <a href="/util/f230-descarca.php?id=<?php echo (int)$f['id']; ?>"
                                                class="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium focus:ring-2 focus:ring-emerald-500"

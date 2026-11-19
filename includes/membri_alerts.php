@@ -98,7 +98,7 @@ function genereaza_alerts_membru($membru, $pdo = null) {
         if (!$dismissed) {
             $alerts[] = [
                 'tip' => 'warning',
-                'mesaj' => 'Expira C.I. pe ' . $data_expirare->format('d.m.Y'),
+                'mesaj' => 'Expira C.I. pe ' . $data_expirare->format('d/m/Y'),
                 'alert_key' => 'ci',
                 'data_expirare' => $data_expirare_str
             ];
@@ -135,7 +135,7 @@ function genereaza_alerts_membru($membru, $pdo = null) {
         if (!$dismissed) {
             $alerts[] = [
                 'tip' => 'warning',
-                'mesaj' => 'Expira C.H. pe ' . $data_expirare->format('d.m.Y'),
+                'mesaj' => 'Expira C.H. pe ' . $data_expirare->format('d/m/Y'),
                 'alert_key' => 'ch',
                 'data_expirare' => $data_expirare_str
             ];
@@ -191,7 +191,7 @@ function genereaza_alerts_membru_pentru_profil($membru, $pdo = null) {
         }
         $alerts[] = [
             'tip' => 'warning',
-            'mesaj' => 'Expira C.I. pe ' . $data_expirare->format('d.m.Y'),
+            'mesaj' => 'Expira C.I. pe ' . $data_expirare->format('d/m/Y'),
             'alert_key' => 'ci',
             'data_expirare' => $data_expirare_str,
             'dismissed' => $dismissed
@@ -217,7 +217,7 @@ function genereaza_alerts_membru_pentru_profil($membru, $pdo = null) {
         }
         $alerts[] = [
             'tip' => 'warning',
-            'mesaj' => 'Expira C.H. pe ' . $data_expirare->format('d.m.Y'),
+            'mesaj' => 'Expira C.H. pe ' . $data_expirare->format('d/m/Y'),
             'alert_key' => 'ch',
             'data_expirare' => $data_expirare_str,
             'dismissed' => $dismissed

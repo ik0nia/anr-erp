@@ -77,7 +77,7 @@ $title = 'Administrativ - print';
         $statusuri = administrativ_statusuri_achizitie();
         ?>
         <p class="title"><?php echo administrativ_print_h($title); ?></p>
-        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d.m.Y H:i')); ?></p>
+        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d/m/Y H:i')); ?></p>
         <table aria-label="Lista achiziții">
             <thead>
                 <tr>
@@ -105,7 +105,7 @@ $title = 'Administrativ - print';
                             ?>
                         </td>
                         <td><?php echo administrativ_print_h((string)($r['furnizor'] ?? '-')); ?></td>
-                        <td><?php echo !empty($r['data_adaugare']) ? administrativ_print_h(date('d.m.Y', strtotime((string)$r['data_adaugare']))) : '-'; ?></td>
+                        <td><?php echo !empty($r['data_adaugare']) ? administrativ_print_h(date('d/m/Y', strtotime((string)$r['data_adaugare']))) : '-'; ?></td>
                         <td><?php echo administrativ_print_h((string)($r['added_by'] ?? '-')); ?></td>
                     </tr>
                 <?php endforeach; endif; ?>
@@ -118,7 +118,7 @@ $title = 'Administrativ - print';
         $tipuri = administrativ_tipuri_document_calendar();
         ?>
         <p class="title"><?php echo administrativ_print_h($title); ?></p>
-        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d.m.Y H:i')); ?></p>
+        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d/m/Y H:i')); ?></p>
         <table aria-label="Calendar administrativ">
             <thead>
                 <tr>
@@ -141,8 +141,8 @@ $title = 'Administrativ - print';
                             echo administrativ_print_h((string)($tipuri[$tip] ?? $tip));
                             ?>
                         </td>
-                        <td><?php echo !empty($r['data_inceput']) ? administrativ_print_h(date('d.m.Y', strtotime((string)$r['data_inceput']))) : '-'; ?></td>
-                        <td><?php echo !empty($r['data_expirarii']) ? administrativ_print_h(date('d.m.Y', strtotime((string)$r['data_expirarii']))) : '-'; ?></td>
+                        <td><?php echo !empty($r['data_inceput']) ? administrativ_print_h(date('d/m/Y', strtotime((string)$r['data_inceput']))) : '-'; ?></td>
+                        <td><?php echo !empty($r['data_expirarii']) ? administrativ_print_h(date('d/m/Y', strtotime((string)$r['data_expirarii']))) : '-'; ?></td>
                         <td><?php echo administrativ_print_h((string)($r['observatii'] ?? '-')); ?></td>
                     </tr>
                 <?php endforeach; endif; ?>
@@ -154,7 +154,7 @@ $title = 'Administrativ - print';
         $rows = (array)($data['lista_juridic'] ?? []);
         ?>
         <p class="title"><?php echo administrativ_print_h($title); ?></p>
-        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d.m.Y H:i')); ?></p>
+        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d/m/Y H:i')); ?></p>
         <table aria-label="Juridic ANR">
             <thead>
                 <tr>
@@ -170,7 +170,7 @@ $title = 'Administrativ - print';
                     <tr><td class="empty" colspan="5">Nu există înregistrări.</td></tr>
                 <?php else: foreach ($rows as $r): ?>
                     <tr>
-                        <td><?php echo !empty($r['data_document']) ? administrativ_print_h(date('d.m.Y', strtotime((string)$r['data_document']))) : '-'; ?></td>
+                        <td><?php echo !empty($r['data_document']) ? administrativ_print_h(date('d/m/Y', strtotime((string)$r['data_document']))) : '-'; ?></td>
                         <td><?php echo administrativ_print_h((string)($r['categorie'] ?? '-')); ?></td>
                         <td><?php echo administrativ_print_h((string)($r['titlu'] ?? '-')); ?></td>
                         <td><?php echo administrativ_print_h((string)($r['descriere'] ?? '-')); ?></td>
@@ -185,7 +185,7 @@ $title = 'Administrativ - print';
         $rows = (array)($data['lista_parteneriate'] ?? []);
         ?>
         <p class="title"><?php echo administrativ_print_h($title); ?></p>
-        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d.m.Y H:i')); ?></p>
+        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d/m/Y H:i')); ?></p>
         <table aria-label="Parteneriate">
             <thead>
                 <tr>
@@ -203,8 +203,8 @@ $title = 'Administrativ - print';
                     <tr>
                         <td><?php echo administrativ_print_h((string)($r['nume_partener'] ?? '-')); ?></td>
                         <td><?php echo administrativ_print_h((string)($r['obiect_parteneriat'] ?? '-')); ?></td>
-                        <td><?php echo !empty($r['data_inceput']) ? administrativ_print_h(date('d.m.Y', strtotime((string)$r['data_inceput']))) : '-'; ?></td>
-                        <td><?php echo !empty($r['data_sfarsit']) ? administrativ_print_h(date('d.m.Y', strtotime((string)$r['data_sfarsit']))) : '-'; ?></td>
+                        <td><?php echo !empty($r['data_inceput']) ? administrativ_print_h(date('d/m/Y', strtotime((string)$r['data_inceput']))) : '-'; ?></td>
+                        <td><?php echo !empty($r['data_sfarsit']) ? administrativ_print_h(date('d/m/Y', strtotime((string)$r['data_sfarsit']))) : '-'; ?></td>
                         <td><?php echo administrativ_print_h((string)($r['observatii'] ?? '-')); ?></td>
                     </tr>
                 <?php endforeach; endif; ?>
@@ -216,7 +216,7 @@ $title = 'Administrativ - print';
         $rows = (array)($data['lista_proceduri'] ?? []);
         ?>
         <p class="title"><?php echo administrativ_print_h($title); ?></p>
-        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d.m.Y H:i')); ?></p>
+        <p class="sub">Data tipăririi: <?php echo administrativ_print_h(date('d/m/Y H:i')); ?></p>
         <table aria-label="Proceduri interne">
             <thead>
                 <tr>
@@ -232,7 +232,7 @@ $title = 'Administrativ - print';
                     <tr>
                         <td><?php echo administrativ_print_h((string)($r['titlu'] ?? '-')); ?></td>
                         <td><?php echo administrativ_print_h(trim(strip_tags((string)($r['continut'] ?? '')))); ?></td>
-                        <td><?php echo !empty($r['updated_at']) ? administrativ_print_h(date('d.m.Y H:i', strtotime((string)$r['updated_at']))) : '-'; ?></td>
+                        <td><?php echo !empty($r['updated_at']) ? administrativ_print_h(date('d/m/Y H:i', strtotime((string)$r['updated_at']))) : '-'; ?></td>
                     </tr>
                 <?php endforeach; endif; ?>
             </tbody>

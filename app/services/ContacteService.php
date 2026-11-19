@@ -148,7 +148,7 @@ function contacte_create(PDO $pdo, array $data, string $utilizator = 'Sistem'): 
     $referinta = trim($data['referinta_contact'] ?? '') ?: null;
 
     $data_nasterii = trim($data['data_nasterii'] ?? '');
-    $data_nasterii = $data_nasterii !== '' ? parse_date_to_ymd($data_nasterii, ['Y-m-d', 'd.m.Y']) : null;
+    $data_nasterii = $data_nasterii !== '' ? parse_date_flexibil($data_nasterii) : null;
 
     try {
         $stmt = $pdo->prepare('INSERT INTO contacte (nume, prenume, companie, tip_contact, telefon, telefon_personal, email, email_personal, website, data_nasterii, notite, referinta_contact) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
@@ -189,7 +189,7 @@ function contacte_update(PDO $pdo, int $id, array $data, string $utilizator = 'S
     $referinta = trim($data['referinta_contact'] ?? '') ?: null;
 
     $data_nasterii = trim($data['data_nasterii'] ?? '');
-    $data_nasterii = $data_nasterii !== '' ? parse_date_to_ymd($data_nasterii, ['Y-m-d', 'd.m.Y']) : null;
+    $data_nasterii = $data_nasterii !== '' ? parse_date_flexibil($data_nasterii) : null;
 
     try {
         // Date vechi pentru log

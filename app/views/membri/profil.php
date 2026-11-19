@@ -865,7 +865,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
                                     <p class="text-xs text-slate-600 dark:text-gray-400 mt-0.5"><?php echo htmlspecialchars($at_ci['nota']); ?></p>
                                     <?php endif; ?>
                                     <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">
-                                        <?php echo $at_ci['created_at'] ? date('d.m.Y H:i', strtotime($at_ci['created_at'])) : '-'; ?>
+                                        <?php echo $at_ci['created_at'] ? date('d/m/Y H:i', strtotime($at_ci['created_at'])) : '-'; ?>
                                         <?php if (!empty($at_ci['uploaded_by'])): ?>
                                         — <?php echo htmlspecialchars($at_ci['uploaded_by']); ?>
                                         <?php endif; ?>
@@ -1280,7 +1280,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
                                     <p class="text-xs text-slate-600 dark:text-gray-400 mt-0.5"><?php echo htmlspecialchars($at['nota']); ?></p>
                                     <?php endif; ?>
                                     <p class="text-xs text-slate-500 dark:text-gray-500 mt-0.5">
-                                        <?php echo $at['created_at'] ? date('d.m.Y H:i', strtotime($at['created_at'])) : '-'; ?>
+                                        <?php echo $at['created_at'] ? date('d/m/Y H:i', strtotime($at['created_at'])) : '-'; ?>
                                         <?php if (!empty($at['uploaded_by'])): ?>
                                         — <?php echo htmlspecialchars($at['uploaded_by']); ?>
                                         <?php endif; ?>
@@ -1394,7 +1394,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
-                                <?php echo $doc_ts ? date('d.m.Y H:i', $doc_ts) : '—'; ?>
+                                <?php echo $doc_ts ? date('d/m/Y H:i', $doc_ts) : '—'; ?>
                             </td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
                                 <?php echo htmlspecialchars((string)($doc['nr_inregistrare'] ?? '—')); ?>
@@ -1581,7 +1581,7 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
                         ?>
                         <tr class="hover:bg-slate-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300 whitespace-nowrap">
-                                <?php echo $ts ? date('d.m.Y H:i', $ts) : '—'; ?>
+                                <?php echo $ts ? date('d/m/Y H:i', $ts) : '—'; ?>
                             </td>
                             <td class="px-4 py-3 text-sm">
                                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium <?php echo $badge_class; ?> mb-1">
