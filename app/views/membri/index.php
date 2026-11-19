@@ -356,6 +356,7 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                     $m_asistent = function_exists('cotizatii_map_insotitor_to_asistent') ? cotizatii_map_insotitor_to_asistent($m_insotitor) : 'Fara asistent personal';
                                     $val_cot_key = $m_hgrad . '|' . $m_asistent;
                                     $val_cot = $valori_cotizatie_an_curent[$val_cot_key] ?? ($valori_cotizatie_an_curent[$m_hgrad] ?? 0);
+                                    $ani_cot_m = function_exists('cotizatii_ani_pentru_incasare') ? cotizatii_ani_pentru_incasare($pdo, (int)$m['id'], $m) : [];
                                     if (in_array($m['id'], $membri_scutiti_cotizatie_ids)): ?>
                                     <a href="/setari?tab=cotizatii"
                                        class="inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-slate-600 dark:border-slate-500 bg-slate-700 dark:bg-slate-600 text-white font-medium"
@@ -363,12 +364,14 @@ $deschide_formular = !empty($eroare) && $_SERVER['REQUEST_METHOD'] === 'POST';
                                         <i data-lucide="shield-check" class="w-3.5 h-3.5 shrink-0" aria-hidden="true"></i>
                                         <span>Scutit de cotizatie</span>
                                     </a>
-                                    <?php else: ?>
+                                    <?php endif; ?>
+                                    <?php if (!in_array($m['id'], $membri_scutiti_cotizatie_ids) || !empty($ani_cot_m)): ?>
                                     <button type="button"
                                             class="btn-deschide-incasari inline-flex items-center gap-1 px-2 py-1 rounded border text-xs border-purple-600 dark:border-purple-500 bg-purple-700 dark:bg-purple-700 text-white hover:bg-purple-600 dark:hover:bg-purple-600 font-medium"
                                             data-membru-id="<?php echo (int)$m['id']; ?>"
                                             data-membru-nume="<?php echo htmlspecialchars($nume_complet); ?>"
                                             data-valoare-cot="<?php echo number_format($val_cot, 2, '.', ''); ?>"
+                                            data-ani-cotizatie="<?php echo htmlspecialchars(json_encode($ani_cot_m, JSON_UNESCAPED_UNICODE), ENT_QUOTES); ?>"
                                             data-cot-achitata="<?php echo $cot_achitata_incasari ? '1' : '0'; ?>"
                                             onclick="event.stopPropagation(); window.deschideIncasari && window.deschideIncasari(this);"
                                             aria-label="Incaseaza <?php echo htmlspecialchars($nume_complet); ?>">

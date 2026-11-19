@@ -224,17 +224,31 @@ function genereaza_alerts_membru_pentru_profil($membru, $pdo = null) {
         ];
     }
     
-    // Cotizație neachitată: verifică din tabelul incasari + scutiri
+    // Cotizatii neachitate: un mesaj pentru fiecare an datorat, cel mai recent primul.
+    // Se afiseaza cel mult 3 ani; restul intr-un singur mesaj cumulativ.
+    // Anii scutiti, anii fara cotizatie definita in Setari si membrii care nu au
+    // status dosar Activ nu produc avertizari.
     if ($pdo && $membru_id) {
         try {
             require_once __DIR__ . '/cotizatii_helper.php';
             require_once __DIR__ . '/incasari_helper.php';
-            $an_curent = (int)date('Y');
-            $scutit = cotizatii_membru_este_scutit($pdo, $membru_id);
-            if (empty($scutit) && !incasari_cotizatie_achitata_an($pdo, $membru_id, $an_curent)) {
+            $membru_situatie = (isset($membru['hgrad']) || isset($membru['status_dosar'])) ? $membru : null;
+            $situatie = cotizatii_situatie_membru($pdo, $membru_id, $membru_situatie);
+            $restante = $situatie['restante'] ?? [];
+            $afisate = array_slice($restante, 0, 3);
+            foreach ($afisate as $rand_an) {
                 $alerts[] = [
                     'tip' => 'warning',
-                    'mesaj' => 'Cotizatie ' . $an_curent . ' neachitata',
+                    'mesaj' => cotizatii_mesaj_restanta($rand_an),
+                    'alert_key' => 'cotizatie',
+                    'dismissed' => false
+                ];
+            }
+            $ani_ramasi = count($restante) - count($afisate);
+            if ($ani_ramasi > 0) {
+                $alerts[] = [
+                    'tip' => 'warning',
+                    'mesaj' => 'Cotizatie datorata si pe alti ' . $ani_ramasi . ($ani_ramasi === 1 ? ' an' : ' ani'),
                     'alert_key' => 'cotizatie',
                     'dismissed' => false
                 ];

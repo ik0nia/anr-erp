@@ -178,6 +178,9 @@ $scutire_cotizatie = $cot_info['scutire_cotizatie'];
 $cotizatie_achitata_an_curent = $cot_info['cotizatie_achitata_an_curent'];
 $valoare_cotizatie_an = $cot_info['valoare_cotizatie_an'];
 $an_cotizatie_setata = (int)($cot_info['an_cotizatie'] ?? date('Y'));
+// Variabila folosita in pagina de profil (data-cotizatie-an).
+$an_cotizatie = $an_cotizatie_setata;
+$ani_cotizatie_datorati = $cot_info['ani_datorati'] ?? [];
 $scutire_cotizatie_membru = null;
 try {
     $scutire_cotizatie_membru = cotizatii_get_scutire_membru($pdo, $membru_id);

@@ -183,13 +183,15 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
                 <i data-lucide="shield-check" class="mr-2 w-4 h-4" aria-hidden="true"></i>
                 Scutit de cotizatie
             </a>
-            <?php else: ?>
+            <?php endif; ?>
+            <?php if (empty($scutire_cotizatie) || !empty($ani_cotizatie_datorati)): ?>
             <button type="button"
                     class="btn-deschide-incasari inline-flex items-center px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
                     data-membru-id="<?php echo (int)$membru['id']; ?>"
                     data-membru-nume="<?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>"
                     data-valoare-cot="<?php echo number_format($valoare_cotizatie_an, 2, '.', ''); ?>"
-                    data-cotizatie-an="<?php echo (int)$an_cotizatie; ?>"
+                    data-cotizatie-an="<?php echo (int)($an_cotizatie ?? date('Y')); ?>"
+                    data-ani-cotizatie="<?php echo htmlspecialchars(json_encode($ani_cotizatie_datorati ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES); ?>"
                     data-cot-achitata="<?php echo $cotizatie_achitata_an_curent ? '1' : '0'; ?>"
                     aria-label="Incaseaza <?php echo htmlspecialchars(trim($membru['nume'] . ' ' . $membru['prenume'])); ?>">
                 <i data-lucide="dollar-sign" class="mr-2 w-4 h-4" aria-hidden="true"></i>
@@ -1486,7 +1488,14 @@ if (!empty($scutire_cotizatie_membru) && is_array($scutire_cotizatie_membru)) {
                                 <?php echo $inc['data_incasare'] ? date(DATE_FORMAT, strtotime($inc['data_incasare'])) : '-'; ?>
                             </td>
                             <td class="px-4 py-3 text-sm text-slate-700 dark:text-gray-300">
-                                <?php echo htmlspecialchars($tipuri_afisare[$inc['tip']] ?? $inc['tip']); ?>
+                                <?php
+                                $tip_afisat_inc = $tipuri_afisare[$inc['tip']] ?? $inc['tip'];
+                                // La cotizatii afisam si anul pentru care s-a incasat.
+                                if (($inc['tip'] ?? '') === 'cotizatie' && !empty($inc['anul'])) {
+                                    $tip_afisat_inc .= ' ' . (int)$inc['anul'];
+                                }
+                                echo htmlspecialchars($tip_afisat_inc);
+                                ?>
                             </td>
                             <td class="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
                                 <?php echo number_format((float)$inc['suma'], 2, ',', ' '); ?>

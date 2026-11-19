@@ -102,23 +102,47 @@ if ($tip_form === 'donatie') {
         exit;
     }
 
-    $anul = (int)date('Y');
+    // Anul cotizatiei vine din dropdown-ul „Cotizatie pentru anul”.
+    $an_cotizatie_post = trim((string)($_POST['an_cotizatie'] ?? ''));
+    $anul = $an_cotizatie_post !== '' ? (int)$an_cotizatie_post : null;
     if ($tip_incasare === 'cotizatie') {
+        if ($anul === null) {
+            echo json_encode(['ok' => false, 'eroare' => 'Selectați anul cotizației sau schimbați tipul încasării.']);
+            exit;
+        }
+        $situatie_dash = cotizatii_situatie_membru($pdo, $membru_id);
+        $status_dosar_dash = (string)($situatie_dash['status_dosar'] ?? 'Activ');
+        if ($status_dosar_dash !== 'Activ') {
+            echo json_encode(['ok' => false, 'eroare' => 'Membrul are status dosar ' . $status_dosar_dash . ' și nu datorează cotizație.']);
+            exit;
+        }
+        $rand_an_dash = $situatie_dash['ani'][$anul] ?? null;
+        if ($rand_an_dash === null || $rand_an_dash['status'] === 'nedefinit') {
+            echo json_encode(['ok' => false, 'eroare' => 'Pentru anul ' . $anul . ' nu există o cotizație definită în Setări pentru acest membru.']);
+            exit;
+        }
+        if ($rand_an_dash['status'] === 'scutit') {
+            echo json_encode(['ok' => false, 'eroare' => 'Membrul este scutit de plata cotizației pentru anul ' . $anul . '.']);
+            exit;
+        }
+        if ($rand_an_dash['status'] === 'achitat') {
+            echo json_encode(['ok' => false, 'eroare' => 'Cotizația pentru anul ' . $anul . ' este deja achitată.']);
+            exit;
+        }
         if ($suma <= 0) {
-            $stmt = $pdo->prepare("SELECT hgrad, insotitor FROM membri WHERE id = ?");
-            $stmt->execute([$membru_id]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            $grad = $row['hgrad'] ?? 'Fara handicap';
-            $asistent = cotizatii_map_insotitor_to_asistent($row['insotitor'] ?? '');
-            $suma = incasari_valoare_cotizatie_anuala($pdo, $anul, $grad, $asistent);
+            $suma = (float)$rand_an_dash['rest'];
         }
-        if ($mod_plata === INCASARI_MOD_MANDAT_POSTAL) {
-            $reprezentand = 'Cotizatie membru - mandat postal';
-        } else {
-            $reprezentand = $reprezentand ?: 'Cotizatie membru';
+        if ($suma <= 0) {
+            echo json_encode(['ok' => false, 'eroare' => 'Introduceți valoarea cotizației.']);
+            exit;
         }
+        $reprezentand = incasari_reprezentand_cotizatie($anul, $mod_plata);
         $id = incasari_adauga($pdo, $membru_id, INCASARI_TIP_COTIZATIE, $anul, $suma, $mod_plata, $data_incasare, $utilizator, null, null, $reprezentand);
     } else {
+        if ($anul !== null) {
+            echo json_encode(['ok' => false, 'eroare' => 'Ați selectat un an de cotizație, dar tipul încasării nu este cotizație.']);
+            exit;
+        }
         if ($suma <= 0) {
             echo json_encode(['ok' => false, 'eroare' => 'Introduceți valoarea donației.']);
             exit;

@@ -22,7 +22,6 @@
             <input type="hidden" name="membru_id" id="incasari-membru-id" value="">
             <input type="hidden" name="valoare_cotizatie" id="incasari-valoare-cot" value="0">
             <input type="hidden" name="cotizatie_achitata" id="incasari-cot-achitata" value="0">
-            <input type="hidden" id="incasari-an-cotizatie" value="<?php echo (int)date('Y'); ?>">
 
             <div>
                 <span class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">Tip încasare</span>
@@ -54,6 +53,14 @@
                 <input type="date" id="incasari-data" name="data_incasare" value="<?php echo date('Y-m-d'); ?>" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
             </div>
 
+            <div id="incasari-wrap-an" class="hidden">
+                <label for="incasari-an-select" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Cotizație pentru anul</label>
+                <select id="incasari-an-select" name="an_cotizatie" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white">
+                    <option value="">Altă plată</option>
+                </select>
+                <p id="incasari-an-info" class="mt-1 text-xs text-slate-700 dark:text-gray-300" aria-live="polite"></p>
+            </div>
+
             <div id="incasari-wrap-suma" class="hidden">
                 <label for="incasari-suma" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1"><span id="incasari-label-suma">Sumă (RON)</span></label>
                 <input type="text" id="incasari-suma" name="suma" placeholder="0.00" class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" inputmode="decimal">
@@ -81,7 +88,11 @@
     var mid = document.getElementById('incasari-membru-id');
     var valCot = document.getElementById('incasari-valoare-cot');
     var cotAchitata = document.getElementById('incasari-cot-achitata');
-    var anCotizatieInput = document.getElementById('incasari-an-cotizatie');
+    var wrapAn = document.getElementById('incasari-wrap-an');
+    var selectAn = document.getElementById('incasari-an-select');
+    var infoAn = document.getElementById('incasari-an-info');
+    var aniDatorati = [];
+    var MODURI_CU_AN = ['mandat_postal', 'card_pos', 'transfer_bancar'];
     var cotAchitataAfis = document.getElementById('incasari-cot-achitata-afis');
     var tipInput = document.getElementById('incasari-tip');
     var modInput = document.getElementById('incasari-mod');
@@ -114,17 +125,67 @@
         });
     }
 
+    function populeazaAniCotizatie() {
+        selectAn.innerHTML = '';
+        var optAlta = document.createElement('option');
+        optAlta.value = '';
+        optAlta.textContent = 'Altă plată';
+        selectAn.appendChild(optAlta);
+        aniDatorati.forEach(function(a){
+            var o = document.createElement('option');
+            o.value = String(a.an);
+            o.textContent = (a.status === 'partial')
+                ? (a.an + ' – rest de plată ' + a.rest + ' lei')
+                : (a.an + ' – ' + a.datorat + ' lei');
+            selectAn.appendChild(o);
+        });
+    }
+
+    function anSelectat() {
+        return selectAn.value ? parseInt(selectAn.value, 10) : 0;
+    }
+
+    function randAn(an) {
+        for (var i = 0; i < aniDatorati.length; i++) {
+            if (aniDatorati[i].an === an) return aniDatorati[i];
+        }
+        return null;
+    }
+
+    // Campul cu anul apare pentru tipul cotizatie si pentru mandat postal, POS si transfer bancar.
+    function arataCampAn() {
+        var trebuie = tipInput.value === 'cotizatie' || MODURI_CU_AN.indexOf(modInput.value) >= 0;
+        wrapAn.classList.toggle('hidden', !trebuie);
+        return trebuie;
+    }
+
+    function actualizeazaDupaAn() {
+        var an = anSelectat();
+        if (tipInput.value === 'cotizatie' && an) {
+            var r = randAn(an);
+            wrapSuma.classList.remove('hidden');
+            labelSuma.textContent = 'Cotizație ' + an + ' (RON)';
+            inputSuma.readOnly = false;
+            inputSuma.required = true;
+            inputSuma.value = r ? String(r.rest) : '';
+            infoAn.textContent = (r && r.status === 'partial')
+                ? ('Cotizația pe ' + an + ' este achitată parțial. Rest de plată ' + r.rest + ' lei.')
+                : '';
+        } else {
+            infoAn.textContent = '';
+        }
+        actualizeazaReprezentandPentruMandatPostal();
+    }
+
     function actualizeazaReprezentandPentruMandatPostal() {
-        var textMandat = 'Cotizatie membru - mandat postal';
         if (tipInput.value !== 'cotizatie') return;
         wrapReprezentand.classList.remove('hidden');
+        var an = anSelectat();
+        var text = 'Cotizatie membru' + (an ? ' ' + an : '');
         if (modInput.value === 'mandat_postal') {
-            inputReprezentand.value = textMandat;
-            return;
+            text += ' - mandat postal';
         }
-        if (!inputReprezentand.value || inputReprezentand.value === textMandat) {
-            inputReprezentand.value = 'Cotizatie membru';
-        }
+        inputReprezentand.value = text;
     }
 
     function modEmiteChitanta() {
@@ -167,6 +228,10 @@
         });
         wrapSuma.classList.add('hidden');
         inputSuma.value = '';
+        inputSuma.readOnly = false;
+        wrapAn.classList.add('hidden');
+        selectAn.value = '';
+        infoAn.textContent = '';
         wrapReprezentand.classList.add('hidden');
         inputReprezentand.value = '';
         btnChitanta.classList.add('hidden');
@@ -182,11 +247,33 @@
         mid.value = btn.getAttribute('data-membru-id') || '';
         if (numeSpan) numeSpan.textContent = btn.getAttribute('data-membru-nume') || '';
         valCot.value = btn.getAttribute('data-valoare-cot') || '0';
-        if (anCotizatieInput) {
-            anCotizatieInput.value = btn.getAttribute('data-cotizatie-an') || String(new Date().getFullYear());
+
+        aniDatorati = [];
+        var aniBrut = btn.getAttribute('data-ani-cotizatie');
+        if (aniBrut) {
+            try {
+                var parsat = JSON.parse(aniBrut) || [];
+                aniDatorati = parsat.map(function(a){
+                    return {
+                        an: parseInt(a.an, 10),
+                        datorat: parseInt(a.datorat, 10) || 0,
+                        rest: parseInt(a.rest, 10) || 0,
+                        status: a.status || 'neachitat'
+                    };
+                }).filter(function(a){ return a.an > 0; });
+            } catch (e) {
+                aniDatorati = [];
+            }
         }
-        var ach = btn.getAttribute('data-cot-achitata');
-        cotAchitata.value = (ach === '1' || ach === 'true') ? '1' : '0';
+        populeazaAniCotizatie();
+
+        if (aniBrut !== null) {
+            // Nu mai datoreaza nimic daca nu exista ani neachitati.
+            cotAchitata.value = aniDatorati.length ? '0' : '1';
+        } else {
+            var ach = btn.getAttribute('data-cot-achitata');
+            cotAchitata.value = (ach === '1' || ach === 'true') ? '1' : '0';
+        }
         if (cotAchitata.value === '1') {
             cotAchitataAfis.classList.remove('hidden');
             document.querySelector('.incasari-tip-btn[data-tip="cotizatie"]').classList.add('hidden');
@@ -241,13 +328,22 @@
             } else {
                 wrapSuma.classList.remove('hidden');
                 labelSuma.textContent = 'Cotizație (RON)';
-                inputSuma.value = valCot.value || '0';
-                inputSuma.readOnly = true;
-                inputSuma.required = false;
+                inputSuma.readOnly = false;
+                inputSuma.required = true;
                 wrapReprezentand.classList.remove('hidden');
-                inputReprezentand.value = 'Cotizatie membru';
+                if (!anSelectat() && aniDatorati.length) {
+                    selectAn.value = String(aniDatorati[0].an);
+                }
+                if (!aniDatorati.length) {
+                    inputSuma.value = valCot.value || '0';
+                    afiseazaMesaj('Pentru acest membru nu există ani de cotizație neachitați definiți în Setări.');
+                }
             }
-            actualizeazaReprezentandPentruMandatPostal();
+            if (t !== 'cotizatie') {
+                selectAn.value = '';
+            }
+            arataCampAn();
+            actualizeazaDupaAn();
             actualizeazaActiuni();
         });
     });
@@ -258,14 +354,57 @@
             modInput.value = m;
             afiseazaMesaj('');
             seteazaSelectie('.incasari-mod-btn', this);
-            actualizeazaReprezentandPentruMandatPostal();
+            if (m === 'mandat_postal' && !anSelectat() && aniDatorati.length) {
+                // Mandatul postal este, de regula, cotizatie: propunem cel mai vechi an datorat.
+                selectAn.value = String(aniDatorati[0].an);
+                if (tipInput.value !== 'cotizatie') {
+                    var btnCotMandat = document.querySelector('.incasari-tip-btn[data-tip="cotizatie"]');
+                    if (btnCotMandat && !btnCotMandat.classList.contains('hidden')) {
+                        tipInput.value = 'cotizatie';
+                        seteazaSelectie('.incasari-tip-btn', btnCotMandat);
+                        wrapReprezentand.classList.remove('hidden');
+                    } else {
+                        selectAn.value = '';
+                    }
+                }
+            }
+            if ((m === 'card_pos' || m === 'transfer_bancar') && tipInput.value !== 'cotizatie') {
+                // La POS si la transfer bancar valoarea implicita este „Alta plata”.
+                selectAn.value = '';
+            }
+            arataCampAn();
+            actualizeazaDupaAn();
             actualizeazaActiuni();
         });
     });
 
+    selectAn.addEventListener('change', function(){
+        var an = anSelectat();
+        var mesaj = '';
+        if (an && tipInput.value !== 'cotizatie') {
+            var btnCot = document.querySelector('.incasari-tip-btn[data-tip="cotizatie"]');
+            if (btnCot) {
+                tipInput.value = 'cotizatie';
+                seteazaSelectie('.incasari-tip-btn', btnCot);
+            }
+            mesaj = 'Tip încasare setat pe cotizație pentru anul ' + an + '.';
+        } else if (!an && tipInput.value === 'cotizatie') {
+            tipInput.value = '';
+            seteazaSelectie('.incasari-tip-btn', null);
+            wrapSuma.classList.add('hidden');
+            inputSuma.value = '';
+            mesaj = 'Alegeți tipul încasării.';
+        }
+        afiseazaMesaj('');
+        arataCampAn();
+        actualizeazaDupaAn();
+        if (mesaj) {
+            infoAn.textContent = mesaj;
+        }
+        actualizeazaActiuni();
+    });
+
     function getSuma() {
-        var tip = tipInput.value;
-        if (tip === 'cotizatie') return parseFloat(valCot.value) || 0;
         return parseFloat(String(inputSuma.value).replace(',','.')) || 0;
     }
 
@@ -288,7 +427,12 @@
         }
         var s = getSuma();
         if (!dataInput.value) { dataInput.setAttribute('aria-invalid', 'true'); afiseazaMesaj('Selectați data încasării.'); dataInput.focus(); return; }
-        if (['donatie','taxa_participare','alte'].indexOf(tipInput.value) >= 0 && s <= 0) { inputSuma.setAttribute('aria-invalid', 'true'); afiseazaMesaj('Introduceți suma.'); inputSuma.focus(); return; }
+        if (tipInput.value === 'cotizatie' && !anSelectat()) {
+            afiseazaMesaj('Selectați anul cotizației sau schimbați tipul încasării.');
+            selectAn.focus();
+            return;
+        }
+        if (s <= 0) { inputSuma.setAttribute('aria-invalid', 'true'); afiseazaMesaj('Introduceți suma.'); inputSuma.focus(); return; }
         var fd = new FormData(form);
         fd.set('suma', s);
         fetch('/api/incasari-salveaza', { method: 'POST', body: fd, credentials: 'same-origin' })

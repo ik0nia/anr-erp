@@ -817,12 +817,37 @@ function membri_cotizatie_info(PDO $pdo, int $membru_id, ?array $membru = null):
         $valoare_cotizatie_an = incasari_valoare_cotizatie_anuala($pdo, $an_cotizatie, $hgrad, $asistent_personal);
     } catch (Exception $e) {}
 
+    // Anii pe care membrul ii datoreaza (pentru dropdown-ul din fereastra de incasare)
+    // si restantele (pentru avertizarile din profil).
+    $ani_datorati = [];
+    $restante_cotizatii = [];
+    try {
+        $situatie = cotizatii_situatie_membru($pdo, $membru_id, $membru);
+        $restante_cotizatii = $situatie['restante'] ?? [];
+        foreach (($situatie['ani_datorati'] ?? []) as $rand_an) {
+            $ani_datorati[] = [
+                'an' => (int)$rand_an['an'],
+                'datorat' => (int)$rand_an['datorat'],
+                'rest' => (int)$rand_an['rest'],
+                'status' => (string)$rand_an['status'],
+            ];
+        }
+    } catch (Exception $e) {}
+
+    // Anul propus implicit la incasare: cel mai vechi an datorat.
+    if (!empty($ani_datorati)) {
+        $an_cotizatie = (int)$ani_datorati[0]['an'];
+        $valoare_cotizatie_an = (float)$ani_datorati[0]['rest'];
+    }
+
     return [
         'scutire_cotizatie' => $scutire_cotizatie,
         'scutire_setata' => $scutire_setata,
         'cotizatie_achitata_an_curent' => $cotizatie_achitata_an_curent,
         'valoare_cotizatie_an' => $valoare_cotizatie_an,
         'an_cotizatie' => $an_cotizatie,
+        'ani_datorati' => $ani_datorati,
+        'restante_cotizatii' => $restante_cotizatii,
     ];
 }
 

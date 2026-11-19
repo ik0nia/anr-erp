@@ -44,17 +44,32 @@ function incasari_ensure_tables($pdo) {
     return;
 }
 
-/** Verifică dacă membru a achitat cotizația pentru anul dat (inclusiv scutit). */
+/**
+ * Verifica daca membrul nu mai datoreaza cotizatie pentru anul dat.
+ *
+ * Returneaza true cand anul este achitat integral, cand membrul este scutit pentru
+ * acel an, cand pentru anul respectiv nu exista cotizatie definita in Setari sau
+ * cand membrul nu are status dosar Activ. O plata partiala NU achita anul.
+ */
 function incasari_cotizatie_achitata_an($pdo, $membru_id, $anul) {
     require_once __DIR__ . '/cotizatii_helper.php';
-    $scutire = cotizatii_membru_este_scutit($pdo, $membru_id);
-    if (!empty($scutire)) {
+    $anul = (int) $anul;
+    $situatie = cotizatii_situatie_membru($pdo, (int)$membru_id);
+    if (!isset($situatie['ani'][$anul])) {
         return true;
     }
-    $anul = (int) $anul;
-    $stmt = $pdo->prepare("SELECT 1 FROM incasari WHERE membru_id = ? AND tip = 'cotizatie' AND anul = ? LIMIT 1");
-    $stmt->execute([(int)$membru_id, $anul]);
-    return $stmt->fetch() ? true : false;
+    return in_array($situatie['ani'][$anul]['status'], ['achitat', 'scutit', 'nedefinit'], true);
+}
+
+/**
+ * Textul „Reprezentand” pentru o cotizatie, cu anul inclus (apare si pe chitanta).
+ */
+function incasari_reprezentand_cotizatie($an, $mod_plata = null) {
+    $text = 'Cotizatie membru ' . (int)$an;
+    if ($mod_plata === INCASARI_MOD_MANDAT_POSTAL) {
+        $text .= ' - mandat postal';
+    }
+    return $text;
 }
 
 /** Valoare cotizație pentru an, grad și asistent personal (din cotizatii_anuale). $asistent_personal default „Fara asistent personal”. */
