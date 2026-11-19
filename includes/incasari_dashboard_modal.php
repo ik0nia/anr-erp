@@ -108,6 +108,25 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
                 <button type="button" id="inc-dash-btn-inchide" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">Închide</button>
             </div>
         </form>
+        <div id="inc-dash-succes" class="hidden mt-4 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4" role="region" aria-labelledby="inc-dash-succes-titlu">
+            <h3 id="inc-dash-succes-titlu" class="font-semibold text-emerald-900 dark:text-emerald-200 mb-1">Chitanța a fost emisă</h3>
+            <p id="inc-dash-succes-detalii" class="text-sm text-slate-800 dark:text-gray-200 mb-3"></p>
+            <div class="space-y-3">
+                <div id="inc-dash-wrap-email-trimite">
+                    <label for="inc-dash-email-trimite" class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Trimite chitanța pe email</label>
+                    <div class="flex flex-wrap gap-2">
+                        <input type="email" id="inc-dash-email-trimite" class="flex-1 min-w-[12rem] px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-slate-900 dark:text-white" placeholder="adresa@exemplu.ro" autocomplete="email">
+                        <button type="button" id="inc-dash-btn-email" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">Trimite pe email</button>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" id="inc-dash-btn-whatsapp" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">Trimite pe WhatsApp</button>
+                    <button type="button" id="inc-dash-btn-tipareste" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">Deschide chitanța</button>
+                    <button type="button" id="inc-dash-btn-gata" class="px-4 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-slate-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">Gata</button>
+                </div>
+                <p id="inc-dash-stare-trimitere" class="text-sm font-medium" role="status" aria-live="polite"></p>
+            </div>
+        </div>
     </div>
 </dialog>
 <script>
@@ -118,6 +137,16 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
     var sumaLitereInput = document.getElementById('inc-dash-suma-litere');
     var reprezentandInput = document.getElementById('inc-dash-reprezentand');
     var modInput = document.getElementById('inc-dash-mod');
+    var panouSucces = document.getElementById('inc-dash-succes');
+    var detaliiSucces = document.getElementById('inc-dash-succes-detalii');
+    var wrapEmailTrimite = document.getElementById('inc-dash-wrap-email-trimite');
+    var inputEmailTrimite = document.getElementById('inc-dash-email-trimite');
+    var btnEmailTrimite = document.getElementById('inc-dash-btn-email');
+    var btnWhatsApp = document.getElementById('inc-dash-btn-whatsapp');
+    var btnTipareste = document.getElementById('inc-dash-btn-tipareste');
+    var btnGata = document.getElementById('inc-dash-btn-gata');
+    var stareTrimitere = document.getElementById('inc-dash-stare-trimitere');
+    var incasareEmisa = null; // { id, seria, nr, telefon }
     var feedback = document.getElementById('inc-dash-feedback');
     var defaultData = new Date().toISOString().slice(0,10);
 
@@ -152,6 +181,63 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
         asteriscNume.style.display = 'inline';
         asteriscPrenume.style.display = 'inline';
         hintDatePersonale.classList.add('hidden');
+        ascundePanouSucces();
+    }
+
+    function ascundePanouSucces() {
+        incasareEmisa = null;
+        if (panouSucces) panouSucces.classList.add('hidden');
+        if (stareTrimitere) { stareTrimitere.textContent = ''; stareTrimitere.className = 'text-sm font-medium'; }
+        if (form) form.classList.remove('hidden');
+    }
+
+    function arataStareTrimitere(text, tip) {
+        if (!stareTrimitere) return;
+        stareTrimitere.textContent = text;
+        var culoare = tip === 'ok' ? ' text-emerald-800 dark:text-emerald-200' : (tip === 'eroare' ? ' text-rose-700 dark:text-rose-300' : ' text-slate-700 dark:text-gray-300');
+        stareTrimitere.className = 'text-sm font-medium' + culoare;
+    }
+
+    function tokenCsrf() {
+        var inp = form ? form.querySelector('input[name="_csrf_token"]') : null;
+        return inp ? inp.value : '';
+    }
+
+    function arataPanouSucces(data) {
+        var telefon = (data.telefon_destinatar || '') || (document.getElementById('inc-dash-telefon') || {}).value || '';
+        var email = (data.email_destinatar || '') || (document.getElementById('inc-dash-email') || {}).value || '';
+        incasareEmisa = {
+            id: data.id,
+            seria: data.seria_chitanta || '-',
+            nr: data.nr_chitanta || '-',
+            telefon: telefon,
+            mesaj: data.mesaj_partajare || '',
+            numePdf: data.nume_pdf || 'chitanta.pdf'
+        };
+        if (detaliiSucces) {
+            detaliiSucces.textContent = 'Chitanța ' + incasareEmisa.seria + ' nr. ' + incasareEmisa.nr + ' a fost înregistrată. O puteți trimite persoanei care a donat.';
+        }
+        if (inputEmailTrimite) inputEmailTrimite.value = (email || '').trim();
+        if (btnWhatsApp) {
+            // Fără telefon completat, butonul are rost doar dacă dispozitivul poate partaja nativ.
+            var potPartaja = (telefon || '').trim() !== '' || typeof navigator.share === 'function';
+            btnWhatsApp.classList.toggle('hidden', !potPartaja);
+        }
+        arataStareTrimitere('');
+        if (form) form.classList.add('hidden');
+        if (panouSucces) panouSucces.classList.remove('hidden');
+        if (inputEmailTrimite && (email || '').trim() !== '') {
+            inputEmailTrimite.focus();
+        } else if (btnWhatsApp) {
+            btnWhatsApp.focus();
+        }
+    }
+
+    function inchideCuReincarcare() {
+        var trebuieReincarcat = incasareEmisa !== null;
+        resetModalDashboard();
+        dialog.close();
+        if (trebuieReincarcat && typeof window.location.reload === 'function') window.location.reload();
     }
 
     function necesitaDatePersonale(modPlata) {
@@ -286,14 +372,15 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
             .then(function(r){ return r.json(); })
             .then(function(data){
                 if (data.ok) {
-                    dialog.close();
                     if (data.seria_chitanta) {
                         window.open('util/incasari-chitanta-print.php?id=' + data.id, '_blank', 'width=800,height=600');
+                        arataPanouSucces(data);
                     } else {
+                        dialog.close();
                         alert('Încasarea a fost înregistrată cu succes.');
+                        resetModalDashboard();
+                        if (typeof window.location.reload === 'function') window.location.reload();
                     }
-                    resetModalDashboard();
-                    if (typeof window.location.reload === 'function') window.location.reload();
                 } else {
                     afiseazaMesaj(data.eroare || 'Eroare la salvare.');
                 }
@@ -301,9 +388,80 @@ if (!function_exists('csrf_field')) { function csrf_field() { return ''; } }
             .catch(function(){ afiseazaMesaj('Eroare de rețea.'); });
     });
 
-    document.getElementById('inc-dash-btn-inchide-x').addEventListener('click', function(){ resetModalDashboard(); dialog.close(); });
-    document.getElementById('inc-dash-btn-inchide').addEventListener('click', function(){ resetModalDashboard(); dialog.close(); });
-    dialog.addEventListener('click', function(e){ if (e.target === dialog) { resetModalDashboard(); dialog.close(); } });
+    document.getElementById('inc-dash-btn-inchide-x').addEventListener('click', inchideCuReincarcare);
+    document.getElementById('inc-dash-btn-inchide').addEventListener('click', inchideCuReincarcare);
+    if (btnGata) btnGata.addEventListener('click', inchideCuReincarcare);
+    dialog.addEventListener('click', function(e){ if (e.target === dialog) { inchideCuReincarcare(); } });
+
+    if (btnTipareste) {
+        btnTipareste.addEventListener('click', function(){
+            if (!incasareEmisa) return;
+            window.open('util/incasari-chitanta-print.php?id=' + incasareEmisa.id, '_blank', 'width=800,height=600');
+        });
+    }
+
+    if (btnEmailTrimite) {
+        btnEmailTrimite.addEventListener('click', function(){
+            if (!incasareEmisa) return;
+            var email = (inputEmailTrimite.value || '').trim();
+            if (email === '' || email.indexOf('@') < 1) {
+                arataStareTrimitere('Completați o adresă de email validă.', 'eroare');
+                inputEmailTrimite.focus();
+                return;
+            }
+            btnEmailTrimite.disabled = true;
+            arataStareTrimitere('Se trimite chitanța pe email…');
+            var fd = new FormData();
+            fd.append('_csrf_token', tokenCsrf());
+            fd.append('id', String(incasareEmisa.id));
+            fd.append('email', email);
+            fetch('/api/incasari-trimite-email', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r){ return r.json(); })
+                .then(function(d){
+                    btnEmailTrimite.disabled = false;
+                    if (d && d.ok) {
+                        arataStareTrimitere('Chitanța a fost trimisă pe email către ' + email + '.', 'ok');
+                    } else {
+                        arataStareTrimitere((d && d.eroare) ? d.eroare : 'Emailul nu a putut fi trimis.', 'eroare');
+                    }
+                })
+                .catch(function(){
+                    btnEmailTrimite.disabled = false;
+                    arataStareTrimitere('Eroare de rețea la trimiterea emailului.', 'eroare');
+                });
+        });
+    }
+
+    if (btnWhatsApp) {
+        btnWhatsApp.addEventListener('click', function(){
+            if (!incasareEmisa) return;
+            btnWhatsApp.disabled = true;
+            arataStareTrimitere('Se pregătește chitanța pentru partajare…');
+            fetch('util/incasari-chitanta-pdf.php?id=' + incasareEmisa.id + '&partaj=1', { credentials: 'same-origin' })
+                .then(function(r){ if (!r.ok) throw new Error('pdf'); return r.blob(); })
+                .then(function(blob){
+                    var fisier = null;
+                    try { fisier = new File([blob], incasareEmisa.numePdf, { type: 'application/pdf' }); } catch (e) { fisier = null; }
+                    var mesaj = incasareEmisa.mesaj || ('Chitanța ' + incasareEmisa.seria + ' nr. ' + incasareEmisa.nr + ' – Asociația Nevăzătorilor Bihor');
+                    if (fisier && navigator.share && navigator.canShare && navigator.canShare({ files: [fisier] })) {
+                        return navigator.share({ files: [fisier], title: 'Chitanță', text: mesaj })
+                            .then(function(){ arataStareTrimitere('Chitanța a fost trimisă către aplicația aleasă.', 'ok'); });
+                    }
+                    var urlBlob = URL.createObjectURL(blob);
+                    var link = document.createElement('a');
+                    link.href = urlBlob;
+                    link.download = incasareEmisa.numePdf;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(function(){ URL.revokeObjectURL(urlBlob); }, 60000);
+                    window.open('https://wa.me/' + (incasareEmisa.telefon || '') + '?text=' + encodeURIComponent(mesaj), '_blank', 'noopener');
+                    arataStareTrimitere('PDF-ul chitanței a fost descărcat; atașați-l în conversația WhatsApp deschisă.', 'ok');
+                })
+                .catch(function(){ arataStareTrimitere('Chitanța nu a putut fi pregătită pentru partajare.', 'eroare'); })
+                .then(function(){ btnWhatsApp.disabled = false; });
+        });
+    }
 
     document.addEventListener('click', function(e){
         var btn = e.target.closest('.btn-deschide-incasari-dashboard');

@@ -10,6 +10,7 @@ require_once __DIR__ . '/../includes/contacte_helper.php';
 require_once __DIR__ . '/../includes/cotizatii_helper.php';
 require_once __DIR__ . '/../includes/incasari_helper.php';
 require_once __DIR__ . '/../includes/log_helper.php';
+require_once __DIR__ . '/../includes/incasari_partajare.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -182,10 +183,17 @@ if (!empty($inc['seria_chitanta'])) {
 }
 registru_v2_adauga_incasare($pdo, $nume_persoana, $descriere_registru, $utilizator);
 
+// Date pentru trimiterea chitanței pe email sau partajarea ei (WhatsApp / partajare nativă).
+$destinatar = incasari_destinatar($pdo, $inc);
+
 echo json_encode([
     'ok' => true,
     'id' => $id,
     'seria_chitanta' => $inc['seria_chitanta'] ?? null,
     'nr_chitanta' => $inc['nr_chitanta'] ?? null,
     'mod_plata' => $inc['mod_plata'] ?? null,
+    'email_destinatar' => $destinatar['email'],
+    'telefon_destinatar' => incasari_telefon_normalizat($destinatar['telefon']),
+    'mesaj_partajare' => incasari_mesaj_partajare($pdo, $inc),
+    'nume_pdf' => incasari_chitanta_pdf_nume($inc, incasari_chitanta_format($pdo)),
 ], JSON_UNESCAPED_UNICODE);

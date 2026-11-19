@@ -5,6 +5,8 @@
  */
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../includes/incasari_helper.php';
+require_once __DIR__ . '/../includes/csrf_helper.php';
+require_once __DIR__ . '/../includes/incasari_partajare.php';
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
@@ -69,6 +71,14 @@ $seria = $inc['seria_chitanta'] ?? '-';
 $nr = $inc['nr_chitanta'] ?? '-';
 
 $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Județ: {$judet}, suma de {$suma_litere} ({$inc['suma']} RON), reprezentând {$reprezentant}.";
+
+// Date pentru trimiterea chitantei pe email si pentru partajare (WhatsApp / partajare nativa).
+$destinatar = incasari_destinatar($pdo, $inc);
+$email_precompletat = (string)($destinatar['email'] ?? '');
+$telefon_destinatar = incasari_telefon_normalizat($destinatar['telefon'] ?? null);
+$mesaj_partajare = incasari_mesaj_partajare($pdo, $inc);
+$nume_pdf_partajare = incasari_chitanta_pdf_nume($inc, incasari_chitanta_format($pdo));
+$are_chitanta = !empty($inc['seria_chitanta']);
 ?>
 <!DOCTYPE html>
 <html lang="ro">
@@ -91,6 +101,14 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
         .no-print { text-align: center; padding: 10px 0; }
         .no-print a, .no-print button { margin: 0 4px; padding: 8px 16px; text-decoration: none; background: #b45309; color: #fff; border: 0; border-radius: 6px; cursor: pointer; font-size: 14px; }
         .no-print a:hover, .no-print button:hover { background: #92400a; }
+        .no-print .bara-partajare { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; margin-top: 10px; }
+        .no-print .bara-partajare label { font-size: 14px; }
+        .no-print .bara-partajare input[type="email"] { padding: 8px 10px; font-size: 14px; border: 1px solid #94a3b8; border-radius: 6px; min-width: 16rem; color: #000; background: #fff; }
+        .no-print .btn-wa { background: #15803d; }
+        .no-print .btn-wa:hover { background: #166534; }
+        .no-print .stare-trimitere { font-size: 14px; padding: 6px 0; margin: 0; }
+        .no-print .stare-trimitere.ok { color: #15803d; font-weight: bold; }
+        .no-print .stare-trimitere.eroare { color: #b91c1c; font-weight: bold; }
         /* Șablon de tipărire: 21 x 28 cm (două chitanțe a câte 21 x 14 cm). */
         .a4-sheet { width: 210mm; height: 280mm; margin: 0 auto; padding: 0; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .chitanta-half {
@@ -131,10 +149,20 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
     <div class="no-print">
         <button type="button" onclick="window.print();">Tipărește</button>
         <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?><?php echo $format_pdf_link; ?>"><?php echo htmlspecialchars($format_pdf_label); ?></a>
+<?php if ($dimensiune_chitanta !== 'a5'): ?>
         <a href="incasari-chitanta-pdf.php?id=<?php echo $id; ?>&format=a5">PDF A5</a>
-        <?php $pdf_a5_url = (isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'https') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . '/util/incasari-chitanta-pdf.php?id=' . $id . $format_pdf_link; ?>
-        <a href="https://wa.me/?text=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON - ' . $pdf_a5_url); ?>" target="_blank" rel="noopener noreferrer">Distribuie WhatsApp</a>
-        <a href="mailto:?subject=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr); ?>&body=<?php echo urlencode('Chitanta ' . $seria . ' nr. ' . $nr . ' - ' . $inc['suma'] . ' RON' . "\n" . $pdf_a5_url); ?>">Distribuie Email</a>
+<?php endif; ?>
+<?php if ($are_chitanta): ?>
+        <form class="bara-partajare" id="form-trimite-email" novalidate>
+            <input type="hidden" name="_csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+            <input type="hidden" name="id" value="<?php echo $id; ?>">
+            <label for="email-chitanta">Trimite chitanța pe email:</label>
+            <input type="email" id="email-chitanta" name="email" value="<?php echo htmlspecialchars($email_precompletat); ?>" placeholder="adresa@exemplu.ro" autocomplete="email" required>
+            <button type="submit" id="btn-trimite-email">Trimite pe email</button>
+            <button type="button" id="btn-trimite-whatsapp" class="btn-wa">Trimite pe WhatsApp</button>
+        </form>
+        <p id="stare-trimitere" class="stare-trimitere" role="status" aria-live="polite"></p>
+<?php endif; ?>
     </div>
     <div class="a4-sheet">
         <?php for ($ex = 1; $ex <= 2; $ex++): ?>
@@ -166,5 +194,95 @@ $text_chitanta = "Am primit de la {$nume}, CNP: {$cnp}, din loc. {$domloc}, Jude
     <script>
         window.onload = function() { window.print(); };
     </script>
+<?php if ($are_chitanta): ?>
+    <script>
+    (function(){
+        var form = document.getElementById('form-trimite-email');
+        var inputEmail = document.getElementById('email-chitanta');
+        var btnEmail = document.getElementById('btn-trimite-email');
+        var btnWa = document.getElementById('btn-trimite-whatsapp');
+        var stare = document.getElementById('stare-trimitere');
+        var idIncasare = <?php echo (int)$id; ?>;
+        var mesajPartajare = <?php echo json_encode($mesaj_partajare, JSON_UNESCAPED_UNICODE); ?>;
+        var numePdf = <?php echo json_encode($nume_pdf_partajare, JSON_UNESCAPED_UNICODE); ?>;
+        var telefon = <?php echo json_encode((string)$telefon_destinatar, JSON_UNESCAPED_UNICODE); ?>;
+        var urlPdf = 'incasari-chitanta-pdf.php?id=' + idIncasare + '&partaj=1';
+
+        function arataStare(text, tip) {
+            stare.textContent = text;
+            stare.className = 'stare-trimitere' + (tip ? ' ' + tip : '');
+        }
+
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            var email = (inputEmail.value || '').trim();
+            if (email === '' || email.indexOf('@') < 1) {
+                arataStare('Completați o adresă de email validă.', 'eroare');
+                inputEmail.focus();
+                return;
+            }
+            btnEmail.disabled = true;
+            arataStare('Se trimite chitanța pe email…');
+            var fd = new FormData();
+            fd.append('_csrf_token', form.querySelector('input[name="_csrf_token"]').value);
+            fd.append('id', String(idIncasare));
+            fd.append('email', email);
+            fetch('/api/incasari-trimite-email', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r){ return r.json(); })
+                .then(function(data){
+                    btnEmail.disabled = false;
+                    if (data && data.ok) {
+                        arataStare('Chitanța a fost trimisă pe email către ' + email + '.', 'ok');
+                    } else {
+                        arataStare((data && data.eroare) ? data.eroare : 'Emailul nu a putut fi trimis.', 'eroare');
+                    }
+                })
+                .catch(function(){
+                    btnEmail.disabled = false;
+                    arataStare('Eroare de rețea la trimiterea emailului.', 'eroare');
+                });
+        });
+
+        btnWa.addEventListener('click', function(){
+            btnWa.disabled = true;
+            arataStare('Se pregătește chitanța pentru partajare…');
+            fetch(urlPdf, { credentials: 'same-origin' })
+                .then(function(r){
+                    if (!r.ok) throw new Error('pdf');
+                    return r.blob();
+                })
+                .then(function(blob){
+                    var fisier = null;
+                    try {
+                        fisier = new File([blob], numePdf, { type: 'application/pdf' });
+                    } catch (e) {
+                        fisier = null;
+                    }
+                    // Partajarea nativă a telefonului, cu PDF-ul atașat.
+                    if (fisier && navigator.share && navigator.canShare && navigator.canShare({ files: [fisier] })) {
+                        return navigator.share({ files: [fisier], title: 'Chitanță', text: mesajPartajare })
+                            .then(function(){ arataStare('Chitanța a fost trimisă către aplicația aleasă.', 'ok'); });
+                    }
+                    // Fără partajare de fișiere: salvăm PDF-ul și deschidem WhatsApp cu mesajul.
+                    var urlBlob = URL.createObjectURL(blob);
+                    var link = document.createElement('a');
+                    link.href = urlBlob;
+                    link.download = numePdf;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(function(){ URL.revokeObjectURL(urlBlob); }, 60000);
+                    var urlWa = 'https://wa.me/' + (telefon || '') + '?text=' + encodeURIComponent(mesajPartajare);
+                    window.open(urlWa, '_blank', 'noopener');
+                    arataStare('PDF-ul chitanței a fost descărcat; atașați-l în conversația WhatsApp deschisă.', 'ok');
+                })
+                .catch(function(){
+                    arataStare('Chitanța nu a putut fi pregătită pentru partajare.', 'eroare');
+                })
+                .then(function(){ btnWa.disabled = false; });
+        });
+    })();
+    </script>
+<?php endif; ?>
 </body>
 </html>

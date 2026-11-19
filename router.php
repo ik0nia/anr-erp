@@ -81,6 +81,7 @@ $routes = [
     '/api/incasari-cauta-membri'   => ['type' => 'legacy', 'script' => 'incasari-cauta-membri.php',      'file' => 'api/incasari-cauta-membri.php'],
     '/api/incasari-salveaza'       => ['type' => 'legacy', 'script' => 'incasari-salveaza.php',           'file' => 'api/incasari-salveaza.php'],
     '/api/incasari-dashboard-salveaza' => ['type' => 'legacy', 'script' => 'incasari-dashboard-salveaza.php', 'file' => 'api/incasari-dashboard-salveaza.php'],
+    '/api/incasari-trimite-email'      => ['type' => 'legacy', 'script' => 'incasari-trimite-email.php',     'file' => 'api/incasari-trimite-email.php'],
     '/api/incasari-update'             => ['type' => 'legacy', 'script' => 'incasari-update.php',            'file' => 'api/incasari-update.php'],
     '/api/incasari-sterge'             => ['type' => 'legacy', 'script' => 'incasari-sterge.php',            'file' => 'api/incasari-sterge.php'],
     '/api/genereaza-document'      => ['type' => 'legacy', 'script' => 'genereaza-document.php',          'file' => 'api/genereaza-document.php'],
